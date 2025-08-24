@@ -1,0 +1,18 @@
+# b64chunk.py
+import sys, base64
+
+CHUNK_SIZE = 10000  # characters per printed chunk
+
+if len(sys.argv) < 2:
+    print(f"Usage: {sys.argv[0]} <file>")
+    sys.exit(1)
+
+# Read and encode
+with open(sys.argv[1], "rb") as f:
+    b64_str = base64.b64encode(f.read()).decode()
+
+# Output in labeled chunks
+for i in range(0, len(b64_str), CHUNK_SIZE):
+    part_num = i // CHUNK_SIZE + 1
+    print(f"--- PART {part_num} ---")
+    print(b64_str[i:i+CHUNK_SIZE])
