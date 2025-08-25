@@ -19,7 +19,7 @@ class U5Map:
     def render(
         self,
         tile_size: int,
-        rect: Optional[Tuple[int, int, int, int]] = None
+        rect: Optional[Tuple[int, int, int, int]] = None,
     ) -> pygame.Surface:
         """
         Render the map or a subsection of it.
