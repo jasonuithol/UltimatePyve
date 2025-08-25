@@ -37,3 +37,12 @@ It uses the original game data files but runs them through a modern, Python‑ba
     Similarly ```python overworld.py``` and ```python underworld.py``` will generate full maps of these worlds.
     You can peek under the hood with ```python data.py``` to see all the various game-wide settings.
     
+## Legal
+    
+    This project does not include any copyrighted game data.
+    You must supply your own legal copy of Ultima V: Warriors of Destiny.
+    
+## Notes
+
+    - This engine is designed to be fully compatible with the original PC data files.
+    - It’s also built with modding and debugging in mind — you can extend maps, add triggers, or inspect raw data without touching the original files
