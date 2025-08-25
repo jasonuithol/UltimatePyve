@@ -46,3 +46,9 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
     - This engine is designed to be fully compatible with the original PC data files.
     - It’s also built with modding and debugging in mind — you can extend maps, add triggers, or inspect raw data without touching the original files
+
+## Acknowledgements
+
+    - https://wiki.ultimacodex.com the source of much wisdom especially around file formats.
+    - ChatGPT5 - thanks buddy.
+
