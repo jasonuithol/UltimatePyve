@@ -1,6 +1,6 @@
 # file: underworld.py
 
-import struct, pygame
+import pygame
 from pathlib import Path
 from u5map import U5Map
 from tileset import load_tiles16, ega_palette, TILE_SIZE

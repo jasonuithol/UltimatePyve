@@ -3,6 +3,7 @@ import pygame
 from pathlib import Path
 from u5map import U5Map
 from tileset import load_tiles16, ega_palette, TILE_SIZE
+from data import DataOVL
 
 # === CONFIG ===
 DATA_OVL_PATH = r".\u5\DATA.OVL"
@@ -19,8 +20,13 @@ HEADER_LEN  = GRID_DIM * GRID_DIM
 VOID_MARKER = 0xFF
 
 def load_britannia() -> U5Map:
+
+    ovl = DataOVL(Path(DATA_OVL_PATH))
+    chunk_map = list(ovl.britannia_chunking_info)
+    '''
     ovl = Path(DATA_OVL_PATH).read_bytes()
     chunk_map = list(ovl[HEADER_OFF:HEADER_OFF+HEADER_LEN])
+    '''
     chunks_data = Path(BRIT_DAT_PATH).read_bytes()
     chunk_list = [chunks_data[i*256:(i+1)*256] for i in range(len(chunks_data)//256)]
     ocean_chunk = bytes([0x01] * (CHUNK_DIM * CHUNK_DIM))
