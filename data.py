@@ -5,6 +5,7 @@ class DataOVL:
     Container for all parsed DATA.OVL sections.
     Each attribute is a raw bytes slice from the file.
     """
+    _instance = None  # class-level cache
 
     def __init__(self, path: Path):
         raw = path.read_bytes()
@@ -81,13 +82,13 @@ class DataOVL:
         self.armor_index_plus10 = slice_at(0x1806, 0x70)
         # 0x187a 0x1ee Text index (+0x10)
         self.text_index_plus10 = slice_at(0x187a, 0x1ee)
-        # 0x1e2a 0x8 Which Map index for TOWNE.DAT
+        # 0x1e2a 0x8 Which Map index do we start in for TOWNE.DAT
         self.map_index_towne = slice_at(0x1e2a, 0x8)
-        # 0x1e32 0x8 Which Map index for DWELLING.DAT
+        # 0x1e32 0x8 Which Map index do we start in for DWELLING.DAT
         self.map_index_dwelling = slice_at(0x1e32, 0x8)
-        # 0x1e3a 0x8 Which Map index for CASTLE.DAT
+        # 0x1e3a 0x8 Which Map index do we start in for CASTLE.DAT
         self.map_index_castle = slice_at(0x1e3a, 0x8)
-        # 0x1e42 0x8 Which Map index for KEEP.DAT
+        # 0x1e42 0x8 Which Map index do we start in for KEEP.DAT
         self.map_index_keep = slice_at(0x1e42, 0x8)
         # 0x1e4a 0x1a Name of cities index (13 shorts, +0x10)
         self.city_name_index = slice_at(0x1e4a, 0x1a)
@@ -187,6 +188,16 @@ class DataOVL:
         # 0x4e90 0x5 Inn bed Y-coordinate
         self.inn_bed_y_coords = slice_at(0x4e90, 0x5)
 
+    @classmethod
+    def load(cls):
+        """
+        Factory method: returns the singleton instance,
+        creating it if it doesn't exist yet.
+        """
+        if cls._instance is None:
+            cls._instance = cls(Path("u5/DATA.OVL"))
+        return cls._instance
+
 if __name__ == "__main__":
 
     def to_ascii(b: bytes) -> str:
@@ -195,7 +206,7 @@ if __name__ == "__main__":
     def to_hex(b: bytes) -> str:
         return ' '.join(f"{c:02X}" for c in b)
 
-    data = DataOVL(Path("u5/DATA.OVL"))
+    data = DataOVL.load()
     print(data)  # shows the repr summary
 
     for name, value in vars(data).items():

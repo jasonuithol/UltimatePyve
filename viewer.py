@@ -13,6 +13,7 @@ USER_SCALE = 2  # 1 = native, 2 = double size, etc.
 player = create_player()
 player.set_position(56, 72)  # starting tile in world coords
 
+
 def main() -> None:
     pygame.init()
     clock = pygame.time.Clock()
@@ -23,6 +24,7 @@ def main() -> None:
         "underworld": load_underworld()
     }
     current_map = "britannia"
+    current_map_level = 0
 
     # Camera position in tiles
     cam_x, cam_y = 46, 62
@@ -55,7 +57,7 @@ def main() -> None:
         cam_y = player.world_y - VIEW_H // 2
 
         # Render current viewport
-        surf = maps[current_map].render(TILE_SIZE, rect=(cam_x, cam_y, VIEW_W, VIEW_H))
+        surf = maps[current_map].render(current_map_level, TILE_SIZE, rect=(cam_x, cam_y, VIEW_W, VIEW_H))
         surf = pygame.transform.scale(
             surf, (VIEW_W * TILE_SIZE * USER_SCALE, VIEW_H * TILE_SIZE * USER_SCALE)
         )

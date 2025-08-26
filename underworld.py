@@ -8,7 +8,6 @@ from tileset import load_tiles16, ega_palette, TILE_SIZE
 # === CONFIG ===
 UNDER_DAT_PATH = r".\u5\UNDER.DAT"
 TILES16_PATH   = r".\u5\TILES.16"
-OUT_FILE       = "underworld_full.png"
 
 # === CONSTANTS ===
 GRID_DIM   = 16       # 16×16 chunks
@@ -29,11 +28,12 @@ def load_underworld() -> U5Map:
                 src = cy * CHUNK_DIM
                 tiles[dst:dst+CHUNK_DIM] = chunk[src:src+CHUNK_DIM]
     tileset = load_tiles16(TILES16_PATH)
-    return U5Map("Underworld", MAP_DIM, MAP_DIM, tileset, ega_palette, tiles, CHUNK_DIM, GRID_DIM)
+    return U5Map("Underworld", MAP_DIM, MAP_DIM, tileset, ega_palette, [tiles], CHUNK_DIM, GRID_DIM)
 
 if __name__ == "__main__":
+    OUT_FILE = "underworld_full.png"
     pygame.init()
     underworld = load_underworld()
-    surf = underworld.render(TILE_SIZE)
+    surf = underworld.render()
     pygame.image.save(surf, OUT_FILE)
     print(f"Saved {OUT_FILE}")

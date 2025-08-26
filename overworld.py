@@ -6,10 +6,8 @@ from tileset import load_tiles16, ega_palette, TILE_SIZE
 from data import DataOVL
 
 # === CONFIG ===
-DATA_OVL_PATH = r".\u5\DATA.OVL"
 BRIT_DAT_PATH = r".\u5\BRIT.DAT"
 TILES16_PATH  = r".\u5\TILES.16"
-OUT_FILE      = "britannia_full.png"
 
 # === CONSTANTS ===
 GRID_DIM    = 16
@@ -21,7 +19,7 @@ VOID_MARKER = 0xFF
 
 def load_britannia() -> U5Map:
 
-    ovl = DataOVL(Path(DATA_OVL_PATH))
+    ovl = DataOVL.load()
     chunk_map = list(ovl.britannia_chunking_info)
     '''
     ovl = Path(DATA_OVL_PATH).read_bytes()
@@ -40,11 +38,12 @@ def load_britannia() -> U5Map:
                 src = cy * CHUNK_DIM
                 tiles[dst:dst+CHUNK_DIM] = chunk[src:src+CHUNK_DIM]
     tileset = load_tiles16(TILES16_PATH)
-    return U5Map("Britannia", MAP_DIM, MAP_DIM, tileset, ega_palette, tiles, CHUNK_DIM, GRID_DIM)
+    return U5Map("Britannia", MAP_DIM, MAP_DIM, tileset, ega_palette, [tiles], CHUNK_DIM, GRID_DIM)
 
 if __name__ == "__main__":
+    OUT_FILE = "britannia_full.png"
     pygame.init()
     britannia = load_britannia()
-    surf = britannia.render(TILE_SIZE)
+    surf = britannia.render()
     pygame.image.save(surf, OUT_FILE)
     print(f"Saved {OUT_FILE}")
