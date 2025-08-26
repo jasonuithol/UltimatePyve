@@ -82,6 +82,8 @@ def draw_sprite(surface, sprite, palette, tile_size=TILE_SIZE, render_scale=1,
 
 def main() -> None:
     pygame.init()
+    pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
+
     clock = pygame.time.Clock()
 
     # Load both maps
@@ -92,14 +94,10 @@ def main() -> None:
     current_map = "britannia"
     current_map_level = 0
 
-    # Camera position in tiles
-    cam_x, cam_y = 46, 62
-
     # Load triggers once
     triggers = load_entry_triggers()
 
     screen = pygame.display.set_mode((VIEW_W * TILE_SIZE * USER_SCALE, VIEW_H * TILE_SIZE * USER_SCALE))
-    pygame.display.set_caption("Ultima V Map Viewer")
 
     current_location_map = None
     previous_x, previous_y = 0,0
@@ -131,10 +129,12 @@ def main() -> None:
 
             # Only check triggers in overworld/underworld
             if current_location_map is None and just_exited_location == False:
-                for tx, ty, loc_index in triggers:
+                for tx, ty, location_index in triggers:
                     if player.world_x == tx and player.world_y == ty:
                         # Transition to new location
-                        u5map, spawn_x, spawn_y, z_level = spawn_from_trigger(loc_index)
+                        u5map, spawn_x, spawn_y, z_level = spawn_from_trigger(location_index)
+
+                        print(f"Entering location {u5map.name} ({location_index}) at level {z_level}, triggered at ({player.world_x}, {player.world_y})")
 
                         # Store the loaded location map in maps dict
                         current_location_map = u5map
@@ -149,11 +149,14 @@ def main() -> None:
             elif not current_location_map is None:
                 if (player.world_x < 0 or player.world_x >= 32 or
                     player.world_y < 0 or player.world_y >= 32):
-                    # Return to previous map
+                    # Return to previous map (i.e. the overworld or underworld)
                     current_location_map = None
                     current_map_level = 0
                     player.set_position(previous_x, previous_y)
                     just_exited_location = True
+
+        map_to_render = current_location_map if current_location_map is not None else maps[current_map] # U5Map instance
+        pygame.display.set_caption(f"{map_to_render.name} [{player.world_x},{player.world_y}]")
 
         # update the camera - it follows the player
         cam_x = player.world_x - VIEW_W // 2
@@ -161,7 +164,7 @@ def main() -> None:
 
         # Render current viewport from raw map data
         surf = render_map_to_surface(
-            current_location_map if current_location_map is not None else maps[current_map], # U5Map instance
+            map_to_render,
             level_ix=current_map_level,
             tile_size=TILE_SIZE,
             rect=(cam_x, cam_y, VIEW_W, VIEW_H)

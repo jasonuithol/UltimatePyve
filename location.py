@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 from pathlib import Path
-from u5map import U5Map
+from u5map import U5Map, LocationMetadata
 from tileset import load_tiles16_raw, ega_palette, TILES16_PATH
 from data import DataOVL
 
@@ -16,10 +16,10 @@ _TILESET_RAW = load_tiles16_raw(TILES16_PATH)
 _PALETTE = ega_palette
 
 dataOvl = DataOVL.load()
-location_names = [p.decode('ascii') for p in dataOvl.city_names_caps.split(b'\x00') if p]
+_location_names = [p.decode('ascii') for p in dataOvl.city_names_caps.split(b'\x00') if p]
 
 # Append missing names (these are not in city_names_caps)
-location_names += [
+_location_names += [
     "LORD BRITISH'S CASTLE",
     "BLACKTHORN'S CASTLE",
     "SPEKTRAN",
@@ -29,107 +29,148 @@ location_names += [
 
 FILES = [
     "TOWNE.DAT",
+    "DWELLING.DAT",
     "CASTLE.DAT",
-    "KEEP.DAT",
-    "DWELLING.DAT"
+    "KEEP.DAT"
 ]
 
-@dataclass
-class LocationMetadata:
-    name_index: int
-    files_index: int
-    map_index_offset: int
-    num_levels: int
+DEFAULT_LEVEL_LISTS = [
+    DataOVL.load().map_index_towne,
+    DataOVL.load().map_index_dwelling,
+    DataOVL.load().map_index_castle,
+    DataOVL.load().map_index_keep
+]
 
-# LOCATION_METADATA
-# key = location_names index
-# value = (FILES index, map_index_offset, num_levels)
+'''
+LOCATION_METADATA
+List of Tuple(location_name_index, files_index, num_levels)
+NOTE: 
+    Order is important: group_index, map_index_offset, trigger_index will be calculated 
+    off of order of appearance within unique values of files_index.
+    
+    This is the same order of appearance that the maps make in the .DAT files.
+'''
 LOCATION_METADATA = [
     # === TOWNE.DAT ===
-    {0: (0, 0, 2)},   # 0  MOONGLOW
-    {1: (0, 2, 2)},   # 1  BRITAIN
-    {2: (0, 4, 2)},   # 2  JHELOM
-    {3: (0, 6, 2)},   # 3  YEW
-    {4: (0, 8, 2)},   # 4  MINOC
-    {5: (0,10, 2)},   # 5  TRINSIC
-    {6: (0,12, 2)},   # 6  SKARA BRAE
-    {7: (0,14, 2)},   # 7  NEW MAGINCIA
-
-    # === CASTLE.DAT ===
-    {27: (1, 0, 5)},  # 27 LORD BRITISH'S CASTLE
-    {28: (1, 5, 5)},  # 28 BLACKTHORN'S CASTLE
-    {13: (1,10, 1)},  # 13 WEST BRITANNY
-    {14: (1,11, 1)},  # 14 NORTH BRITANNY
-    {15: (1,12, 1)},  # 15 EAST BRITANNY
-    {16: (1,13, 1)},  # 16 PAWS
-    {17: (1,14, 1)},  # 17 COVE
-    {18: (1,15, 1)},  # 18 BUCCANEER'S DEN
-
-    # === KEEP.DAT ===
-    {19: (2, 0, 2)},  # 19 ARARAT
-    {20: (2, 2, 2)},  # 20 BORDERMARCH
-    {21: (2, 4, 1)},  # 21 FARTHING
-    {22: (2, 5, 1)},  # 22 WINDEMERE
-    {23: (2, 6, 1)},  # 23 STONEGATE
-    {24: (2, 7, 3)},  # 24 THE LYCAEUM
-    {25: (2,10, 3)},  # 25 EMPATH ABBEY
-    {26: (2,13, 3)},  # 26 SERPENT'S HOLD
+    (0, 0, 2),   # 0  MOONGLOW                  [ 0]            
+    (1, 0, 2),   # 1  BRITAIN                   [ 1]
+    (2, 0, 2),   # 2  JHELOM                    [ 2]
+    (3, 0, 2),   # 3  YEW                       [ 3]
+    (4, 0, 2),   # 4  MINOC                     [ 4]
+    (5, 0, 2),   # 5  TRINSIC                   [ 5]
+    (6, 0, 2),   # 6  SKARA BRAE                [ 6]
+    (7, 0, 2),   # 7  NEW MAGINCIA              [ 7]
 
     # === DWELLING.DAT ===
-    {8:  (3, 0, 3)},  # 8  FOGSBANE
-    {9:  (3, 3, 3)},  # 9  STORMCROW
-    {10: (3, 6, 3)},  # 10 GREYHAVEN
-    {11: (3, 9, 3)},  # 11 WAVEGUIDE
-    {12: (3,12, 1)},  # 12 IOLO'S HUT
-    {29: (3,13, 1)},  # 29 SPEKTRAN
-    {30: (3,14, 1)},  # 30 SIN'VRAAL'S HUT
-    {31: (3,15, 1)}   # 31 GRENDEL'S HUT
+    (8, 1, 3),  # 8  FOGSBANE                   [ 8]
+    (9, 1, 3),  # 9  STORMCROW
+    (10, 1, 3),  # 10 GREYHAVEN
+    (11, 1, 3),  # 11 WAVEGUIDE
+    (12, 1, 1),  # 12 IOLO'S HUT                [12]
+    (29, 1, 1),  # 29 SPEKTRAN
+    (30, 1, 1),  # 30 SIN'VRAAL'S HUT           [14]
+    (31, 1, 1),   # 31 GRENDEL'S HUT             [15]
+        
+    # === CASTLE.DAT ===
+    (27, 2, 5),  # 27 LORD BRITISH'S CASTLE     [16]
+    (28, 2, 5),  # 28 BLACKTHORN'S CASTLE       [17]
+    (13, 2, 1),  # 13 WEST BRITANNY             [18]  
+    (14, 2, 1),  # 14 NORTH BRITANNY            [19]
+    (15, 2, 1),  # 15 EAST BRITANNY             [20]
+    (16, 2, 1),  # 16 PAWS                      [21]
+    (17, 2, 1),  # 17 COVE                      [22]
+    (18, 2, 1),  # 18 BUCCANEER'S DEN
+
+    # === KEEP.DAT ===
+    (19, 3, 2),  # 19 ARARAT                    [24]
+    (20, 3, 2),  # 20 BORDERMARCH
+    (21, 3, 1),  # 21 FARTHING
+    (22, 3, 1),  # 22 WINDEMERE
+    (23, 3, 1),  # 23 STONEGATE
+    (24, 3, 3),  # 24 THE LYCAEUM
+    (25, 3, 3),  # 25 EMPATH ABBEY              [30]
+    (26, 3, 3),  # 26 SERPENT'S HOLD
+
+    # TODO: DUNGEONS
 ]
 
-# Build sorted metadata list so metadata[name_index] works
-metadata: List[LocationMetadata] = []
-for entry in LOCATION_METADATA:
-    name_index = next(iter(entry.keys()))
-    files_index, map_index_offset, num_levels = entry[name_index]
-    metadata.append(LocationMetadata(name_index, files_index, map_index_offset, num_levels))
-metadata.sort(key=lambda m: m.name_index)
+def build_metadata():
 
-def get_location_metadata(location_index: int) -> Tuple[str, str, int, int]:
-    name = location_names[location_index]
-    meta = metadata[location_index]
-    filename = FILES[meta.files_index]
-    return name, filename, meta.map_index_offset, meta.num_levels
+    # Build sorted metadata list so metadata[location_index] works
+    metadata: List[LocationMetadata] = []
+    current_file_index = None
+    trigger_index = 0
 
-def load_location_map(location_index: int) -> U5Map:
-    name = location_names[location_index]
-    meta = metadata[location_index]
+    for name_index, files_index, num_levels in LOCATION_METADATA:
+
+        # calculate group_index, map_index_offset
+        if current_file_index != files_index:
+            current_file_index = files_index
+            group_index = 0
+            map_index_offset = 0
+            next_map_offset = num_levels
+        else:
+            group_index += 1
+            map_index_offset = next_map_offset
+            next_map_offset += num_levels
+
+        default_level = DEFAULT_LEVEL_LISTS[files_index][group_index] - map_index_offset
+
+        meta = LocationMetadata(
+            name=_location_names[name_index],
+            name_index=name_index,
+            files_index=files_index,
+            group_index=group_index,
+            
+            map_index_offset=map_index_offset,
+            num_levels=num_levels,
+            default_level=default_level,
+            trigger_index=trigger_index
+        )
+        metadata.append(meta)
+
+        trigger_index += 1
+
+    metadata.sort(key=lambda m: m.trigger_index)
+
+    return metadata
+
+_metadata = None
+
+def get_metadata():
+    global _metadata
+    if _metadata is None:
+        _metadata = build_metadata()
+    return _metadata
+
+def load_location_map(trigger_index: int) -> U5Map:
+    meta = get_metadata()[trigger_index]
     filename = FILES[meta.files_index]
-    map_index = meta.map_index_offset
-    num_levels = meta.num_levels
 
     path = Path("u5") / filename
     if not path.exists():
         raise FileNotFoundError(f"Map file not found: {filename}")
 
     map_size = LOCATION_WIDTH * LOCATION_HEIGHT
-    offset = map_index * map_size
+    offset = meta.map_index_offset * map_size
 
     levels = []
     with open(path, "rb") as f:
         f.seek(offset)
-        for _ in range(num_levels):
+        for _ in range(meta.num_levels):
             tile_ids = bytearray(f.read(map_size))
             levels.append(tile_ids)
 
     return U5Map(
-        name=name or f"{path.stem}_{map_index}",
+        name=meta.name,
         width=LOCATION_WIDTH,
         height=LOCATION_HEIGHT,
         tileset=_TILESET_RAW,  # raw pixel data
         palette=_PALETTE,
         levels=levels,
         chunk_dim=CHUNK_DIM,
-        grid_dim=GRID_DIM
+        grid_dim=GRID_DIM,
+        location_metadata=meta
     )
 
 if __name__ == "__main__":
@@ -141,10 +182,14 @@ if __name__ == "__main__":
 
     pygame.init()
 
-    for location_index in range(len(metadata)):
-        name, filename, map_offset, _ = get_location_metadata(location_index)
-        u5map = load_location_map(location_index)
-        print(f"Loaded map {name} (index={location_index}) from {filename}")
+    metadata = get_metadata()
+
+    for ix in range(len(metadata)):
+        meta = metadata[ix]
+        name, filename, map_offset = meta.name, FILES[meta.files_index], meta.map_index_offset
+
+        u5map = load_location_map(meta.trigger_index)
+        print(f"Loaded map {name} (index={ix}) from {filename}")
         for level in range(len(u5map.levels)):
             try:
                 rendered_surface = render_map_to_surface(u5map, level_ix=level)
@@ -153,7 +198,7 @@ if __name__ == "__main__":
                 raise e
             pygame.image.save(
                 rendered_surface,
-                f"{filename}_{location_index}_{u5map.name or 'Unknown'}_level_{level}.png"
+                f"{filename}_{ix}_{u5map.name or 'Unknown'}_level_{level}.png"
             )
 
     pygame.quit()

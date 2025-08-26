@@ -35,7 +35,7 @@ def load_britannia() -> U5Map:
                 src = cy * CHUNK_DIM
                 tiles[dst:dst+CHUNK_DIM] = chunk[src:src+CHUNK_DIM]
     tileset = load_tiles16_raw(TILES16_PATH)
-    return U5Map("Britannia", MAP_DIM, MAP_DIM, tileset, ega_palette, [tiles], CHUNK_DIM, GRID_DIM)
+    return U5Map("Britannia", MAP_DIM, MAP_DIM, tileset, ega_palette, [tiles], CHUNK_DIM, GRID_DIM, None)
 
 if __name__ == "__main__":
     import pygame
