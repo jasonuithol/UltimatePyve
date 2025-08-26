@@ -1,29 +1,19 @@
-import pygame
 from typing import List
-from tileset import load_tiles16, TILE_SIZE
+from tileset import load_tiles16_raw, TILE_SIZE, TILES16_PATH
 
 DEFAULT_FRAME_TIME = 0.5
 
 class Sprite:
-    def __init__(self, frames: List[pygame.Surface], frame_time: float = DEFAULT_FRAME_TIME):
+    def __init__(self, frames: List[List[List[int]]], frame_time: float = DEFAULT_FRAME_TIME):
+        """
+        frames: list of raw tile pixel arrays (palette indices), not Surfaces
+        """
         self.frames = frames
         self.frame_time = frame_time
         self.current_frame = 0
         self.time_accum = 0.0
         self.world_x = 0
         self.world_y = 0
-
-    @classmethod
-    def from_spritesheet(cls, path: str, frame_width: int, frame_height: int,
-                         frame_time: float = DEFAULT_FRAME_TIME):
-        sheet = pygame.image.load(path).convert_alpha()
-        sheet_width, _ = sheet.get_size()
-        frames = []
-        for x in range(0, sheet_width, frame_width):
-            frame = pygame.Surface((frame_width, frame_height), pygame.SRCALPHA)
-            frame.blit(sheet, (0, 0), (x, 0, frame_width, frame_height))
-            frames.append(frame)
-        return cls(frames, frame_time)
 
     def set_position(self, tile_x: int, tile_y: int):
         self.world_x = tile_x
@@ -39,36 +29,40 @@ class Sprite:
             self.time_accum -= self.frame_time
             self.current_frame = (self.current_frame + 1) % len(self.frames)
 
-    def draw(self, surface, x, y):
-        surface.blit(self.frames[self.current_frame], (x, y))
+    def get_current_frame_pixels(self) -> List[List[int]]:
+        """Return the raw pixel array for the current frame."""
+        return self.frames[self.current_frame]
 
-    def draw_relative_to_camera(self, surface, cam_x, cam_y, tile_size, render_scale):
-        screen_x = (self.world_x - cam_x) * tile_size * render_scale
-        screen_y = (self.world_y - cam_y) * tile_size * render_scale
-        scaled_frame = pygame.transform.scale(
-            self.frames[self.current_frame],
-            (TILE_SIZE * render_scale, TILE_SIZE * render_scale)
-        )
-        surface.blit(scaled_frame, (screen_x, screen_y))
 
 # --- Factory function for the Avatar ---
 def create_player(frame_time=DEFAULT_FRAME_TIME):
     PLAYER_FIRST_TILE = 332
     PLAYER_FRAME_COUNT = 4
-    tileset = load_tiles16(r".\u5\TILES.16")
-    frames = tileset[PLAYER_FIRST_TILE:PLAYER_FIRST_TILE + PLAYER_FRAME_COUNT]
+    tileset_raw = load_tiles16_raw(TILES16_PATH)
+    frames = tileset_raw[PLAYER_FIRST_TILE:PLAYER_FIRST_TILE + PLAYER_FRAME_COUNT]
     return Sprite(frames, frame_time)
 
+
 if __name__ == "__main__":
+    import pygame
+    from tileset import ega_palette
+
+    def pixels_to_surface(tile_pixels, palette):
+        """Convert a 2D list of palette indices into a Pygame Surface."""
+        surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+        for y, row in enumerate(tile_pixels):
+            for x, idx in enumerate(row):
+                surf.set_at((x, y), palette[idx])
+        return surf
+
     pygame.init()
-    tileset = load_tiles16(r".\u5\TILES.16")
+    tileset_raw = load_tiles16_raw(TILES16_PATH)
 
     index = 256  # start of entity bank
-    SCALE = 3    # render scale multiplier
+    SCALE = 3
 
-    # Make the window big enough for close button + scaled sprite
     win_w = TILE_SIZE * SCALE * 5
-    win_h = TILE_SIZE * SCALE + 30  # extra space for index text
+    win_h = TILE_SIZE * SCALE + 30
     screen = pygame.display.set_mode((win_w, win_h))
     pygame.display.set_caption("U5 Sprite Viewer")
 
@@ -87,20 +81,20 @@ if __name__ == "__main__":
                 elif event.key == pygame.K_LEFT:
                     index = max(0, index - 1)
 
-        if index >= len(tileset):
+        if index >= len(tileset_raw):
             index = 0
 
-        # Scale the sprite
+        # Convert raw pixels to Surface, then scale
+        raw_tile = tileset_raw[index]
+        surf_tile = pixels_to_surface(raw_tile, ega_palette)
         sprite_img = pygame.transform.scale(
-            tileset[index],
+            surf_tile,
             (TILE_SIZE * SCALE, TILE_SIZE * SCALE)
         )
 
-        # Draw background, sprite, and index text
         screen.fill((30, 30, 30))
         screen.blit(sprite_img, (0, 0))
         text_surf = font.render(f"Tile {index}", True, (255, 255, 255))
         screen.blit(text_surf, (5, TILE_SIZE * SCALE + 5))
 
         pygame.display.flip()
-

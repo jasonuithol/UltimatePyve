@@ -1,8 +1,8 @@
 # file: tileset.py
-import struct, pygame
+import struct
 from pathlib import Path
 
-TILES16_PATH   = r".\u5\TILES.16"
+TILES16_PATH = r".\u5\TILES.16"
 TILE_SIZE = 16
 
 _tileset16_cache = {}
@@ -17,6 +17,7 @@ def lzw_decompress(data: bytes) -> bytes:
     data_bits = 0
     bit_count = 0
     pos = 0
+
     def get_code():
         nonlocal data_bits, bit_count, pos
         while bit_count < code_size and pos < len(data):
@@ -27,6 +28,7 @@ def lzw_decompress(data: bytes) -> bytes:
         data_bits >>= code_size
         bit_count -= code_size
         return code
+
     prev = None
     while True:
         code = get_code()
@@ -53,7 +55,7 @@ def lzw_decompress(data: bytes) -> bytes:
         prev = code
     return bytes(result)
 
-# EGA palette
+# EGA palette (RGB tuples)
 ega_palette = [
     (0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170),
     (170, 0, 0), (170, 0, 170), (170, 85, 0), (170, 170, 170),
@@ -61,23 +63,31 @@ ega_palette = [
     (255, 85, 85), (255, 85, 255), (255, 255, 85), (255, 255, 255),
 ]
 
-def load_tiles16(path: str) -> list[pygame.Surface]:
-    if not path in _tileset16_cache:
+def load_tiles16_raw(path: str) -> list[list[list[int]]]:
+    """
+    Load TILES.16 and return a list of tiles, each tile being a 2D list
+    of palette indices (0–15). No Pygame surfaces are created.
+    """
+    if path not in _tileset16_cache:
         raw = Path(path).read_bytes()
         (uncomp_len,) = struct.unpack("<I", raw[:4])
         data = lzw_decompress(raw[4:])
         assert len(data) == uncomp_len
+
         tiles = []
-        row_bytes = 8
+        row_bytes = TILE_SIZE // 2  # 8 bytes per row for 16px wide
         for t in range(512):
-            surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            tile_pixels = []
+            base_offset = t * row_bytes * TILE_SIZE
             for y in range(TILE_SIZE):
-                row = data[t*row_bytes*TILE_SIZE + y*row_bytes :
-                        t*row_bytes*TILE_SIZE + (y+1)*row_bytes]
+                row = data[base_offset + y * row_bytes : base_offset + (y + 1) * row_bytes]
+                pixel_row = []
                 for x in range(TILE_SIZE):
                     shift = 4 if (x % 2) == 0 else 0
-                    val = (row[x//2] >> shift) & 0x0F
-                    surf.set_at((x, y), ega_palette[val])
-            tiles.append(surf)
+                    val = (row[x // 2] >> shift) & 0x0F
+                    pixel_row.append(val)
+                tile_pixels.append(pixel_row)
+            tiles.append(tile_pixels)
+
         _tileset16_cache[path] = tiles
     return _tileset16_cache[path]
