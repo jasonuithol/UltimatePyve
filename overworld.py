@@ -2,12 +2,11 @@ import pygame
 
 from pathlib import Path
 from u5map import U5Map
-from tileset import load_tiles16, ega_palette, TILE_SIZE
+from tileset import load_tiles16, ega_palette, TILES16_PATH
 from data import DataOVL
 
 # === CONFIG ===
 BRIT_DAT_PATH = r".\u5\BRIT.DAT"
-TILES16_PATH  = r".\u5\TILES.16"
 
 # === CONSTANTS ===
 GRID_DIM    = 16

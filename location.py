@@ -5,7 +5,7 @@ import pygame
 from typing import Dict, Tuple
 from pathlib import Path
 from u5map import U5Map
-from tileset import load_tiles16, ega_palette  # your existing tileset/palette loader
+from tileset import load_tiles16, ega_palette, TILES16_PATH  # your existing tileset/palette loader
 from data import DataOVL
 
 LOCATION_WIDTH = 32
@@ -14,7 +14,7 @@ CHUNK_DIM = 16
 GRID_DIM = LOCATION_WIDTH // CHUNK_DIM
 
 # Load shared tileset/palette once
-_TILESET, _PALETTE = load_tiles16("u5/TILES.16"), ega_palette
+_TILESET, _PALETTE = load_tiles16(TILES16_PATH), ega_palette
 
 dataOvl = DataOVL.load()
 location_names = [p.decode('ascii') for p in dataOvl.city_names_caps.split(b'\x00') if p]

@@ -3,11 +3,10 @@
 import pygame
 from pathlib import Path
 from u5map import U5Map
-from tileset import load_tiles16, ega_palette, TILE_SIZE
+from tileset import load_tiles16, ega_palette, TILES16_PATH
 
 # === CONFIG ===
 UNDER_DAT_PATH = r".\u5\UNDER.DAT"
-TILES16_PATH   = r".\u5\TILES.16"
 
 # === CONSTANTS ===
 GRID_DIM   = 16       # 16×16 chunks

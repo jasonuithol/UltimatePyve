@@ -2,7 +2,10 @@
 import struct, pygame
 from pathlib import Path
 
+TILES16_PATH   = r".\u5\TILES.16"
 TILE_SIZE = 16
+
+_tileset16_cache = {}
 
 # --- LZW decompression ---
 def lzw_decompress(data: bytes) -> bytes:
@@ -59,20 +62,22 @@ ega_palette = [
 ]
 
 def load_tiles16(path: str) -> list[pygame.Surface]:
-    raw = Path(path).read_bytes()
-    (uncomp_len,) = struct.unpack("<I", raw[:4])
-    data = lzw_decompress(raw[4:])
-    assert len(data) == uncomp_len
-    tiles = []
-    row_bytes = 8
-    for t in range(512):
-        surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-        for y in range(TILE_SIZE):
-            row = data[t*row_bytes*TILE_SIZE + y*row_bytes :
-                       t*row_bytes*TILE_SIZE + (y+1)*row_bytes]
-            for x in range(TILE_SIZE):
-                shift = 4 if (x % 2) == 0 else 0
-                val = (row[x//2] >> shift) & 0x0F
-                surf.set_at((x, y), ega_palette[val])
-        tiles.append(surf)
-    return tiles
+    if not path in _tileset16_cache:
+        raw = Path(path).read_bytes()
+        (uncomp_len,) = struct.unpack("<I", raw[:4])
+        data = lzw_decompress(raw[4:])
+        assert len(data) == uncomp_len
+        tiles = []
+        row_bytes = 8
+        for t in range(512):
+            surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            for y in range(TILE_SIZE):
+                row = data[t*row_bytes*TILE_SIZE + y*row_bytes :
+                        t*row_bytes*TILE_SIZE + (y+1)*row_bytes]
+                for x in range(TILE_SIZE):
+                    shift = 4 if (x % 2) == 0 else 0
+                    val = (row[x//2] >> shift) & 0x0F
+                    surf.set_at((x, y), ega_palette[val])
+            tiles.append(surf)
+        _tileset16_cache[path] = tiles
+    return _tileset16_cache[path]
