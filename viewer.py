@@ -183,7 +183,10 @@ def main() -> None:
         draw_sprite(screen, player, ega_palette, TILE_SIZE, USER_SCALE, cam_x, cam_y)
 
         pygame.display.flip()
-        clock.tick(FPS)
+        dt_seconds = clock.tick(FPS) / 1000.0  # dt in seconds
+
+        # Update all animated sprites here
+        player.update(dt_seconds)
 
     pygame.quit()
 

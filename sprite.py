@@ -1,10 +1,10 @@
 from typing import List
 from tileset import load_tiles16_raw, TILE_SIZE, TILES16_PATH
 
-DEFAULT_FRAME_TIME = 0.5
+DEFAULT_FRAME_TIME_SECONDS = 0.5
 
 class Sprite:
-    def __init__(self, frames: List[List[List[int]]], frame_time: float = DEFAULT_FRAME_TIME):
+    def __init__(self, frames: List[List[List[int]]], frame_time: float = DEFAULT_FRAME_TIME_SECONDS):
         """
         frames: list of raw tile pixel arrays (palette indices), not Surfaces
         """
@@ -23,8 +23,8 @@ class Sprite:
         self.world_x += dx
         self.world_y += dy
 
-    def update(self, dt: float):
-        self.time_accum += dt
+    def update(self, dt_seconds: float):
+        self.time_accum += dt_seconds
         while self.time_accum >= self.frame_time:
             self.time_accum -= self.frame_time
             self.current_frame = (self.current_frame + 1) % len(self.frames)
@@ -35,7 +35,7 @@ class Sprite:
 
 
 # --- Factory function for the Avatar ---
-def create_player(frame_time=DEFAULT_FRAME_TIME):
+def create_player(frame_time=DEFAULT_FRAME_TIME_SECONDS):
     PLAYER_FIRST_TILE = 332
     PLAYER_FRAME_COUNT = 4
     tileset_raw = load_tiles16_raw(TILES16_PATH)

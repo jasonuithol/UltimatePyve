@@ -46,9 +46,9 @@ LOCATION_METADATA
 List of Tuple(location_name_index, files_index, num_levels)
 NOTE: 
     Order is important: group_index, map_index_offset, trigger_index will be calculated 
-    off of order of appearance within unique values of files_index.
+    off of order of appearance (first two within unique values of files_index.)
     
-    This is the same order of appearance that the maps make in the .DAT files.
+    This is the same order of appearance that the maps make in the .DAT files/entry trigger co-ordinate lists.
 '''
 LOCATION_METADATA = [
     # === TOWNE.DAT ===
@@ -69,7 +69,7 @@ LOCATION_METADATA = [
     (12, 1, 1),  # 12 IOLO'S HUT                [12]
     (29, 1, 1),  # 29 SPEKTRAN
     (30, 1, 1),  # 30 SIN'VRAAL'S HUT           [14]
-    (31, 1, 1),   # 31 GRENDEL'S HUT             [15]
+    (31, 1, 1),   # 31 GRENDEL'S HUT            [15]
         
     # === CASTLE.DAT ===
     (27, 2, 5),  # 27 LORD BRITISH'S CASTLE     [16]
