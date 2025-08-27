@@ -1,3 +1,4 @@
 u5/
 *.png
 __pycache__/
+.vscode/
