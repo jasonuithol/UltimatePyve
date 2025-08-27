@@ -51,7 +51,7 @@ def render_map_to_surface(u5map: U5Map, level_ix: int = 0, tile_size: int = TILE
                     surf.blit(tile_surf, (x * tile_size, y * tile_size))
     return surf
 
-def draw_sprite(surface, sprite, palette, tile_size=TILE_SIZE, render_scale=1,
+def draw_sprite(surface, sprite, palette, tile_size=TILE_SIZE, 
                 cam_x=None, cam_y=None):
     """
     Draw a sprite to the surface.
@@ -60,22 +60,15 @@ def draw_sprite(surface, sprite, palette, tile_size=TILE_SIZE, render_scale=1,
     """
     # Determine screen position
     if cam_x is not None and cam_y is not None:
-        screen_x = (sprite.world_x - cam_x) * tile_size * render_scale
-        screen_y = (sprite.world_y - cam_y) * tile_size * render_scale
+        screen_x = (sprite.world_x - cam_x) * tile_size
+        screen_y = (sprite.world_y - cam_y) * tile_size
     else:
-        screen_x = sprite.world_x * tile_size * render_scale
-        screen_y = sprite.world_y * tile_size * render_scale
+        screen_x = sprite.world_x * tile_size
+        screen_y = sprite.world_y * tile_size
 
     # Convert raw pixels to a Surface
     frame_pixels = sprite.get_current_frame_pixels()
     frame_surface = pixels_to_surface(frame_pixels, palette)
-
-    # Scale if needed
-    if render_scale != 1:
-        frame_surface = pygame.transform.scale(
-            frame_surface,
-            (tile_size * render_scale, tile_size * render_scale)
-        )
 
     # Draw
     surface.blit(frame_surface, (screen_x, screen_y))
@@ -197,6 +190,9 @@ def main() -> None:
             rect=(cam_x, cam_y, VIEW_W, VIEW_H)
         )
 
+        # Draw player relative to camera
+        draw_sprite(surf, player, ega_palette, TILE_SIZE, cam_x, cam_y)
+
         # Scale for display
         surf = pygame.transform.scale(
             surf,
@@ -205,9 +201,6 @@ def main() -> None:
 
         # Blit to screen
         screen.blit(surf, (0, 0))
-
-        # Draw player relative to camera
-        draw_sprite(screen, player, ega_palette, TILE_SIZE, USER_SCALE, cam_x, cam_y)
 
         pygame.display.flip()
         dt_seconds = clock.tick(FPS) / 1000.0  # dt in seconds
