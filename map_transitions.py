@@ -17,18 +17,6 @@ def load_entry_triggers() -> List[Trigger]:
 
     # First 39 come straight from DATA.OVL
     triggers: List[Trigger] = [(x, y, i) for i, (x, y) in enumerate(zip(xs, ys))]
-
-    print(f"ORIGINAL TRIGGERS: {triggers}")
-
-    '''
-    # Append the 3 missing ones manually (coords TBD)
-    triggers.extend([
-        (0, 0, 27),  # LORD BRITISH'S CASTLE
-        (0, 0, 28),  # BLACKTHORN'S CASTLE
-        (0, 0, 29),  # SPEKTRAN
-    ])
-    print(f"EXTENDED TRIGGERS: {triggers}")
-    '''
     return triggers
 
 def spawn_from_trigger(trigger_index: int):

@@ -1,10 +1,10 @@
-from typing import List
-from tileset import load_tiles16_raw, TILE_SIZE, TILES16_PATH
+from typing import List, Callable
+from tileset import load_tiles16_raw, TILES16_PATH
 
 DEFAULT_FRAME_TIME_SECONDS = 0.5
 
 class Sprite:
-    def __init__(self, frames: List[List[List[int]]], frame_time: float = DEFAULT_FRAME_TIME_SECONDS):
+    def __init__(self, frames: List[List[List[int]]], transport_mode: str, frame_time: float = DEFAULT_FRAME_TIME_SECONDS):
         """
         frames: list of raw tile pixel arrays (palette indices), not Surfaces
         """
@@ -14,6 +14,7 @@ class Sprite:
         self.time_accum = 0.0
         self.world_x = 0
         self.world_y = 0
+        self.transport_mode = transport_mode
 
     def set_position(self, tile_x: int, tile_y: int):
         self.world_x = tile_x
@@ -40,5 +41,5 @@ def create_player(frame_time=DEFAULT_FRAME_TIME_SECONDS):
     PLAYER_FRAME_COUNT = 4
     tileset_raw = load_tiles16_raw(TILES16_PATH)
     frames = tileset_raw[PLAYER_FIRST_TILE:PLAYER_FIRST_TILE + PLAYER_FRAME_COUNT]
-    return Sprite(frames, frame_time)
+    return Sprite(frames, 'walk', frame_time)
 

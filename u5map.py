@@ -25,7 +25,14 @@ class U5Map:
     grid_dim: int                         # width/chunk_dim
     location_metadata: Optional[LocationMetadata]   # if this is a sub-location of the world e.g. a town, keep, dwelling, castle.
 
+    def is_in_bounds(self, x: int, y: int) -> bool:
+        """Check if the given coordinates are within the map bounds."""
+        return 0 <= x < self.width and 0 <= y < self.height
+
     def get_tile_id(self, level_ix: int, x: int, y: int) -> int:
+
+        assert self.is_in_bounds(x, y), f"Coordinates {x}, {y} out of bounds."
+
         try:
             level = self.levels[level_ix]
         except Exception as e:

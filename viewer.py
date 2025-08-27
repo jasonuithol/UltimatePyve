@@ -8,7 +8,7 @@ from underworld import load_underworld
 from tileset import ega_palette, TILE_SIZE
 from sprite import create_player
 from map_transitions import load_entry_triggers, spawn_from_trigger
-
+from terrain import can_traverse
 
 # === CONFIG ===
 VIEW_W, VIEW_H = 21, 15   # viewport size in tiles
@@ -79,7 +79,6 @@ def draw_sprite(surface, sprite, palette, tile_size=TILE_SIZE, render_scale=1,
     # Draw
     surface.blit(frame_surface, (screen_x, screen_y))
 
-
 def main() -> None:
     pygame.init()
     pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
@@ -101,11 +100,12 @@ def main() -> None:
 
     current_location_map = None
     previous_x, previous_y = 0,0
-    just_exited_location = False
+    map_to_render = maps[current_map] # U5Map instance
 
     running = True
     while running:
         for event in pygame.event.get():
+            dx,dy = 0,0
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
@@ -115,47 +115,65 @@ def main() -> None:
                     # Toggle between maps
                     current_map = "underworld" if current_map == "britannia" else "britannia"
                 elif event.key == pygame.K_LEFT:
-                    player.move(-1, 0)
-                    just_exited_location = False
+                    dx = -1
                 elif event.key == pygame.K_RIGHT:
-                    player.move(1, 0)
-                    just_exited_location = False
+                    dx = +1
                 elif event.key == pygame.K_UP:
-                    player.move(0, -1)
-                    just_exited_location = False
+                    dy = -1
                 elif event.key == pygame.K_DOWN:
-                    player.move(0, 1)
-                    just_exited_location = False
+                    dy = +1
+
+            target_x = player.world_x + dx
+            target_y = player.world_y + dy
 
             # Only check triggers in overworld/underworld
-            if current_location_map is None and just_exited_location == False:
+            if current_location_map is None:
                 for tx, ty, location_index in triggers:
-                    if player.world_x == tx and player.world_y == ty:
+                    if target_x == tx and target_y == ty:
+
                         # Transition to new location
-                        u5map, spawn_x, spawn_y, z_level = spawn_from_trigger(location_index)
-
-                        print(f"Entering location {u5map.name} ({location_index}) at level {z_level}, triggered at ({player.world_x}, {player.world_y})")
-
-                        # Store the loaded location map in maps dict
-                        current_location_map = u5map
-                        current_map_level = z_level
+                        current_location_map, target_x, target_y, current_map_level = spawn_from_trigger(location_index)
+                        print(f"Entering location {current_location_map.name} ({location_index}) at level {current_map_level}, triggered at ({target_x}, {target_y})")
 
                         # Move player to spawn point
                         previous_x, previous_y = player.world_x, player.world_y     
-                        player.set_position(spawn_x, spawn_y)
+                        player.set_position(target_x, target_y)
+                        dx, dy = 0, 0
                         break
 
             # Exit location if outside bounds
             elif not current_location_map is None:
-                if (player.world_x < 0 or player.world_x >= 32 or
-                    player.world_y < 0 or player.world_y >= 32):
+                if (target_x < 0 or target_x >= 32 or
+                    target_y < 0 or target_y >= 32):
+
+                    print(f"Returning to {current_map} at ({previous_x}, {previous_y})")
+
                     # Return to previous map (i.e. the overworld or underworld)
                     current_location_map = None
                     current_map_level = 0
                     player.set_position(previous_x, previous_y)
-                    just_exited_location = True
+                # did not exit location boundaries
 
-        map_to_render = current_location_map if current_location_map is not None else maps[current_map] # U5Map instance
+            map_to_render = current_location_map if current_location_map is not None else maps[current_map] # U5Map instance
+
+            # Check if non-transitioning move is allowed by terrain.
+            if dx == 0 and dy == 0:
+                pass
+            else:
+                if can_traverse(player.transport_mode, map_to_render.get_tile_id(current_map_level, target_x, target_y)):
+                    player.move(dx, dy)
+                else:
+                    # Handle blocked movement (e.g. by displaying a message)
+                    print("Movement blocked by terrain.")
+
+            #       
+            # Continue processing more events.
+            #
+
+        #
+        # all events processed.
+        #  
+
         pygame.display.set_caption(f"{map_to_render.name} [{player.world_x},{player.world_y}]")
 
         # update the camera - it follows the player
