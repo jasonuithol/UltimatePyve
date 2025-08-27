@@ -1,7 +1,7 @@
 # map_transitions.py
 from typing import List, Tuple
-from data import DataOVL
-from location import load_location_map
+from loaders.data import DataOVL
+from loaders.location import load_location_map
 
 Trigger = Tuple[int, int, int]  # (x, y, location_index)
 

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from u5map import U5Map
-from tileset import load_tiles16_raw, ega_palette, TILES16_PATH
+from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH
 
 # === CONFIG ===
 UNDER_DAT_PATH = r".\u5\UNDER.DAT"
@@ -34,6 +34,7 @@ if __name__ == "__main__":
     OUT_FILE = "underworld_full.png"
     pygame.init()
     underworld = load_underworld()
-    render_map_to_surface(underworld)
+    surf = render_map_to_surface(underworld)
+    pygame.image.save(surf, OUT_FILE)    
     print(f"Saved {OUT_FILE}")
     pygame.quit()

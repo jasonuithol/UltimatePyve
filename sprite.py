@@ -1,5 +1,5 @@
 from typing import List, Callable
-from tileset import load_tiles16_raw, TILES16_PATH
+from loaders.tileset import load_tiles16_raw, TILES16_PATH
 
 DEFAULT_FRAME_TIME_SECONDS = 0.5
 

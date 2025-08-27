@@ -2,10 +2,11 @@
 from typing import Tuple, Optional
 import pygame
 
-from overworld import load_britannia
+from loaders.overworld import load_britannia
+from loaders.underworld import load_underworld
+from loaders.tileset import ega_palette, TILE_SIZE
+
 from u5map import U5Map
-from underworld import load_underworld
-from tileset import ega_palette, TILE_SIZE
 from sprite import create_player
 from map_transitions import load_entry_triggers, spawn_from_trigger
 from terrain import can_traverse

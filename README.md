@@ -20,23 +20,49 @@ It uses the original game data files but runs them through a modern, Python‑ba
    Make sure `python` (or `python3`) points to the correct version.  When it asks if you want to add it to the PATH, say yes.
 
 2. **Clone this repository**  
-   ```bash
+   ```
    git clone https://github.com/jasonuithol/UltimatePyve.git
    cd UltimatePyve
+   ```
 
 ## Monkeypatching
 
-    Right now - you'll need to copy your ultima V directory to a folder under UltimatePyve and name that ulimate v directory "u5"
+    Right now - you'll need to copy your Ultima V directory to a folder under UltimatePyve and name that copy of Ultima v directory "u5"
+
+    e.g.
+
+    UltimatePyve
+    |
+    \- loaders
+    \- u5
 
     I hope to get rid of this requirement later but for now, it is what it is.
 
+### IMPORTANT REASSURANCE: This program does NOT alter your u5 or Ultima V directory or file contents.
+
 ## Running
 
-    There's not much right now, but you can run ```python viewer.py``` and roam around the over and under world (press TAB to switch)
-    You can run ```python sprites.py``` to look at all the tiles in TILES.16
-    Similarly ```python overworld.py``` and ```python underworld.py``` will generate full maps of these worlds.
-    You can peek under the hood with ```python data.py``` to see all the various game-wide settings.
-    
+    Running the main engine:
+    ```
+    python viewer.py
+    ```
+
+    Running diagnostic/test scripts:
+
+    ```
+    rem
+    rem Any/All of these.
+    rem
+
+    python -m loaders.overworld
+    python -m loaders.underworld
+    python -m loaders.locations
+    python -m loaders.data
+    python -m loaders.tileset
+    ```
+
+---
+
 ## Legal
     
     This project does not include any copyrighted game data.

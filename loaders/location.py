@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import List, Tuple
 from pathlib import Path
 from u5map import U5Map, LocationMetadata
-from tileset import load_tiles16_raw, ega_palette, TILES16_PATH
-from data import DataOVL
+from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH
+from loaders.data import DataOVL
 
 LOCATION_WIDTH = 32
 LOCATION_HEIGHT = 32

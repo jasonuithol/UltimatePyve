@@ -1,7 +1,7 @@
 from pathlib import Path
 from u5map import U5Map
-from tileset import load_tiles16_raw, ega_palette, TILES16_PATH
-from data import DataOVL
+from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH
+from loaders.data import DataOVL
 
 # === CONFIG ===
 BRIT_DAT_PATH = r".\u5\BRIT.DAT"
@@ -43,6 +43,7 @@ if __name__ == "__main__":
     OUT_FILE = "britannia_full.png"
     pygame.init()
     britannia = load_britannia()
-    render_map_to_surface(britannia)
+    surf = render_map_to_surface(britannia)
+    pygame.image.save(surf, OUT_FILE)
     print(f"Saved {OUT_FILE}")
     pygame.quit()
