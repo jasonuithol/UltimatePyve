@@ -105,6 +105,14 @@ def main() -> None:
     running = True
     while running:
         for event in pygame.event.get():
+
+            '''
+                TODO: the inside of this loop needs to:
+                        - first generate a game state delta
+                        - then evaluate if it's allowed
+                        - finally update the game state
+            '''
+
             dx,dy = 0,0
             if event.type == pygame.QUIT:
                 running = False
