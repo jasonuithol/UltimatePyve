@@ -1,11 +1,22 @@
 # file: tileset.py
 import struct
 from pathlib import Path
+from typing import List
 
 TILES16_PATH = r".\u5\TILES.16"
 TILE_SIZE = 16
 
+TILE_ID_GRASS = 5
+
 _tileset16_cache = {}
+
+# EGA palette (RGB tuples)
+ega_palette = [
+    (0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170),
+    (170, 0, 0), (170, 0, 170), (170, 85, 0), (170, 170, 170),
+    ( 85, 85, 85), (85, 85, 255), (85, 255, 85), (85, 255, 255),
+    (255, 85, 85), (255, 85, 255), (255, 255, 85), (255, 255, 255),
+]
 
 # --- LZW decompression ---
 def lzw_decompress(data: bytes) -> bytes:
@@ -55,14 +66,6 @@ def lzw_decompress(data: bytes) -> bytes:
         prev = code
     return bytes(result)
 
-# EGA palette (RGB tuples)
-ega_palette = [
-    (0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170),
-    (170, 0, 0), (170, 0, 170), (170, 85, 0), (170, 170, 170),
-    ( 85, 85, 85), (85, 85, 255), (85, 255, 85), (85, 255, 255),
-    (255, 85, 85), (255, 85, 255), (255, 255, 85), (255, 255, 255),
-]
-
 def load_tiles16_raw(path: str) -> list[list[list[int]]]:
     """
     Load TILES.16 and return a list of tiles, each tile being a 2D list
@@ -92,10 +95,18 @@ def load_tiles16_raw(path: str) -> list[list[list[int]]]:
         _tileset16_cache[path] = tiles
     return _tileset16_cache[path]
 
+# utility function
+def draw_tile_onto_pixel_array(tile: List[List[int]], surf, pixels, palette, offset_x, offset_y):
+    for py in range(TILE_SIZE):
+        for px in range(TILE_SIZE):
+            # Get the pixel color from the tile
+            u5_color = tile[py][px]
+            rgb_color = palette[u5_color]
+            # Set the pixel color on the rendered surface
+            pixels[(offset_x + px, offset_y + py)] = surf.map_rgb(rgb_color)
 
 if __name__ == "__main__":
     import pygame
-    from viewer import pixels_to_surface
 
     pygame.init()
     pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
@@ -142,7 +153,10 @@ if __name__ == "__main__":
                 if idx >= len(tileset_raw):
                     continue
                 raw_tile = tileset_raw[idx]
-                surf_tile = pixels_to_surface(raw_tile, ega_palette)
+                surf_tile = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                pixels_tile = pygame.PixelArray(surf_tile)
+                draw_tile_onto_pixel_array(raw_tile, surf_tile, pixels_tile, ega_palette, 0, 0)
+                del pixels_tile
                 sprite_img = pygame.transform.scale(
                     surf_tile,
                     (TILE_SIZE * TILE_SCALE, TILE_SIZE * TILE_SCALE)

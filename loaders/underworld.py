@@ -29,12 +29,7 @@ def load_underworld() -> U5Map:
     return U5Map("Underworld", MAP_DIM, MAP_DIM, tileset, ega_palette, [tiles], CHUNK_DIM, GRID_DIM, None)
 
 if __name__ == "__main__":
-    import pygame
-    from viewer import render_map_to_surface
-    OUT_FILE = "underworld_full.png"
-    pygame.init()
+    from loaders.location import render_location_map_to_disk
     underworld = load_underworld()
-    surf = render_map_to_surface(underworld)
-    pygame.image.save(surf, OUT_FILE)    
-    print(f"Saved {OUT_FILE}")
-    pygame.quit()
+    surf = render_location_map_to_disk(underworld, 0)
+

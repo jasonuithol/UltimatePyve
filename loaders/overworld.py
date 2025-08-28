@@ -38,12 +38,6 @@ def load_britannia() -> U5Map:
     return U5Map("Britannia", MAP_DIM, MAP_DIM, tileset, ega_palette, [tiles], CHUNK_DIM, GRID_DIM, None)
 
 if __name__ == "__main__":
-    import pygame
-    from viewer import render_map_to_surface
-    OUT_FILE = "britannia_full.png"
-    pygame.init()
+    from loaders.location import render_location_map_to_disk
     britannia = load_britannia()
-    surf = render_map_to_surface(britannia)
-    pygame.image.save(surf, OUT_FILE)
-    print(f"Saved {OUT_FILE}")
-    pygame.quit()
+    surf = render_location_map_to_disk(britannia, 0)

@@ -1,9 +1,8 @@
 # file: location.py
-from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List
 from pathlib import Path
 from u5map import U5Map, LocationMetadata
-from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH
+from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH, TILE_SIZE
 from loaders.data import DataOVL
 
 LOCATION_WIDTH = 32
@@ -173,33 +172,39 @@ def load_location_map(trigger_index: int) -> U5Map:
         location_metadata=meta
     )
 
-if __name__ == "__main__":
-    # Debug/dump mode — safe to import pygame here
+def render_location_map_to_disk(u5map: U5Map, level: int) -> U5Map:
     import pygame
-
-    # IMPORTANT: Dont move this import to the top otherwise you'll create a circular dependency.  It's perfectly fine here though.
-    from viewer import render_map_to_surface  # your pygame bridge
-
+    from loaders.tileset import draw_tile_onto_pixel_array
     pygame.init()
+    surf = pygame.Surface((TILE_SIZE * u5map.width, TILE_SIZE * u5map.height))
+    pixels = pygame.PixelArray(surf)
+    for x in range(u5map.width):
+        for y in range(u5map.height):
+            tile_id = u5map.get_tile_id(level, x, y)
+            # Do something with tile_id, e.g. render it
+            tile = _TILESET_RAW[tile_id]
+            draw_tile_onto_pixel_array(tile, surf, pixels, _PALETTE, x * TILE_SIZE, y * TILE_SIZE)
+    del pixels  # Unlock the surface
+    pygame.image.save(
+        surf,
+        f"{u5map.name}_{level}.png"
+    )
+    pygame.quit()
 
+    return surf
+
+if __name__ == "__main__":
     metadata = get_metadata()
-
     for ix in range(len(metadata)):
         meta = metadata[ix]
         name, filename, map_offset = meta.name, FILES[meta.files_index], meta.map_index_offset
 
-        u5map = load_location_map(meta.trigger_index)
+        u5map: U5Map = load_location_map(meta.trigger_index)
         print(f"Loaded map {name} (index={ix}) from {filename}")
         for level in range(len(u5map.levels)):
             try:
-                rendered_surface = render_map_to_surface(u5map, level_ix=level)
+                surf = render_location_map_to_disk(u5map, level)
             except Exception as e:
                 print(f"Error rendering {name} level {level}: {e}")
                 raise e
-            pygame.image.save(
-                rendered_surface,
-                f"{filename}_{ix}_{u5map.name or 'Unknown'}_level_{level}.png"
-            )
-
-    pygame.quit()
     print("All maps dumped.")
