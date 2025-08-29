@@ -90,7 +90,7 @@ class ViewPort:
         screen_coord = sprite.world_coord.subtract(self.view_world_coord).scale(self.tile_size_pixels)
 
         # Convert raw pixels to a Surface
-        frame_pixels = sprite.get_current_frame_pixels()
+        frame_pixels = sprite.get_current_frame_pixels(pygame.time.get_ticks())
         frame_surface = self.pixels_to_surface(frame_pixels)
 
         # Draw
@@ -116,14 +116,9 @@ class DisplayEngine:
         self.screen = pygame.display.set_mode(tuple(self.main_display.size_in_pixels()))
         self.clock = pygame.time.Clock()
         self.fps = 60
-        self.player: Sprite = None
         self.sprites: List[Sprite] = []
         self.active_map: Optional[U5Map] = None
         self.active_level = 0
-
-    def register_player(self, player: Sprite) -> None:
-        self.player = player
-        self.register_sprite(player)
 
     def register_sprite(self, sprite: Sprite) -> None:
         self.sprites.append(sprite)
@@ -135,13 +130,13 @@ class DisplayEngine:
         self.active_map = u5map
         self.active_level = map_level
 
-    def render(self):
+    def render(self, player_coord: Coord):
 
         # Update window title with current location/world of player.
-        pygame.display.set_caption(f"{self.active_map.name} [{self.player.world_coord}]")
+        pygame.display.set_caption(f"{self.active_map.name} [{player_coord}]")
 
         # Centre the viewport on the player.
-        self.main_display.view_port.centre_view_on(self.player.world_coord)
+        self.main_display.view_port.centre_view_on(player_coord)
 
         # Render current viewport from raw map data
         self.main_display.view_port.draw_map(
@@ -164,10 +159,3 @@ class DisplayEngine:
         self.screen.blit(scaled_surface, (0, 0))
 
         pygame.display.flip()
-
-    def update_sprites(self):
-        dt_seconds = self.clock.tick(self.fps) / 1000.0  # dt in seconds
-
-        # Update all animated sprites here
-        for sprite in self.sprites:
-            sprite.update(dt_seconds)

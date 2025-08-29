@@ -1,45 +1,53 @@
-from typing import List, Callable
+from typing import List
 from loaders.tileset import load_tiles16_raw, TILES16_PATH
 from dark_math import Coord
+from terrain import get_transport_modes
 
 DEFAULT_FRAME_TIME_SECONDS = 0.5
 
 class Sprite:
-    def __init__(self, frames: List[List[List[int]]], transport_mode: str, frame_time: float = DEFAULT_FRAME_TIME_SECONDS):
+    def __init__(self, frames: List[List[List[int]]], frame_time: float = DEFAULT_FRAME_TIME_SECONDS):
         """
         frames: list of raw tile pixel arrays (palette indices), not Surfaces
         """
         self.frames = frames
         self.frame_time = frame_time
-        self.current_frame = 0
-        self.time_accum = 0.0
         self.world_coord = Coord(0,0)
-        self.transport_mode = transport_mode
 
     def set_position(self, coord: Coord):
         self.world_coord = coord
 
-    def move(self, dx: int, dy: int):
-        self.world_coord
-        self.world_x += dx
-        self.world_y += dy
-
-    def update(self, dt_seconds: float):
-        self.time_accum += dt_seconds
-        while self.time_accum >= self.frame_time:
-            self.time_accum -= self.frame_time
-            self.current_frame = (self.current_frame + 1) % len(self.frames)
-
-    def get_current_frame_pixels(self) -> List[List[int]]:
-        """Return the raw pixel array for the current frame."""
-        return self.frames[self.current_frame]
+    def get_current_frame_pixels(self, ticks_since_init: int) -> List[List[int]]:
+        num_frames_elapsed: int = int((ticks_since_init / 1000) // self.frame_time)
+        current_frame = num_frames_elapsed % len(self.frames)
+        return self.frames[current_frame]
 
 
-# --- Factory function for the Avatar ---
-def create_player(frame_time=DEFAULT_FRAME_TIME_SECONDS):
-    PLAYER_FIRST_TILE = 332
-    PLAYER_FRAME_COUNT = 4
+# --- Factory function for the Avatar sprites ---
+def create_player(transport_mode: int, direction: int) -> Sprite:
+    transport_name = get_transport_modes()[transport_mode]
+    func = globals()[f"create_player_{transport_name}"]
+    return func(direction)
+
+def _create_player_any(PLAYER_FIRST_TILE:int, PLAYER_FRAME_COUNT:int, frame_time=DEFAULT_FRAME_TIME_SECONDS) -> Sprite:
     tileset_raw = load_tiles16_raw(TILES16_PATH)
     frames = tileset_raw[PLAYER_FIRST_TILE:PLAYER_FIRST_TILE + PLAYER_FRAME_COUNT]
-    return Sprite(frames, 'walk', frame_time)
+    return Sprite(frames, frame_time)
 
+def create_player_walk(_whatever: int) -> Sprite:
+    return _create_player_any(332, 4)
+
+def create_player_horse(direction: int) -> Sprite:
+    return _create_player_any(274 + direction, 1)
+
+def create_player_carpet(direction: int) -> Sprite:
+    return _create_player_any(276 + direction, 1)
+
+def create_player_skiff(direction: int) -> Sprite:
+    return _create_player_any(296 + direction, 1)
+
+def create_player_ship(direction: int) -> Sprite:
+    return _create_player_any(292 + direction, 1)
+
+def create_player_sail(direction: int) -> Sprite:
+    return _create_player_any(288 + direction, 1)

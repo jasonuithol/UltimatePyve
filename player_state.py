@@ -27,7 +27,9 @@ class PlayerState(Freezable):
     inner_coord: Optional[Coord] = None
 
     # options: walk, horse, carpet, skiff, ship
-    transport: int = 0 # walk
+    transport_mode: int = 0 # walk
+    last_east_west: int = 0 # east
+    last_nesw_dir: int = 1 # east
 
     def is_in_outer_map(self):
         return self.inner_map is None
@@ -38,8 +40,18 @@ class PlayerState(Freezable):
         else:
             return self.inner_map, self.inner_map_level, self.inner_coord
 
+    def get_current_transport_info(self):
+        if self.transport_mode == 0:
+            direction = 0 # no one cares.
+        elif self.transport_mode < 3:
+            direction = self.last_east_west
+        else:
+            direction = self.last_nesw_dir
+
+        return self.transport_mode, direction
+
     def _can_traverse(self, target: Coord):
-        transport_mode = get_transport_modes()[self.transport]
+        transport_mode = get_transport_modes()[self.transport_mode]
         current_map, current_level, _ = self.get_current_position()      
         target_tile_id = current_map.get_tile_id(current_level, target.x, target.y)
         return can_traverse(transport_mode, target_tile_id)
@@ -105,6 +117,21 @@ class PlayerState(Freezable):
             
             self.inner_coord = target
 
+        if value.x == 1:
+            # east
+            self.last_east_west = 0
+            self.last_nesw_dir = 1
+        elif value.x == -1:
+            # west
+            self.last_east_west = 1
+            self.last_nesw_dir = 3
+        elif value.y == 1:
+            # south
+            self.last_nesw_dir = 2
+        elif value.y == -1:
+            # north
+            self.last_nesw_dir = 0
+
         return self
 
     #
@@ -122,7 +149,7 @@ class PlayerState(Freezable):
     @mutator
     def rotate_transport(self) -> Self:
 
-        self.transport = (self.transport + 1) % len(get_transport_modes())
+        self.transport_mode = (self.transport_mode + 1) % len(get_transport_modes())
 
         # forbid turning into a ship on land, for example.
         _, _, target = self.get_current_position()

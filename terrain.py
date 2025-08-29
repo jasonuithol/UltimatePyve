@@ -10,6 +10,7 @@ class Terrain:
     carpet: bool = False
     skiff: bool = False
     ship: bool = False
+    sail: bool = False
 
 _terrains = None
 _transport_modes = None
@@ -91,9 +92,10 @@ def get_terrains():
             for i in range(start, finish + 1):
                 terrains[i].skiff = True
 
-        # ship traversable
+        # ship and sail traversable
         for i in [1,  2]:
             terrains[i].ship = True
+            terrains[i].sail = True
 
         _terrains = terrains
 
@@ -111,7 +113,8 @@ def get_transport_modes():
             "horse",
             "carpet",
             "skiff",
-            "ship"
+            "ship",
+            "sail"
         ]
     return _transport_modes
 
