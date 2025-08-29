@@ -44,7 +44,7 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
     Running the main engine:
     ```
-    python viewer.py
+    python main.py
     ```
 
     Running diagnostic/test scripts:
@@ -54,11 +54,7 @@ It uses the original game data files but runs them through a modern, Python‑ba
     rem Any/All of these.
     rem
 
-    python -m loaders.overworld
-    python -m loaders.underworld
-    python -m loaders.locations
-    python -m loaders.data
-    python -m loaders.tileset
+   
     ```
 
 ---

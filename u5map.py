@@ -1,6 +1,7 @@
 # file: u5map.py
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
+from dark_math import Coord, Size
 
 @dataclass
 class LocationMetadata:
@@ -16,8 +17,7 @@ class LocationMetadata:
 @dataclass
 class U5Map:
     name: str
-    width: int
-    height: int
+    size_in_tiles: Size
     tileset: List[List[List[int]]]        # raw tile pixel data (palette indices)
     palette: List[Tuple[int, int, int]]   # EGA palette
     levels: List[bytearray]               # width*height tile IDs per level
@@ -26,8 +26,10 @@ class U5Map:
     location_metadata: Optional[LocationMetadata]   # if this is a sub-location of the world e.g. a town, keep, dwelling, castle.
 
     def is_in_bounds(self, x: int, y: int) -> bool:
-        """Check if the given coordinates are within the map bounds."""
-        return 0 <= x < self.width and 0 <= y < self.height
+        return Coord(x,y).is_in_bounds(self.size_in_tiles)
+
+    def get_wrapped_coord(self, coord: Coord) -> Coord:
+        return Coord(coord.x % self.size_in_tiles.x, coord.y % self.size_in_tiles.y)
 
     def get_tile_id(self, level_ix: int, x: int, y: int) -> int:
 
@@ -40,7 +42,7 @@ class U5Map:
             raise
 
         try:
-            index = y * self.width + x
+            index = y * self.size_in_tiles.w + x
             return level[index]
         except Exception as e:
             print(f"Error accessing tile {index} from level, size {len(level)}: {e}")

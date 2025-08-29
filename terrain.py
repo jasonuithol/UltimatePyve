@@ -12,6 +12,7 @@ class Terrain:
     ship: bool = False
 
 _terrains = None
+_transport_modes = None
 
 def get_terrains():
     global _terrains
@@ -101,6 +102,18 @@ def get_terrains():
 def can_traverse(transport_mode: str, tile_id: int):
     terrain = get_terrains()[tile_id]
     return getattr(terrain, transport_mode)
+
+def get_transport_modes():
+    global _transport_modes
+    if _transport_modes is None:
+        _transport_modes = [
+            "walk",
+            "horse",
+            "carpet",
+            "skiff",
+            "ship"
+        ]
+    return _transport_modes
 
 moveable_tiles = [
      91,    # pot plant

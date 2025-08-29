@@ -1,9 +1,15 @@
 # file: location.py
+
+#
+# INNER LOCATIONS (i.e. TOWNES KEEPS CASTLES DWELLINGS)   TODO: DUNGEONS
+#
+
 from typing import List
 from pathlib import Path
 from u5map import U5Map, LocationMetadata
 from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH, TILE_SIZE
 from loaders.data import DataOVL
+from dark_math import Coord, Size
 
 LOCATION_WIDTH = 32
 LOCATION_HEIGHT = 32
@@ -148,7 +154,7 @@ def load_location_map(trigger_index: int) -> U5Map:
 
     path = Path("u5") / filename
     if not path.exists():
-        raise FileNotFoundError(f"Map file not found: {filename}")
+        raise FileNotFoundError(f"Map file not found: {filename!r}")
 
     map_size = LOCATION_WIDTH * LOCATION_HEIGHT
     offset = meta.map_index_offset * map_size
@@ -162,8 +168,7 @@ def load_location_map(trigger_index: int) -> U5Map:
 
     return U5Map(
         name=meta.name,
-        width=LOCATION_WIDTH,
-        height=LOCATION_HEIGHT,
+        size_in_tiles=Size(LOCATION_WIDTH,LOCATION_HEIGHT),
         tileset=_TILESET_RAW,  # raw pixel data
         palette=_PALETTE,
         levels=levels,
@@ -176,10 +181,10 @@ def render_location_map_to_disk(u5map: U5Map, level: int) -> U5Map:
     import pygame
     from loaders.tileset import draw_tile_onto_pixel_array
     pygame.init()
-    surf = pygame.Surface((TILE_SIZE * u5map.width, TILE_SIZE * u5map.height))
+    surf = pygame.Surface(tuple(u5map.size_in_tiles.scale(TILE_SIZE)))
     pixels = pygame.PixelArray(surf)
-    for x in range(u5map.width):
-        for y in range(u5map.height):
+    for x in range(u5map.size_in_tiles.x):
+        for y in range(u5map.size_in_tiles.y):
             tile_id = u5map.get_tile_id(level, x, y)
             # Do something with tile_id, e.g. render it
             tile = _TILESET_RAW[tile_id]
@@ -205,6 +210,6 @@ if __name__ == "__main__":
             try:
                 surf = render_location_map_to_disk(u5map, level)
             except Exception as e:
-                print(f"Error rendering {name} level {level}: {e}")
+                print(f"Error rendering {name!r} level {level!r}: {e}")
                 raise e
     print("All maps dumped.")

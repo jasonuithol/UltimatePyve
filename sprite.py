@@ -1,5 +1,6 @@
 from typing import List, Callable
 from loaders.tileset import load_tiles16_raw, TILES16_PATH
+from dark_math import Coord
 
 DEFAULT_FRAME_TIME_SECONDS = 0.5
 
@@ -12,15 +13,14 @@ class Sprite:
         self.frame_time = frame_time
         self.current_frame = 0
         self.time_accum = 0.0
-        self.world_x = 0
-        self.world_y = 0
+        self.world_coord = Coord(0,0)
         self.transport_mode = transport_mode
 
-    def set_position(self, tile_x: int, tile_y: int):
-        self.world_x = tile_x
-        self.world_y = tile_y
+    def set_position(self, coord: Coord):
+        self.world_coord = coord
 
     def move(self, dx: int, dy: int):
+        self.world_coord
         self.world_x += dx
         self.world_y += dy
 

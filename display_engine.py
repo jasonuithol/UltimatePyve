@@ -5,50 +5,7 @@ from dataclasses import dataclass, field
 from u5map import U5Map
 from sprite import Sprite
 from loaders.tileset import ega_palette, TILE_ID_GRASS
-
-@dataclass
-class Vector2:
-    x: int
-    y: int
-
-    def scale(self, s: int) -> Self:
-         return self.__class__(self.x * s, self.y * s)
-    
-    def add(self, other: Self) -> Self:
-            return self.__class__(self.x + other.x, self.y + other.y)
-
-    def subtract(self, other: Self) -> Self:
-            return self.__class__(self.x - other.x, self.y - other.y)
-
-    # allow tuple(Size) to yield (x,y)
-    def __iter__(self):
-        yield self.x
-        yield self.y
-
-@dataclass
-class Size(Vector2):
-    @property
-    def w(self) -> int:
-        return self.x
-
-    @w.setter
-    def w(self, value: int):
-        self.x = value
-
-    @property
-    def h(self) -> int:
-        return self.y
-
-    @h.setter
-    def h(self, value: int):
-        self.y = value
-
-@dataclass
-class Coord(Vector2):
-    pass
-
-    def is_in_bounds(self, size: Size) -> bool:
-        return 0 <= self.x < size.w and 0 <= self.y < size.h
+from dark_math import Coord, Size
 
 @dataclass
 class ViewPort:
@@ -83,12 +40,12 @@ class ViewPort:
         del pixels  # Unlock the surface
         return surf
 
-    def get_unscaled_surface(self):
+    def get_input_surface(self):
         if self._unscaled_surface is None:
             self._unscaled_surface = pygame.Surface(tuple(self.view_size_in_pixels()))
         return self._unscaled_surface
 
-    def get_scaled_surface(self):
+    def get_output_surface(self):
         if self._scaled_surface is None:
             self._scaled_surface = pygame.Surface(tuple(self.view_size_in_pixels_scaled()))
         return self._scaled_surface
@@ -98,8 +55,7 @@ class ViewPort:
         Render the map or a subsection of it to a Pygame Surface.
         rect: (tile_x, tile_y, tile_w, tile_h) in tile coordinates.
         """
-        u5map_size = Size(u5map.width, u5map.height)
-        viewport_surf = self.get_unscaled_surface()
+        viewport_surf = self.get_input_surface()
 
         for y in range(self.view_size_tiles.h):
             for x in range(self.view_size_tiles.w):
@@ -107,7 +63,7 @@ class ViewPort:
 
                 # Don't try to pull a tile from outside the source map.
                 # If out of bounds, use grass tile.
-                if map_coord.is_in_bounds(u5map_size):
+                if map_coord.is_in_bounds(u5map.size_in_tiles):
                     tid = u5map.get_tile_id(level_ix, map_coord.x, map_coord.y)
                 else:
                     tid = TILE_ID_GRASS
@@ -120,7 +76,7 @@ class ViewPort:
                     # draw the tile surface onto the viewport surface.
                     viewport_surf.blit(tile_surf, (x * self.tile_size_pixels, y * self.tile_size_pixels))
                 else:
-                    print(f"Warning: tile id {tid} out of range, skipping render.")
+                    print(f"Warning: tile id {tid!r} out of range, skipping render.")
 
         return viewport_surf
 
@@ -131,15 +87,14 @@ class ViewPort:
         Otherwise, position is treated as screen coords.
         """
         # Determine screen position
-        sprite_coord = Coord(sprite.world_x, sprite.world_y)
-        screen_coord = sprite_coord.subtract(self.view_world_coord).scale(self.tile_size_pixels)
+        screen_coord = sprite.world_coord.subtract(self.view_world_coord).scale(self.tile_size_pixels)
 
         # Convert raw pixels to a Surface
         frame_pixels = sprite.get_current_frame_pixels()
         frame_surface = self.pixels_to_surface(frame_pixels)
 
         # Draw
-        viewport_surf = self.get_unscaled_surface()
+        viewport_surf = self.get_input_surface()
         viewport_surf.blit(frame_surface, tuple(screen_coord))
 
 
@@ -183,10 +138,10 @@ class DisplayEngine:
     def render(self):
 
         # Update window title with current location/world of player.
-        pygame.display.set_caption(f"{self.active_map.name} [{self.player.world_x},{self.player.world_y}]")
+        pygame.display.set_caption(f"{self.active_map.name} [{self.player.world_coord}]")
 
         # Centre the viewport on the player.
-        self.main_display.view_port.centre_view_on(Coord(self.player.world_x, self.player.world_y))
+        self.main_display.view_port.centre_view_on(self.player.world_coord)
 
         # Render current viewport from raw map data
         self.main_display.view_port.draw_map(
@@ -198,9 +153,9 @@ class DisplayEngine:
             self.main_display.view_port.draw_sprite(sprite)
 
         # Scale for display
-        scaled_surface = self.main_display.view_port.get_scaled_surface()
+        scaled_surface = self.main_display.view_port.get_output_surface()
         pygame.transform.scale(
-            surface = self.main_display.view_port.get_unscaled_surface(),
+            surface = self.main_display.view_port.get_input_surface(),
             size = scaled_surface.get_size(),
             dest_surface = scaled_surface
         )
