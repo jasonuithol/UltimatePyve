@@ -55,20 +55,21 @@ def main() -> None:
                     else:
                         player_state = new_state
 
+
         #
         # all events processed.
         #  
         new_map, new_level, new_coords = player_state.get_current_position()
         display_engine.set_active_map(new_map, new_level)
 
-        transport_mode, direction = player_state.get_current_transport_info()
         # this will reset animations constantly - so sprites need to be stateless HAHAHAHAHAHAH
-        display_engine.unregister_sprite(player_sprite)
-        player_sprite = create_player(transport_mode, direction)
-        display_engine.register_sprite(player_sprite)
+        display_engine.clear_sprites()
 
-        # for the player - this feels pointless.  but other sprites will appreciate the effort.
+        # Player sprite
+        transport_mode, direction = player_state.get_current_transport_info()
+        player_sprite = create_player(transport_mode, direction)
         player_sprite.set_position(new_coords)
+        display_engine.register_sprite(player_sprite)
 
         # update display
         display_engine.render(new_coords)

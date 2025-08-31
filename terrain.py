@@ -1,6 +1,6 @@
 # file: terrain.py
 from dataclasses import dataclass
-from typing import Tuple
+from loaders.tileset import TILES16_PATH, load_tiles16_raw
 
 @dataclass
 class Terrain:
@@ -24,7 +24,7 @@ def get_terrains():
         
         # walkable terain
         for start, finish in [
-            (  4, 12),
+            (  4, 11),
             ( 14, 38), # INCLUDES BRIDGE
             ( 44, 45),
             ( 48, 55),
@@ -117,6 +117,7 @@ def get_transport_modes():
             "sail"
         ]
     return _transport_modes
+
 
 moveable_tiles = [
      91,    # pot plant

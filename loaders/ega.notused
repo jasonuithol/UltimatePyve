@@ -1,0 +1,67 @@
+#
+# NOT USED
+#
+'''
+from PIL import Image 
+
+def decode_rle_ega(data: bytes) -> bytearray:
+    """
+    Decode Ultima-style RLE-compressed EGA file into raw planar bytes.
+
+    Args:
+        data: bytes from the .EGA file (RLE encoded)
+
+    Returns:
+        bytearray of decoded bytes (each byte = two 4-bit pixels)
+        Expected length for 320x200x4bpp is 320*200//2 = 32000 bytes.
+    """
+    out = bytearray()
+    i = 0
+    while i < len(data):
+        b = data[i]
+        if b == 0x02:
+            # Run: next byte = count, next byte = value
+            count = data[i + 1]
+            value = data[i + 2]
+            out.extend([value] * count)
+            i += 3
+        else:
+            # Literal byte
+            out.append(b)
+            i += 1
+    return out
+
+if __name__ == "__main__":
+    import sys
+    from loaders.tileset import ega_palette
+    if len(sys.argv) != 3:
+        print(f"Usage: {sys.argv[0]} input.EGA output.png")
+        sys.exit(1)
+
+    in_path, out_path = sys.argv[1], sys.argv[2]
+
+    # Read and decode
+    raw_data = open(in_path, "rb").read()
+    decoded = decode_rle_ega(raw_data)
+
+    # Sanity check size
+    expected_bytes = 320 * 200 // 2
+    if len(decoded) != expected_bytes:
+        print(f"Warning: decoded length {len(decoded)} != expected {expected_bytes}")
+
+    # Expand to full pixel indices
+    pixels = []
+    for byte in decoded:
+        hi = (byte >> 4) & 0x0F
+        lo = byte & 0x0F
+        pixels.extend([hi, lo])
+
+    # Map to RGB
+    rgb_data = [ega_palette[p] for p in pixels]
+
+    # Create and save image
+    img = Image.new("RGB", (320, 200))
+    img.putdata(rgb_data)
+    img.save(out_path)
+    print(f"Saved decoded image to {out_path}")
+'''

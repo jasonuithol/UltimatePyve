@@ -179,17 +179,14 @@ def load_location_map(trigger_index: int) -> U5Map:
 
 def render_location_map_to_disk(u5map: U5Map, level: int) -> U5Map:
     import pygame
-    from loaders.tileset import draw_tile_onto_pixel_array
+    from loaders.tileset import Tile
     pygame.init()
     surf = pygame.Surface(tuple(u5map.size_in_tiles.scale(TILE_SIZE)))
-    pixels = pygame.PixelArray(surf)
     for x in range(u5map.size_in_tiles.x):
         for y in range(u5map.size_in_tiles.y):
             tile_id = u5map.get_tile_id(level, x, y)
-            # Do something with tile_id, e.g. render it
-            tile = _TILESET_RAW[tile_id]
-            draw_tile_onto_pixel_array(tile, surf, pixels, _PALETTE, x * TILE_SIZE, y * TILE_SIZE)
-    del pixels  # Unlock the surface
+            tile: Tile = _TILESET_RAW[tile_id]
+            tile.blit_to_surface(surf, Coord(x * TILE_SIZE, y * TILE_SIZE))
     pygame.image.save(
         surf,
         f"{u5map.name}_{level}.png"
