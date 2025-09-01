@@ -17,11 +17,27 @@ _tileset16_cache = {}
 
 # EGA palette (RGB tuples)
 ega_palette = [
-    (0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170),
-    (170, 0, 0), (170, 0, 170), (170, 85, 0), (170, 170, 170),
-    ( 85, 85, 85), (85, 85, 255), (85, 255, 85), (85, 255, 255),
-    (255, 85, 85), (255, 85, 255), (255, 255, 85), (255, 255, 255),
+    (0, 0, 0),         # 0000: Black
+    (0, 0, 170),       # 0001: Blue
+    (0, 170, 0),       # 0010: Green
+    (0, 170, 170),     # 0011: Cyan
+
+    (170, 0, 0),       # 0100: Red
+    (170, 0, 170),     # 0101: Magenta
+    (170, 85, 0),      # 0110: Brown (dark yellow)
+    (170, 170, 170),   # 0111: Light Gray
+
+    (85, 85, 85),      # 1000: Dark Gray
+    (85, 85, 255),     # 1001: Light Blue
+    (85, 255, 85),     # 1010: Light Green
+    (85, 255, 255),    # 1011: Light Cyan
+
+    (255, 85, 85),     # 1100: Light Red
+    (255, 85, 255),    # 1101: Light Magenta
+    (255, 255, 85),    # 1110: Yellow
+    (255, 255, 255),   # 1111: White
 ]
+
 
 # --- LZW decompression ---
 def lzw_decompress(data: bytes) -> bytes:
@@ -149,9 +165,10 @@ if __name__ == "__main__":
     pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
     tileset_raw: List[Tile] = load_tiles16_raw(TILES16_PATH)
 
-    TILE_SCALE = 2
-    GRID_COLS = 32
-    GRID_ROWS = 16
+    TILE_SCALE = 3
+    GRID_COLS = 40
+    TOTAL_TILES = 512
+    GRID_ROWS = (TOTAL_TILES // GRID_COLS) + 1
     MARGIN = 10  # padding around grid
 
     win_w = GRID_COLS * TILE_SIZE * TILE_SCALE + MARGIN * 2

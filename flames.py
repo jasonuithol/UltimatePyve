@@ -49,38 +49,30 @@ def _build_frames(original_tile_id: int) -> Iterator[Tile]:
     original_tile: Tile = tiles[original_tile_id]
     overlay_tile: Tile = tiles[get_flame_overlay_index(original_tile_id)]
 
-    cycle_length = 10       # observed lamppost cycle length
-    visible_frames = 5      # how many frames lamp is "on"
-
-    flame_frames = []
-    for f in range(10):
-        surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-        color = (255, 128 + (f * 10) % 127, 0)
-        surf.fill(color)
-        flame_frames.append(surf)
-    frame_index = 0
+    cycle_length = 23       # arbitrary prime number
 
     # Apply overlay mask
-    for frame_index in range(cycle_length):
+    for _ in range(cycle_length):
         composed_surface = original_tile.to_surface().copy()
         for y, row in enumerate(overlay_tile.pixels):
             for x, mask_val in enumerate(row):
-                if mask_val != 0:
-                    # Derive a stable per-pixel offset
-                    # Option 1: use mask_val if varied
-                    # Option 2: use coords to stagger even if mask_val is uniform
-                    offset = (mask_val + x + y) % cycle_length
-
-                    phase = (frame_index + offset) % cycle_length
-                    if phase >= visible_frames:
-                        composed_surface.set_at((x, y), (0, 0, 0))  # lamp "off"    
+                composed_value = original_tile.pixels[y][x]
+                for bit_ix in range(8):
+                    bit_selector = 1 << bit_ix
+                    if bit_selector & mask_val:
+                        # RANDOMLY TOGGLE ORIGINAL
+                        if random.choice([True, False]):
+                            composed_value ^= bit_selector
                     else:
-                        flame_color = flame_frames[phase].get_at((x, y))   # lamp "on"
-                        composed_surface.set_at((x, y), flame_color)
+                        # leave original alone
+                        pass
+
+                composed_surface.set_at((x, y), ega_palette[composed_value])
 
         composed_tile = Tile(None)
         composed_tile.set_surface(composed_surface)
         yield composed_tile
+
 '''
 def _build_frames_test(original_tile_id: int) -> Iterator[Tile]:
     from loaders.tileset import Tile, TILE_SIZE
@@ -108,7 +100,7 @@ def _build_frames_test(original_tile_id: int) -> Iterator[Tile]:
         yield tile
 '''
 def build_sprite(tile_id: int) -> Sprite:
-    FRAME_TIME = 0.03
+    FRAME_TIME = 0.15
     global _sprite_cache
     if not tile_id in _sprite_cache.keys():
         frames = list(_build_frames(tile_id))
@@ -180,7 +172,7 @@ if __name__ == "__main__":
             if frame_time < 0.01:
                 frame_time = 0.01
 
-        current_sprite.set_frame_time(frame_time)
+        current_sprite.set_frame_time(frame_time, 0.0)
         current_frame = current_sprite.get_current_frame_tile(pygame.time.get_ticks())
 
         scaled = pygame.transform.scale(current_frame.surface, (TILE_SIZE * SCALE, TILE_SIZE * SCALE))

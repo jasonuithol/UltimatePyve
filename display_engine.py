@@ -161,7 +161,7 @@ class DisplayEngine:
         self.screen = pygame.display.set_mode(tuple(self.main_display.size_in_pixels()))
         self.clock = pygame.time.Clock()
         self.fps = 60
-        self.sprites: Dict[Coord, Sprite] = {}
+        self.sprites: Dict[Coord, sprite.Sprite] = {}
         self.active_map: Optional[U5Map] = None
         self.active_level = 0
 
