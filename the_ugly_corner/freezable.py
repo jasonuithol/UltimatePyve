@@ -1,5 +1,26 @@
 # file: freezable.py
 
+from typing import Generic, TypeVar, Optional
+
+T = TypeVar("T")
+
+class Response(Generic[T]):
+    __slots__ = ("value", "error")
+
+    def __init__(self, value: Optional[T] = None, error: Optional[str] = None):
+        self.value = value
+        self.error = error
+
+    @property
+    def success(self) -> bool:
+        return self.error is None
+
+    def __repr__(self):
+        if self.success:
+            return f"Response(success, value={self.value!r})"
+        else:
+            return f"Response(error={self.error!r})"
+
 from copy import copy 
 from contextlib import contextmanager
 from functools import wraps
@@ -37,3 +58,4 @@ def mutator(method):
         # If your mutate() already freezes on exit, result/new are frozen here
         return result if result is not None else new
     return wrapper
+

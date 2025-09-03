@@ -1,8 +1,9 @@
-from typing import List, Optional
+from typing import Dict, List, Optional, Self
 from loaders.tileset import load_tiles16_raw, TILES16_PATH, Tile
 from dark_math import Coord
 from terrain import get_transport_modes
 import pygame
+from copy import copy
 
 DEFAULT_FRAME_TIME_SECONDS = 0.5
 
@@ -31,6 +32,12 @@ class Sprite:
 
     def get_current_frame_tile(self, ticks_since_init: int) -> Tile:
         return self.frames[self.get_current_frame_index(ticks_since_init)]
+
+    def spawn_from_master(self, coord: Coord) -> Self:
+        sprite_copy = copy(self)
+        sprite_copy.world_coord = coord
+        # TODO: Get time_offsets working...
+        return sprite_copy
 
 # --- Factory function for the Avatar sprites ---
 def create_player(transport_mode: int, direction: int) -> Sprite:
@@ -74,9 +81,9 @@ animated_tiles = [
     (252,2),    # bellows
 ]
 
-_animated_tile_cache = None
+_animated_tile_cache: Dict[int, Sprite] = None
 
-def build_animated_tile_sprites():
+def build_animated_tile_sprites() -> Dict[int, Sprite]:
     global _animated_tile_cache
     if _animated_tile_cache is None:
         _animated_tile_cache = {}

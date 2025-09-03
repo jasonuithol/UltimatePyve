@@ -1,5 +1,6 @@
 # file: viewer.py
 import pygame
+import doors
 
 from sprite import Sprite, create_player
 from display_engine import DisplayEngine
@@ -7,6 +8,7 @@ from player_state import PlayerState
 from dark_math import Coord, Vector2
 
 from loaders.overworld import load_britannia
+from world_state import WorldState
 
 def process_event(player_state: PlayerState, event: pygame.event.Event) ->PlayerState:
     if event.key == pygame.K_TAB:
@@ -27,9 +29,14 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) ->Player
 
 def main() -> None:
 
-    display_engine = DisplayEngine()
+    world_state = WorldState()
+    for tile_id, door_factory in doors.build_all_door_types().items():
+        world_state.register_interactable_factory(tile_id, door_factory)
+
+    display_engine = DisplayEngine(world_state=world_state)
 
     player_state = PlayerState(
+        world_state=world_state,
         outer_map=load_britannia(), 
         outer_coord=Coord(56, 72)    # starting tile in world coords, just a bit SE of Iolo's Hut.
     )
@@ -54,7 +61,6 @@ def main() -> None:
                         print("Action was forbidden !")
                     else:
                         player_state = new_state
-
 
         #
         # all events processed.

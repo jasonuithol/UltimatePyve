@@ -1,8 +1,7 @@
 # file: dark_math.py
 
 from typing import Self
-from immutable import immutable
-from auto_init import auto_init
+from custom_decorators import immutable, auto_init
 
 @immutable
 @auto_init
@@ -68,6 +67,6 @@ if __name__ == "__main__":
      
     a = Coord(1, 2)
     b = Coord(1, 2)
-    print(a == b)            # expect True
-    print(hash(a), hash(b))  # expect same number
-    print({a: "one"}[b])     # should retrieve "one" without KeyError
+    assert a == b, "__eq__ has a problem"
+    assert hash(a) == hash(b), "__hash__ has a problem"
+    assert {a: "one"}[b] == "one", "Being a stable dictionary key is a problem" 

@@ -1,29 +1,28 @@
 import pygame
 from copy import copy
-from typing import Any, Tuple, List, Optional, Dict
+from typing import Any, Protocol, Tuple, List, Optional, Dict
 from dataclasses import dataclass, field
 from collections import deque
 
 import flames
-import terrain
-from u5map import U5Map
+from interactable import Interactable
 import sprite
+import doors
+from u5map import U5Map
 
-from loaders.tileset import ega_palette, TILE_ID_GRASS, Tile
+from loaders.tileset import ega_palette, TILE_ID_GRASS, Tile, load_tiles16_raw, TILES16_PATH
 from dark_math import Coord, Size
+from world_state import WorldState
 
-
-
-'''
-def tile_to_surface(tile_data: TileData, surf: pygame.Surface, pixel_offset: Coord) -> None:
-    for y, row in enumerate(tile_data):
-        for x, pix in enumerate(row):
-            surf.set_at((x + pixel_offset.x, y + pixel_offset.y), ega_palette[pix])
-'''
+class EngineProtocol(Protocol):
+    world_state: WorldState
+    def register_sprite(self, sprite_copy: sprite.Sprite) -> None:
+        ...
+        
 
 @dataclass
 class ViewPort:
-    engine: Any
+    engine: EngineProtocol
     palette: List[Tuple[int,int,int]]
     view_world_coord: Coord = field(default_factory=lambda: Coord(0, 0))
     view_size_tiles: Size = field(default_factory=lambda: Size(21, 15))
@@ -59,15 +58,11 @@ class ViewPort:
             self._scaled_surface = pygame.Surface(tuple(self.view_size_in_pixels_scaled()))
         return self._scaled_surface
 
+    '''
     def flood_fill_visibility(start_x, start_y, is_blocked, mark_visible):
-        """
-        Ultima V–style boundary-fill for visibility.
-
-        Args:
-            start_x, start_y: starting tile coordinates (player position)
-            is_blocked(x, y) -> bool: True if tile blocks vision
-            mark_visible(x, y): called for each visible tile
-        """
+        #            start_x, start_y: starting tile coordinates (player position)
+        #            is_blocked(x, y) -> bool: True if tile blocks vision
+        #            mark_visible(x, y): called for each visible tile
         visited = set()
         q = deque()
         q.append((start_x, start_y))
@@ -86,12 +81,8 @@ class ViewPort:
                     continue
                 visited.add((nx, ny))
                 q.append((nx, ny))
-
+    '''
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
-        """
-        Render the map or a subsection of it to a Pygame Surface.
-        rect: (tile_x, tile_y, tile_w, tile_h) in tile coordinates.
-        """
         viewport_surface = self.get_input_surface()
 
         for y in range(self.view_size_tiles.h):
@@ -107,12 +98,14 @@ class ViewPort:
 
                 # if the tile is animated, register a sprite
                 if tid in self._animated_tiles.keys():
-                    sprite_copy = copy(self._animated_tiles[tid])
-                    sprite_copy.world_coord = map_coord
-                    random_number = ((hash(tuple(map_coord)) & 0xFFFFFFFFFFFFFFFF) / float(1 << 64))
-                    sprite_copy.frame_time_offset = sprite_copy.frame_time * len(sprite_copy.frames) * random_number
+                    sprite_master = self._animated_tiles[tid]
+                    sprite_copy = sprite_master.spawn_from_master(map_coord)
 
                     self.engine.register_sprite(sprite_copy)
+
+                interactable = self.engine.world_state.get_interactable(tid, map_coord)
+                if interactable:
+                    self.engine.register_sprite(interactable.create_sprite())
 
                 # Don't try to render a non-existant tile id.
                 if 0 <= tid < len(u5map.tileset):
@@ -143,35 +136,47 @@ class ViewPort:
         )
 
 
-@dataclass 
+@dataclass
 class MainDisplay:
     view_port: ViewPort
 
     def size_in_pixels(self) -> Size:
-         return self.view_port.view_size_in_pixels_scaled()
-
+        return self.view_port.view_size_in_pixels_scaled()
+    
 # file: engine.py
-class DisplayEngine:
+class DisplayEngine(EngineProtocol):
 
-    def __init__(self):
+    def __init__(self, world_state: WorldState):
+
+        # Create and reference important components.
+        self.view_port = ViewPort(engine=self, palette=ega_palette)
+        self.main_display = MainDisplay(view_port=self.view_port)
+        self.world_state = world_state
+
+        # Set up pygame
         pygame.init()
         pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
-        view_port = ViewPort(engine=self, palette=ega_palette)
-        self.main_display = MainDisplay(view_port)
         self.screen = pygame.display.set_mode(tuple(self.main_display.size_in_pixels()))
         self.clock = pygame.time.Clock()
         self.fps = 60
+
+        # Init internal state
         self.sprites: Dict[Coord, sprite.Sprite] = {}
         self.active_map: Optional[U5Map] = None
         self.active_level = 0
 
+        # Register tile_id hooks.
+        self.register_special_tiles()
+
+    def register_special_tiles(self):
+
         # Flaming objects 
         for tile_id, sprite_master_copy in flames.build_all_sprites().items():
-            view_port.register_animated_tile(tile_id, sprite_master_copy)
+            self.view_port.register_animated_tile(tile_id, sprite_master_copy)
 
         # Other animated tiles
         for tile_id, sprite_master_copy in sprite.build_animated_tile_sprites().items():
-            view_port.register_animated_tile(tile_id, sprite_master_copy)
+            self.view_port.register_animated_tile(tile_id, sprite_master_copy)
 
     def register_sprite(self, sprite: sprite.Sprite) -> None:
         self.sprites[sprite.world_coord] = sprite
@@ -192,21 +197,21 @@ class DisplayEngine:
         pygame.display.set_caption(f"{self.active_map.name} [{player_coord}]")
 
         # Centre the viewport on the player.
-        self.main_display.view_port.centre_view_on(player_coord)
+        self.view_port.centre_view_on(player_coord)
 
         # Render current viewport from raw map data
-        self.main_display.view_port.draw_map(
+        self.view_port.draw_map(
             self.active_map,
             self.active_level
         )
 
         for sprite in self.sprites.values():
-            self.main_display.view_port.draw_sprite(sprite)
+            self.view_port.draw_sprite(sprite)
 
         # Scale for display
-        scaled_surface = self.main_display.view_port.get_output_surface()
+        scaled_surface = self.view_port.get_output_surface()
         pygame.transform.scale(
-            surface = self.main_display.view_port.get_input_surface(),
+            surface = self.view_port.get_input_surface(),
             size = scaled_surface.get_size(),
             dest_surface = scaled_surface
         )

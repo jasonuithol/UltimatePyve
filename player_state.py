@@ -2,11 +2,12 @@
 from dataclasses import dataclass
 from typing import Optional, Self
 
-from dark_math import Coord, Vector2
-from freezable import Freezable, mutator
+from interactable import Interactable
 from u5map import U5Map
+from dark_math import Coord, Vector2
 from terrain import get_transport_modes, can_traverse
 from map_transitions import get_entry_trigger
+from world_state import WorldState
 
 from loaders.location import load_location_map
 from loaders.overworld import load_britannia
@@ -16,7 +17,9 @@ from loaders.underworld import load_underworld
 # An immutable state.  transitions return a cloned, modified copy of current state
 #
 @dataclass
-class PlayerState(Freezable):
+class PlayerState:
+
+    world_state: WorldState
 
     # either "britannia" or "underworld"
     outer_map: U5Map          
@@ -52,15 +55,18 @@ class PlayerState(Freezable):
 
     def _can_traverse(self, target: Coord):
         transport_mode = get_transport_modes()[self.transport_mode]
-        current_map, current_level, _ = self.get_current_position()      
+        current_map, current_level, _ = self.get_current_position()
         target_tile_id = current_map.get_tile_id(current_level, target.x, target.y)
+        interactable = self.world_state.get_interactable(target_tile_id, target)      
+        if interactable:
+            result = interactable.move_into()
+            return result.success
         return can_traverse(transport_mode, target_tile_id)
 
     #
     # Internal State transitions
     #
 
-    @mutator
     def _move_to_inner_map(self, u5map: U5Map) -> Self:
         self.inner_map = u5map
         self.inner_map_level = u5map.location_metadata.default_level
@@ -70,7 +76,6 @@ class PlayerState(Freezable):
         )
         return self
 
-    @mutator
     def _return_to_outer_map(self) -> Self:
         self.inner_map = None
         self.inner_map_level = None
@@ -81,7 +86,6 @@ class PlayerState(Freezable):
     # Player driven State transitions
     #
 
-    @mutator
     def move(self, value: Vector2) -> Self:
 
         #
@@ -138,7 +142,6 @@ class PlayerState(Freezable):
     # Testing only
     #
 
-    @mutator
     def switch_outer_map(self) -> Self:
         if self.outer_map.name == "BRITANNIA":
             self.outer_map = load_underworld()
@@ -146,7 +149,6 @@ class PlayerState(Freezable):
             self.outer_map = load_britannia()
         return self
     
-    @mutator
     def rotate_transport(self) -> Self:
 
         self.transport_mode = (self.transport_mode + 1) % len(get_transport_modes())
