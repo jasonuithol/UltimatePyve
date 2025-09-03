@@ -67,6 +67,9 @@ class PlayerState:
     # Internal State transitions
     #
 
+    def _on_changing_map(self) -> None:
+        self.world_state.clear_interactables()
+
     def _move_to_inner_map(self, u5map: U5Map) -> Self:
         self.inner_map = u5map
         self.inner_map_level = u5map.location_metadata.default_level
@@ -74,12 +77,14 @@ class PlayerState:
             (u5map.size_in_tiles.w - 1) // 2,
             (u5map.size_in_tiles.h - 2)
         )
+        self._on_changing_map()
         return self
 
     def _return_to_outer_map(self) -> Self:
         self.inner_map = None
         self.inner_map_level = None
         self.inner_coord = None
+        self._on_changing_map()
         return self
 
     #

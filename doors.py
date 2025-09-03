@@ -113,11 +113,13 @@ class DoorInstance(Interactable):
         return R_LOUD_SUCCESS
 
     # Interactable implementation: Start
-    def create_sprite(self, actor=None):
+    def create_sprite(self) -> Sprite:
         frame = load_tiles16_raw(TILES16_PATH)[self.tile_id]
-        return Sprite(
+        sprite = Sprite(
             frames=[frame]
         )
+        sprite.world_coord = self.coord
+        return sprite
 
     def move_into(self, actor=None) -> InteractionResult:
         if self.is_open:

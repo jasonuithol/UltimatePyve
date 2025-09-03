@@ -46,7 +46,7 @@ class Interactable(Protocol):
     coord: Coord
     tile_id: int
 
-    def create_sprite() -> Sprite:
+    def create_sprite(self) -> Sprite:
         ...
 
     def move_into(self, actor=None) -> InteractionResult:
