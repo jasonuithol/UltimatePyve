@@ -50,7 +50,6 @@ def main() -> None:
     running = True
     while running:
         for event in pygame.event.get():
-            new_state: PlayerState = None
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:

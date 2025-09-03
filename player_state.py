@@ -1,6 +1,6 @@
 # file: player_state.py
 from dataclasses import dataclass
-from typing import Optional, Self
+from typing import Optional, Self, Tuple
 
 from interactable import Interactable, InteractionResult
 from u5map import U5Map
@@ -34,16 +34,16 @@ class PlayerState:
     last_east_west: int = 0 # east
     last_nesw_dir: int = 1 # east
 
-    def is_in_outer_map(self):
+    def is_in_outer_map(self) -> bool:
         return self.inner_map is None
 
-    def get_current_position(self):
+    def get_current_position(self) -> Tuple[U5Map, int, Coord]:
         if self.is_in_outer_map():
             return self.outer_map, 0, self.outer_coord
         else:
             return self.inner_map, self.inner_map_level, self.inner_coord
 
-    def get_current_transport_info(self):
+    def get_current_transport_info(self) -> Tuple[int, int]:
         if self.transport_mode == 0:
             direction = 0 # no one cares.
         elif self.transport_mode < 3:
@@ -53,7 +53,7 @@ class PlayerState:
 
         return self.transport_mode, direction
 
-    def _can_traverse(self, target: Coord):
+    def _can_traverse(self, target: Coord) -> bool:
         transport_mode = get_transport_modes()[self.transport_mode]
         current_map, current_level, _ = self.get_current_position()
         target_tile_id = current_map.get_tile_id(current_level, target.x, target.y)
@@ -70,7 +70,7 @@ class PlayerState:
     def _on_changing_map(self) -> None:
         self.world_state.clear_interactables()
 
-    def _move_to_inner_map(self, u5map: U5Map) -> Self:
+    def _move_to_inner_map(self, u5map: U5Map) -> InteractionResult:
         self.inner_map = u5map
         self.inner_map_level = u5map.location_metadata.default_level
         self.inner_coord = Coord(
@@ -80,7 +80,7 @@ class PlayerState:
         self._on_changing_map()
         return InteractionResult.ok(f"Entered {u5map.name}")
 
-    def _return_to_outer_map(self) -> Self:
+    def _return_to_outer_map(self) -> InteractionResult:
         msg = f"Exited {self.inner_map.name}"
 
         self.inner_map = None
