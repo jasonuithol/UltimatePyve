@@ -1,7 +1,7 @@
 # file: magic.py
 from enum import Enum
 
-from custom_decorators import auto_init, immutable
+from dark_libraries.custom_decorators import auto_init, immutable
 
 # spell target types.
 class SpellTargetType(Enum):

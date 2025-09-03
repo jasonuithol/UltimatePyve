@@ -1,9 +1,9 @@
 # file: underworld.py
 
 from pathlib import Path
-from u5map import U5Map
+from navigation.u5map import U5Map
 from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH
-from dark_math import Size
+from dark_libraries.dark_math import Size
 
 # === CONFIG ===
 UNDER_DAT_PATH = r".\u5\UNDER.DAT"

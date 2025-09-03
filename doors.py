@@ -1,13 +1,14 @@
 # file: doors.py
 from typing import Dict
 import random
-from dark_math import Coord
-from loaders.tileset import load_tiles16_raw, TILES16_PATH
-from magic import S_MAGIC_UNLOCK
-from sprite import Sprite
-from usable_items import UsableItem
 
-from custom_decorators import immutable
+from dark_libraries.dark_math import Coord
+from dark_libraries.custom_decorators import immutable
+from loaders.tileset import load_tiles16_raw, TILES16_PATH
+
+from magic import S_MAGIC_UNLOCK
+from animation.sprite import Sprite
+from usable_items import UsableItem
 from interactable import Interactable, InteractableFactory, InteractionResult, R_KEYBROKE, R_LOCKED, R_LOUD_SUCCESS, R_NOTHING_THERE, R_QUIET_SUCCESS
 
 # Tile types.

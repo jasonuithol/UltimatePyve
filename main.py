@@ -3,10 +3,10 @@ import pygame
 import doors
 
 from interactable import InteractionResult
-from sprite import Sprite, create_player
+from animation.sprite import Sprite, create_player
 from display_engine import DisplayEngine
-from player_state import PlayerState
-from dark_math import Coord, Vector2
+from navigation.player_state import PlayerState
+from dark_libraries.dark_math import Coord, Vector2
 
 from loaders.overworld import load_britannia
 from world_state import WorldState

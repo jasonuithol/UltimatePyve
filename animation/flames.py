@@ -1,6 +1,6 @@
 # file: flames.py
 from typing import List, Optional, Dict, Iterator
-from sprite import Sprite
+from animation.sprite import Sprite
 from loaders.tileset import Tile, TILE_SIZE
 import pygame
 

@@ -1,8 +1,8 @@
 # file: interactable.py
 from typing import Protocol
-from custom_decorators import immutable
-from dark_math import Coord
-from sprite import Sprite
+from dark_libraries.custom_decorators import immutable
+from dark_libraries.dark_math import Coord
+from animation.sprite import Sprite
 
 # Action results
 R_QUIET_SUCCESS = ""

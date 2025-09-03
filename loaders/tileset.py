@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Optional
 from dataclasses import dataclass, field
 
-from dark_math import Coord
+from dark_libraries.dark_math import Coord
 
 TILES16_PATH = r".\u5\TILES.16"
 TILE_SIZE = 16

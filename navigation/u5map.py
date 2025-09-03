@@ -1,7 +1,7 @@
 # file: u5map.py
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
-from dark_math import Coord, Size
+from dark_libraries.dark_math import Coord, Size
 
 @dataclass
 class LocationMetadata:

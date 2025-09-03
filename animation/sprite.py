@@ -1,9 +1,8 @@
-from typing import Dict, List, Optional, Self
-from loaders.tileset import load_tiles16_raw, TILES16_PATH, Tile
-from dark_math import Coord
-from terrain import get_transport_modes
-import pygame
 from copy import copy
+from typing import Dict, List, Optional, Self
+
+from dark_libraries.dark_math import Coord
+from loaders.tileset import load_tiles16_raw, TILES16_PATH, Tile
 
 DEFAULT_FRAME_TIME_SECONDS = 0.5
 
@@ -41,7 +40,7 @@ class Sprite:
 
 # --- Factory function for the Avatar sprites ---
 def create_player(transport_mode: int, direction: int) -> Sprite:
-    transport_name = get_transport_modes()[transport_mode]
+    transport_name = ["walk","horse","carpet","skiff","ship","sail"][transport_mode]
     func = globals()[f"create_player_{transport_name}"]
     return func(direction)
 

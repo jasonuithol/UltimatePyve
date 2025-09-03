@@ -1,5 +1,5 @@
 from typing import Dict, Optional
-from dark_math import Coord
+from dark_libraries.dark_math import Coord
 from interactable import Interactable, InteractableFactory
 
 class WorldState:

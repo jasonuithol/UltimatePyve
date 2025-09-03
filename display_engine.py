@@ -4,14 +4,14 @@ from typing import Any, Protocol, Tuple, List, Optional, Dict
 from dataclasses import dataclass, field
 from collections import deque
 
-import flames
+import animation.flames as flames
 from interactable import Interactable
-import sprite
+import animation.sprite as sprite
 import doors
-from u5map import U5Map
+from navigation.u5map import U5Map
 
 from loaders.tileset import ega_palette, TILE_ID_GRASS, Tile, load_tiles16_raw, TILES16_PATH
-from dark_math import Coord, Size
+from dark_libraries.dark_math import Coord, Size
 from world_state import WorldState
 
 class EngineProtocol(Protocol):

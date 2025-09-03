@@ -1,12 +1,12 @@
 # file: player_state.py
 from dataclasses import dataclass
-from typing import Optional, Self, Tuple
+from typing import Optional, Tuple
 
-from interactable import Interactable, InteractionResult
-from u5map import U5Map
-from dark_math import Coord, Vector2
+from interactable import InteractionResult
+from navigation.u5map import U5Map
+from dark_libraries.dark_math import Coord, Vector2
 from terrain import get_transport_modes, can_traverse
-from map_transitions import get_entry_trigger
+from navigation.map_transitions import get_entry_trigger
 from world_state import WorldState
 
 from loaders.location import load_location_map
