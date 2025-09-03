@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import Optional, Self
 
-from interactable import Interactable
+from interactable import Interactable, InteractionResult
 from u5map import U5Map
 from dark_math import Coord, Vector2
 from terrain import get_transport_modes, can_traverse
@@ -78,20 +78,22 @@ class PlayerState:
             (u5map.size_in_tiles.h - 2)
         )
         self._on_changing_map()
-        return self
+        return InteractionResult.ok(f"Entered {u5map.name}")
 
     def _return_to_outer_map(self) -> Self:
+        msg = f"Exited {self.inner_map.name}"
+
         self.inner_map = None
         self.inner_map_level = None
         self.inner_coord = None
         self._on_changing_map()
-        return self
+        return InteractionResult.ok(msg)
 
     #
     # Player driven State transitions
     #
 
-    def move(self, value: Vector2) -> Self:
+    def move(self, value: Vector2) -> InteractionResult:
 
         #
         # Check map transitions
@@ -104,7 +106,7 @@ class PlayerState:
             # Check traversability before transitions.
             # A ship cannot enter a town, for example, so we must forbid it here.
             if not self._can_traverse(target):
-                return None
+                return InteractionResult.error("Blocked")
             
             # Check map transitions
             trigger_index = get_entry_trigger(target)
@@ -122,7 +124,7 @@ class PlayerState:
                 return self._return_to_outer_map()
 
             if not self._can_traverse(target):
-                return None
+                return InteractionResult.error("Blocked")
             
             self.inner_coord = target
 
@@ -141,27 +143,27 @@ class PlayerState:
             # north
             self.last_nesw_dir = 0
 
-        return self
+        return InteractionResult.ok()
 
     #
     # Testing only
     #
 
-    def switch_outer_map(self) -> Self:
+    def switch_outer_map(self) -> InteractionResult:
         if self.outer_map.name == "BRITANNIA":
             self.outer_map = load_underworld()
         else:
             self.outer_map = load_britannia()
-        return self
+        return InteractionResult.ok()
     
-    def rotate_transport(self) -> Self:
+    def rotate_transport(self) -> InteractionResult:
 
         self.transport_mode = (self.transport_mode + 1) % len(get_transport_modes())
 
         # forbid turning into a ship on land, for example.
         _, _, target = self.get_current_position()
         if not self._can_traverse(target):
-            return None
+            return InteractionResult.error()
         
-        return self
+        return InteractionResult.ok()
 

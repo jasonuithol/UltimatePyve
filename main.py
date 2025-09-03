@@ -2,6 +2,7 @@
 import pygame
 import doors
 
+from interactable import InteractionResult
 from sprite import Sprite, create_player
 from display_engine import DisplayEngine
 from player_state import PlayerState
@@ -10,7 +11,7 @@ from dark_math import Coord, Vector2
 from loaders.overworld import load_britannia
 from world_state import WorldState
 
-def process_event(player_state: PlayerState, event: pygame.event.Event) ->PlayerState:
+def process_event(player_state: PlayerState, event: pygame.event.Event) -> InteractionResult:
     if event.key == pygame.K_TAB:
         return player_state.switch_outer_map()
     elif event.key == pygame.K_BACKQUOTE:
@@ -25,7 +26,7 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) ->Player
         return player_state.move(Vector2(0, +1))
     
     # Nothing changed
-    return player_state
+    return InteractionResult.error("wtf ?")
 
 def main() -> None:
 
@@ -56,11 +57,15 @@ def main() -> None:
                 if event.key == pygame.K_ESCAPE:
                     running = False
                 else:
-                    new_state = process_event(player_state, event)
-                    if new_state is None:
-                        print("Action was forbidden !")
+                    interaction_result = process_event(player_state, event)
+                    if interaction_result is None:
+                        print("wtf ?")
                     else:
-                        player_state = new_state
+                        if interaction_result.message and len(interaction_result.message):
+                            if interaction_result.success == False:
+                                print(f"{interaction_result.message} :(")
+                            else:
+                                print(f"{interaction_result.message} :)")
 
         #
         # all events processed.
