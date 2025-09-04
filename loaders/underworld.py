@@ -13,10 +13,13 @@ GRID_DIM   = 16       # 16×16 chunks
 CHUNK_DIM  = 16       # 16×16 tiles per chunk
 MAP_DIM    = GRID_DIM * CHUNK_DIM  # 256×256 tiles
 
-_map: U5Map = None
+class UnderWorld(U5Map):
+    pass
+
+_map: UnderWorld = None
 
 # --- Load UNDER.DAT directly ---
-def load_underworld() -> U5Map:
+def load_underworld() -> UnderWorld:
     global _map
     if _map is None:
         raw = Path(UNDER_DAT_PATH).read_bytes()
@@ -31,7 +34,7 @@ def load_underworld() -> U5Map:
                     src = cy * CHUNK_DIM
                     tiles[dst:dst+CHUNK_DIM] = chunk[src:src+CHUNK_DIM]
         tileset = load_tileset()
-        _map = U5Map("UNDERWORLD", Size(MAP_DIM, MAP_DIM), tileset, [tiles], CHUNK_DIM, GRID_DIM, None)
+        _map = UnderWorld("UNDERWORLD", Size(MAP_DIM, MAP_DIM), tileset, [tiles], CHUNK_DIM, GRID_DIM, None)
     return _map
 
 if __name__ == "__main__":

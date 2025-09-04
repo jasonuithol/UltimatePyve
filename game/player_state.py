@@ -5,11 +5,11 @@ from typing import Optional, Tuple
 from game.interactable import InteractionResult
 from game.u5map import U5Map
 from dark_libraries.dark_math import Coord, Vector2
+from loaders.location import LocationLoader
 from terrain import get_transport_modes, can_traverse
 from game.map_transitions import get_entry_trigger
 from game.world_state import WorldState
 
-from loaders.location import load_location_map
 from loaders.overworld import load_britannia
 from loaders.underworld import load_underworld
     
@@ -20,6 +20,7 @@ from loaders.underworld import load_underworld
 class PlayerState:
 
     world_state: WorldState
+    location_loader: LocationLoader
 
     # either "britannia" or "underworld"
     outer_map: U5Map          
@@ -111,7 +112,7 @@ class PlayerState:
             # Check map transitions
             trigger_index = get_entry_trigger(target)
             if not trigger_index is None:
-                inner_map = load_location_map(trigger_index)
+                inner_map = self.location_loader.load_location_map(trigger_index)
                 # always succeeds.
                 return self._move_to_inner_map(inner_map)
 

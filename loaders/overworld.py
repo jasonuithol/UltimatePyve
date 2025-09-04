@@ -16,9 +16,12 @@ HEADER_OFF  = 0x3886
 HEADER_LEN  = GRID_DIM * GRID_DIM
 VOID_MARKER = 0xFF
 
-_map: U5Map = None
+class Britannia(U5Map):
+    pass
 
-def load_britannia() -> U5Map:
+_map: Britannia = None
+
+def load_britannia() -> Britannia:
     global _map
     if _map is None:
         ovl = DataOVL.load()
@@ -36,7 +39,7 @@ def load_britannia() -> U5Map:
                     src = cy * CHUNK_DIM
                     tiles[dst:dst+CHUNK_DIM] = chunk[src:src+CHUNK_DIM]
         tileset = load_tileset()
-        _map = U5Map("BRITANNIA", Size(MAP_DIM, MAP_DIM), tileset, [tiles], CHUNK_DIM, GRID_DIM, None)
+        _map = Britannia("BRITANNIA", Size(MAP_DIM, MAP_DIM), tileset, [tiles], CHUNK_DIM, GRID_DIM, None)
     return _map
 
 if __name__ == "__main__":

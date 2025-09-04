@@ -1,5 +1,6 @@
 # file: viewer.py
 import pygame
+from dark_libraries.service_provider import ServiceProvider
 import game.doors as doors
 
 from game.interactable import InteractionResult
@@ -8,8 +9,10 @@ from display.display_engine import DisplayEngine
 from game.player_state import PlayerState
 from dark_libraries.dark_math import Coord, Vector2
 
-from loaders.overworld import load_britannia
-from loaders.tileset import load_tileset
+from loaders import service_composition
+from loaders.location import LocationLoader
+from loaders.overworld import Britannia #, load_britannia
+from loaders.tileset import TileSet #, load_tileset
 from game.world_state import WorldState
 
 def process_event(player_state: PlayerState, event: pygame.event.Event) -> InteractionResult:
@@ -31,20 +34,29 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) -> Inter
 
 def main() -> None:
 
-    tileset = load_tileset()
-    world_state = WorldState()
+    provider = ServiceProvider(allow_auto=True)
+    service_composition.compose(provider)
+
+    tileset: TileSet = provider.get(TileSet)
+#    world_state = WorldState()
+    world_state: WorldState = provider.get(WorldState)
+
     for tile_id, door_factory in doors.build_all_door_types().items():
         world_state.register_interactable_factory(tile_id, door_factory)
 
-    display_engine = DisplayEngine(world_state=world_state, tileset=tileset)
+#    display_engine = DisplayEngine(world_state=world_state, tileset=tileset)
+    display_engine: DisplayEngine = provider.get(DisplayEngine)
 
     player_state = PlayerState(
         world_state=world_state,
-        outer_map=load_britannia(), 
+        location_loader=provider.get(LocationLoader),
+#        outer_map=load_britannia(), 
+        outer_map=provider.get(Britannia),
         outer_coord=Coord(56, 72)    # starting tile in world coords, just a bit SE of Iolo's Hut.
     )
 
-    avatar_sprite_factory = AvatarSpriteFactory(tileset=tileset)
+#    avatar_sprite_factory = AvatarSpriteFactory(tileset=tileset)
+    avatar_sprite_factory: AvatarSpriteFactory = provider.get(AvatarSpriteFactory)
 
     player_sprite: Sprite = avatar_sprite_factory.create_player(transport_mode=0, direction=0)
     player_sprite.set_position(player_state.outer_coord)  
