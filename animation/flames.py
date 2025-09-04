@@ -1,7 +1,7 @@
 # file: flames.py
-from typing import List, Optional, Dict, Iterator
+from typing import Optional, Dict, Iterator
 from animation.sprite import Sprite
-from loaders.tileset import Tile, TILE_SIZE
+from loaders.tileset import Tile
 import pygame
 
 import random
@@ -43,11 +43,11 @@ def get_flame_overlay_index(tile_index: int) -> Optional[int]:
 def _build_frames(original_tile_id: int) -> Iterator[Tile]:
     assert has_flame_animation(original_tile_id), f"Tile id={original_tile_id} is not flame-animatable."
 
-    from loaders.tileset import load_tiles16_raw, TILES16_PATH, Tile, ega_palette
-    tiles: List[Tile] = load_tiles16_raw(TILES16_PATH)
+    from loaders.tileset import load_tileset
+    tileset = load_tileset()
 
-    original_tile: Tile = tiles[original_tile_id]
-    overlay_tile: Tile = tiles[get_flame_overlay_index(original_tile_id)]
+    original_tile: Tile = tileset.tiles[original_tile_id]
+    overlay_tile: Tile = tileset.tiles[get_flame_overlay_index(original_tile_id)]
 
     cycle_length = 23       # arbitrary prime number
 
@@ -67,7 +67,7 @@ def _build_frames(original_tile_id: int) -> Iterator[Tile]:
                         # leave original alone
                         pass
 
-                composed_surface.set_at((x, y), ega_palette[composed_value])
+                composed_surface.set_at((x, y), tileset.palette[composed_value])
 
         composed_tile = Tile(None)
         composed_tile.set_surface(composed_surface)
@@ -120,8 +120,8 @@ def build_all_sprites() -> Dict[int, Sprite]:
 #
 if __name__ == "__main__":
 
-    from loaders.tileset import load_tiles16_raw, TILES16_PATH, TileData, TILE_SIZE
-    tiles: List[TileData] = load_tiles16_raw(TILES16_PATH)
+    from loaders.tileset import load_tileset
+    tileset = load_tileset()
 
     selection_index = 0
     current_tile_id = _flame_animatable[selection_index]
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     SCALE = 20
     FPS = 60
 
-    screen = pygame.display.set_mode((TILE_SIZE * SCALE, TILE_SIZE * SCALE))
+    screen = pygame.display.set_mode((tileset.tile_size * SCALE, tileset.tile_size * SCALE))
     clock = pygame.time.Clock()
 
     running = True
@@ -175,7 +175,7 @@ if __name__ == "__main__":
         current_sprite.set_frame_time(frame_time, 0.0)
         current_frame = current_sprite.get_current_frame_tile(pygame.time.get_ticks())
 
-        scaled = pygame.transform.scale(current_frame.surface, (TILE_SIZE * SCALE, TILE_SIZE * SCALE))
+        scaled = pygame.transform.scale(current_frame.surface, (tileset.tile_size * SCALE, tileset.tile_size * SCALE))
         screen.blit(scaled, (0, 0))
         pygame.display.flip()
 

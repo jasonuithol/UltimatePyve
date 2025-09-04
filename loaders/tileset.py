@@ -3,20 +3,21 @@ import pygame
 import base64
 import struct
 from pathlib import Path
-from typing import List, Optional
-from dataclasses import dataclass, field
+from typing import List, Optional, Tuple
+from dataclasses import dataclass
 
 from dark_libraries.dark_math import Coord
 
-TILES16_PATH = r".\u5\TILES.16"
-TILE_SIZE = 16
-
-TILE_ID_GRASS = 5
-
+_TILES16_PATH = r".\u5\TILES.16"
 _tileset16_cache = {}
 
+TILE_SIZE = 16
+TILE_ID_GRASS = 5
+
+EgaPalette = List[Tuple[int,int,int]]
+
 # EGA palette (RGB tuples)
-ega_palette = [
+_ega_palette: EgaPalette = [
     (0, 0, 0),         # 0000: Black
     (0, 0, 170),       # 0001: Blue
     (0, 170, 0),       # 0010: Green
@@ -116,7 +117,15 @@ class Tile:
             for px in range(TILE_SIZE):
                 # Get the pixel color from the tile
                 u5_color = self.pixels[py][px]
-                rgb_color = ega_palette[u5_color]
+                
+                #
+                # TODO: This should be part of the contructor.  This then means no need to pass ega_palette to ViewPort
+                #       and also allows animation of the same tile under different palettes (e.g spells, burning, taking damage, poisoned)
+                # 
+                # TODO: Also keep in mind that some effects might be global e.g. lightning, darkness or coord based e.g. spells
+                #       and that palette would need to be passed in dynamically during an event and would be scoped differently.
+                rgb_color = _ega_palette[u5_color]
+                
                 # Set the pixel color on the rendered surface
                 surface_pixels[(pixel_offset.x + px, pixel_offset.y + py)] = surface_pixels.surface.map_rgb(rgb_color)
 
@@ -137,12 +146,29 @@ class Tile:
         target_rectangle.topleft = tuple(pixel_offset)
         target_surface.blit(source_surface, target_rectangle)
 
+@dataclass
+class TileSet:
+    tiles: List[Tile]
+    palette: EgaPalette
+    tile_size: int
 
-def load_tiles16_raw(path: str) -> List[Tile]:
+_tileset: TileSet = None
+def load_tileset() -> TileSet:
+    global _tileset
+    if _tileset is None:
+        _tileset = TileSet(
+            tiles = load_tiles16_raw(),
+            palette = _ega_palette,
+            tile_size = TILE_SIZE
+        )
+    return _tileset
+
+def load_tiles16_raw(path: str=_TILES16_PATH) -> List[Tile]:
     """
     Load TILES.16 and return a list of tiles, each tile being a 2D list
     of palette indices (0–15). No Pygame surfaces are created.
     """
+    global _tileset16_cache
     if path not in _tileset16_cache:
         raw = Path(path).read_bytes()
         (uncomp_len,) = struct.unpack("<I", raw[:4])
@@ -163,7 +189,7 @@ if __name__ == "__main__":
 
     pygame.init()
     pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
-    tileset_raw: List[Tile] = load_tiles16_raw(TILES16_PATH)
+    tileset_raw: List[Tile] = load_tiles16_raw()
 
     TILE_SCALE = 3
     GRID_COLS = 40

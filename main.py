@@ -3,12 +3,13 @@ import pygame
 import game.doors as doors
 
 from game.interactable import InteractionResult
-from animation.sprite import Sprite, create_player
+from animation.sprite import Sprite, AvatarSpriteFactory
 from display.display_engine import DisplayEngine
 from game.player_state import PlayerState
 from dark_libraries.dark_math import Coord, Vector2
 
 from loaders.overworld import load_britannia
+from loaders.tileset import load_tileset
 from game.world_state import WorldState
 
 def process_event(player_state: PlayerState, event: pygame.event.Event) -> InteractionResult:
@@ -30,11 +31,12 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) -> Inter
 
 def main() -> None:
 
+    tileset = load_tileset()
     world_state = WorldState()
     for tile_id, door_factory in doors.build_all_door_types().items():
         world_state.register_interactable_factory(tile_id, door_factory)
 
-    display_engine = DisplayEngine(world_state=world_state)
+    display_engine = DisplayEngine(world_state=world_state, tileset=tileset)
 
     player_state = PlayerState(
         world_state=world_state,
@@ -42,7 +44,9 @@ def main() -> None:
         outer_coord=Coord(56, 72)    # starting tile in world coords, just a bit SE of Iolo's Hut.
     )
 
-    player_sprite: Sprite = create_player(transport_mode=0, direction=0)
+    avatar_sprite_factory = AvatarSpriteFactory(tileset=tileset)
+
+    player_sprite: Sprite = avatar_sprite_factory.create_player(transport_mode=0, direction=0)
     player_sprite.set_position(player_state.outer_coord)  
 
     display_engine.register_sprite(player_sprite)
@@ -77,7 +81,7 @@ def main() -> None:
 
         # Player sprite
         transport_mode, direction = player_state.get_current_transport_info()
-        player_sprite = create_player(transport_mode, direction)
+        player_sprite = avatar_sprite_factory.create_player(transport_mode, direction)
         player_sprite.set_position(new_coords)
         display_engine.register_sprite(player_sprite)
 

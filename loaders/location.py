@@ -7,7 +7,7 @@
 from typing import List
 from pathlib import Path
 from game.u5map import U5Map, LocationMetadata
-from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH, TILE_SIZE
+from loaders.tileset import load_tileset
 from loaders.data import DataOVL
 from dark_libraries.dark_math import Coord, Size
 
@@ -17,8 +17,7 @@ CHUNK_DIM = 16
 GRID_DIM = LOCATION_WIDTH // CHUNK_DIM
 
 # Load shared tileset/palette once (raw pixel data, no Surfaces)
-_TILESET_RAW = load_tiles16_raw(TILES16_PATH)
-_PALETTE = ega_palette
+_TILESET = load_tileset()
 
 dataOvl = DataOVL.load()
 _location_names = [p.decode('ascii') for p in dataOvl.city_names_caps.split(b'\x00') if p]
@@ -169,8 +168,7 @@ def load_location_map(trigger_index: int) -> U5Map:
     return U5Map(
         name=meta.name,
         size_in_tiles=Size(LOCATION_WIDTH,LOCATION_HEIGHT),
-        tileset=_TILESET_RAW,  # raw pixel data
-        palette=_PALETTE,
+        tileset=_TILESET,  # raw pixel data
         levels=levels,
         chunk_dim=CHUNK_DIM,
         grid_dim=GRID_DIM,
@@ -181,12 +179,12 @@ def render_location_map_to_disk(u5map: U5Map, level: int) -> U5Map:
     import pygame
     from loaders.tileset import Tile
     pygame.init()
-    surf = pygame.Surface(tuple(u5map.size_in_tiles.scale(TILE_SIZE)))
+    surf = pygame.Surface(tuple(u5map.size_in_tiles.scale(_TILESET.tile_size)))
     for x in range(u5map.size_in_tiles.x):
         for y in range(u5map.size_in_tiles.y):
             tile_id = u5map.get_tile_id(level, x, y)
-            tile: Tile = _TILESET_RAW[tile_id]
-            tile.blit_to_surface(surf, Coord(x * TILE_SIZE, y * TILE_SIZE))
+            tile: Tile = _TILESET.tiles[tile_id]
+            tile.blit_to_surface(surf, Coord(x * _TILESET.tile_size, y * _TILESET.tile_size))
     pygame.image.save(
         surf,
         f"{u5map.name}_{level}.png"

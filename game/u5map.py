@@ -1,9 +1,11 @@
 # file: u5map.py
-from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Optional
+from dark_libraries.custom_decorators import auto_init, immutable
 from dark_libraries.dark_math import Coord, Size
+from loaders.tileset import TileSet
 
-@dataclass
+@auto_init
+@immutable
 class LocationMetadata:
     name: str                   # name of the location
     name_index: int             # which name the location takes.
@@ -14,15 +16,15 @@ class LocationMetadata:
     default_level: int          # which level the player spawns in when entering the location.
     trigger_index: int          # the index the entry triggers for this location are at.
 
-@dataclass
+@auto_init
+@immutable
 class U5Map:
     name: str
     size_in_tiles: Size
-    tileset: List[List[List[int]]]        # raw tile pixel data (palette indices)
-    palette: List[Tuple[int, int, int]]   # EGA palette
+    tileset: TileSet                      # tile pixel data and metadata
     levels: List[bytearray]               # width*height tile IDs per level
     chunk_dim: int                        # 16 for U5
-    grid_dim: int                         # width/chunk_dim
+    grid_dim: int                         # size_in_tiles.w/chunk_dim
     location_metadata: Optional[LocationMetadata]   # if this is a sub-location of the world e.g. a town, keep, dwelling, castle.
 
     def is_in_bounds(self, x: int, y: int) -> bool:

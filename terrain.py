@@ -1,6 +1,5 @@
 # file: terrain.py
 from dataclasses import dataclass
-from loaders.tileset import TILES16_PATH, load_tiles16_raw
 
 @dataclass
 class Terrain:

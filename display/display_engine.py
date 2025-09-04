@@ -2,7 +2,6 @@ from display.engine_protocol import EngineProtocol
 from display.main_display import MainDisplay
 from display.view_port import ViewPort
 from game.world_state import WorldState
-from loaders.tileset import ega_palette
 import pygame
 import animation.sprite as sprite
 import animation.flames as flames
@@ -10,13 +9,15 @@ import animation.flames as flames
 from dark_libraries.dark_math import Coord
 from typing import Dict, Optional
 from game.u5map import U5Map
+from loaders.tileset import EgaPalette, TileSet
 
 class DisplayEngine(EngineProtocol):
 
-    def __init__(self, world_state: WorldState):
+    def __init__(self, world_state: WorldState, tileset: TileSet):
 
         # Create and reference important components.
-        self.view_port = ViewPort(engine=self, palette=ega_palette)
+        self.tileset = tileset
+        self.view_port = ViewPort(engine=self, palette=tileset.palette)
         self.main_display = MainDisplay(view_port=self.view_port)
         self.world_state = world_state
 
@@ -42,7 +43,8 @@ class DisplayEngine(EngineProtocol):
             self.view_port.register_animated_tile(tile_id, sprite_master_copy)
 
         # Other animated tiles
-        for tile_id, sprite_master_copy in sprite.build_animated_tile_sprites().items():
+        animated_sprite_factory = sprite.AnimatedTileFactory(tileset=self.tileset)
+        for tile_id, sprite_master_copy in animated_sprite_factory.build_animated_tile_sprites().items():
             self.view_port.register_animated_tile(tile_id, sprite_master_copy)
 
     def register_sprite(self, sprite: sprite.Sprite) -> None:

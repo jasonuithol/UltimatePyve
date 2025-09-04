@@ -4,7 +4,7 @@ import random
 
 from dark_libraries.dark_math import Coord
 from dark_libraries.custom_decorators import immutable
-from loaders.tileset import load_tiles16_raw, TILES16_PATH
+from loaders.tileset import load_tileset, TileSet
 
 from game.magic import S_MAGIC_UNLOCK
 from animation.sprite import Sprite
@@ -30,11 +30,12 @@ L_MAGIC_LOCKED = 2
 
 @immutable
 class DoorType(InteractableFactory):
-    def __init__(self, tile_id: bool, lock_type: int, windowed: bool):
+    def __init__(self, tile_id: bool, lock_type: int, windowed: bool, tileset: TileSet):
         # Set Permanent state
         self.original_tile_id:      int  = tile_id
         self.original_lock_type:    int = lock_type
         self.original_windowed:     bool = windowed
+        self.tileset:               TileSet = tileset
 
     def create_interactable(self, coord: Coord) -> 'DoorInstance':
         return DoorInstance(door_type=self, coord=coord)
@@ -115,7 +116,7 @@ class DoorInstance(Interactable):
 
     # Interactable implementation: Start
     def create_sprite(self) -> Sprite:
-        frame = load_tiles16_raw(TILES16_PATH)[self.tile_id]
+        frame = self.door_type.tileset.tiles[self.tile_id]
         sprite = Sprite(
             frames=[frame]
         )
@@ -152,19 +153,20 @@ _door_types: Dict[int, DoorType] = None
 
 def build_all_door_types() -> Dict[int, DoorType]:
     global _door_types
+    tileset = load_tileset()
     if _door_types is None:
         _door_types = {}
         for door in [
             #                               lock_type       windowed
             #                               --------------  --------
-            DoorType(D_MAGIC_NORMAL,        L_MAGIC_LOCKED, False),
-            DoorType(D_MAGIC_WINDOWED,      L_MAGIC_LOCKED, True ),
+            DoorType(D_MAGIC_NORMAL,        L_MAGIC_LOCKED, False,    tileset),
+            DoorType(D_MAGIC_WINDOWED,      L_MAGIC_LOCKED, True ,    tileset),
 
-            DoorType(D_UNLOCKED_NORMAL,     L_UNLOCKED,     False),
-            DoorType(D_UNLOCKED_WINDOWED,   L_UNLOCKED,     True ),
+            DoorType(D_UNLOCKED_NORMAL,     L_UNLOCKED,     False,    tileset),
+            DoorType(D_UNLOCKED_WINDOWED,   L_UNLOCKED,     True ,    tileset),
 
-            DoorType(D_LOCKED_NORMAL,       L_KEY_LOCKED,   False),
-            DoorType(D_LOCKED_WINDOWED,     L_KEY_LOCKED,   True ),
+            DoorType(D_LOCKED_NORMAL,       L_KEY_LOCKED,   False,    tileset),
+            DoorType(D_LOCKED_WINDOWED,     L_KEY_LOCKED,   True ,    tileset),
         ]:
             _door_types[door.original_tile_id] = door
 

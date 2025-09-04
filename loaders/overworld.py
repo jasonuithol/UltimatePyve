@@ -2,7 +2,7 @@ from pathlib import Path
 from game.u5map import U5Map
 from dark_libraries.dark_math import Size
 
-from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH
+from loaders.tileset import load_tileset
 from loaders.data import DataOVL
 
 # === CONFIG ===
@@ -35,8 +35,8 @@ def load_britannia() -> U5Map:
                     dst = (gy*CHUNK_DIM + cy) * MAP_DIM + gx*CHUNK_DIM
                     src = cy * CHUNK_DIM
                     tiles[dst:dst+CHUNK_DIM] = chunk[src:src+CHUNK_DIM]
-        tileset = load_tiles16_raw(TILES16_PATH)
-        _map = U5Map("BRITANNIA", Size(MAP_DIM, MAP_DIM), tileset, ega_palette, [tiles], CHUNK_DIM, GRID_DIM, None)
+        tileset = load_tileset()
+        _map = U5Map("BRITANNIA", Size(MAP_DIM, MAP_DIM), tileset, [tiles], CHUNK_DIM, GRID_DIM, None)
     return _map
 
 if __name__ == "__main__":

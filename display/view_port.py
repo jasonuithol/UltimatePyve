@@ -73,8 +73,8 @@ class ViewPort:
                     self.engine.register_sprite(interactable.create_sprite())
 
                 # Don't try to render a non-existant tile id.
-                if 0 <= tid < len(u5map.tileset):
-                    tile: Tile = u5map.tileset[tid]
+                if 0 <= tid < len(u5map.tileset.tiles):
+                    tile: Tile = u5map.tileset.tiles[tid]
                     tile.blit_to_surface(
                         viewport_surface, 
                         Coord(x * self.tile_size_pixels, y * self.tile_size_pixels)
