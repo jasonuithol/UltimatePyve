@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 from dark_libraries.dark_math import Coord
-from interactable import Interactable, InteractableFactory
+from game.interactable import Interactable, InteractableFactory
 
 class WorldState:
     def __init__(self):

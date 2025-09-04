@@ -1,15 +1,15 @@
 # file: viewer.py
 import pygame
-import doors
+import game.doors as doors
 
-from interactable import InteractionResult
+from game.interactable import InteractionResult
 from animation.sprite import Sprite, create_player
-from display_engine import DisplayEngine
-from navigation.player_state import PlayerState
+from display.display_engine import DisplayEngine
+from game.player_state import PlayerState
 from dark_libraries.dark_math import Coord, Vector2
 
 from loaders.overworld import load_britannia
-from world_state import WorldState
+from game.world_state import WorldState
 
 def process_event(player_state: PlayerState, event: pygame.event.Event) -> InteractionResult:
     if event.key == pygame.K_TAB:

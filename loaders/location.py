@@ -6,7 +6,7 @@
 
 from typing import List
 from pathlib import Path
-from navigation.u5map import U5Map, LocationMetadata
+from game.u5map import U5Map, LocationMetadata
 from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH, TILE_SIZE
 from loaders.data import DataOVL
 from dark_libraries.dark_math import Coord, Size

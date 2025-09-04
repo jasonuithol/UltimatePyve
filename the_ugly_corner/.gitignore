@@ -2,3 +2,8 @@ u5/
 *.png
 __pycache__/
 .vscode/
+
+dependencies.svg
+dependencies.txt
+dependencies.dot
+dependencies-*.svg

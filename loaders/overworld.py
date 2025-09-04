@@ -1,5 +1,5 @@
 from pathlib import Path
-from navigation.u5map import U5Map
+from game.u5map import U5Map
 from dark_libraries.dark_math import Size
 
 from loaders.tileset import load_tiles16_raw, ega_palette, TILES16_PATH

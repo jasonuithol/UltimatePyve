@@ -2,12 +2,12 @@
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
-from interactable import InteractionResult
-from navigation.u5map import U5Map
+from game.interactable import InteractionResult
+from game.u5map import U5Map
 from dark_libraries.dark_math import Coord, Vector2
 from terrain import get_transport_modes, can_traverse
-from navigation.map_transitions import get_entry_trigger
-from world_state import WorldState
+from game.map_transitions import get_entry_trigger
+from game.world_state import WorldState
 
 from loaders.location import load_location_map
 from loaders.overworld import load_britannia
