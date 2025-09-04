@@ -1,4 +1,4 @@
-# file: tileset.py
+# file: loaders/tileset.py
 import pygame
 import base64
 import struct

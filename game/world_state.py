@@ -1,3 +1,4 @@
+# file: game/world_state.py
 from typing import Dict, Optional
 from dark_libraries.dark_math import Coord
 from game.interactable import Interactable, InteractableFactory

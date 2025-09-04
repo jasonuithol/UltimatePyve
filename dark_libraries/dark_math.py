@@ -1,4 +1,4 @@
-# file: dark_math.py
+# file: dark_libraries/dark_math.py
 
 from typing import Self
 from dark_libraries.custom_decorators import immutable, auto_init

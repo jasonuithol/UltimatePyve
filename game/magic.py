@@ -1,4 +1,4 @@
-# file: magic.py
+# file: game/magic.py
 from enum import Enum
 
 from dark_libraries.custom_decorators import auto_init, immutable

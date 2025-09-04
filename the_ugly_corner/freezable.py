@@ -1,4 +1,4 @@
-# file: freezable.py
+# file: the_ugly_corner/freezable.py
 
 from typing import Generic, TypeVar, Optional
 

@@ -1,3 +1,4 @@
+# file: animation/sprite.py
 from copy import copy
 from typing import Dict, List, Optional, Self
 

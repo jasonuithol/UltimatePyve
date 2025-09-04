@@ -1,4 +1,4 @@
-# file: flames.py
+# file: animation/flames.py
 from typing import Optional, Dict, Iterator
 from animation.sprite import Sprite
 from loaders.tileset import Tile

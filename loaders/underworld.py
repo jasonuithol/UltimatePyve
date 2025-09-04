@@ -1,4 +1,4 @@
-# file: underworld.py
+# file: loaders/underworld.py
 
 from pathlib import Path
 from game.u5map import U5Map

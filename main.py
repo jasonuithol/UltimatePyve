@@ -1,4 +1,4 @@
-# file: viewer.py
+# file: main.py
 import pygame
 from dark_libraries.service_provider import ServiceProvider
 import game.doors as doors

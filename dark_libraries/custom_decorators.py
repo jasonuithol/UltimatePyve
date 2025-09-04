@@ -1,4 +1,4 @@
-# file: immutable.py
+# file: dark_libraries/custom_decorators.py
 def immutable(cls):
     orig_setattr = cls.__setattr__
     def locked_setattr(self, name, value):

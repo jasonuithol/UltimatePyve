@@ -1,4 +1,4 @@
-# file: doors.py
+# file: game/doors.py
 from typing import Dict
 import random
 

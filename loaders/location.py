@@ -1,4 +1,4 @@
-# file: location.py
+# file: loaders/location.py
 
 #
 # INNER LOCATIONS (i.e. TOWNES KEEPS CASTLES DWELLINGS)   TODO: DUNGEONS

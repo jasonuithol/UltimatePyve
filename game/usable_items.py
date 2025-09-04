@@ -1,4 +1,4 @@
-# file: usable_items.py
+# file: game/usable_items.py
 from enum import Enum
 
 class UsableItem(Enum):

@@ -1,4 +1,4 @@
-# file: interactable.py
+# file: game/interactable.py
 from typing import Protocol
 from dark_libraries.custom_decorators import immutable
 from dark_libraries.dark_math import Coord

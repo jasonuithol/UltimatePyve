@@ -1,3 +1,4 @@
+# file: display/engine_protocol.py
 from typing import Protocol
 
 from animation import sprite

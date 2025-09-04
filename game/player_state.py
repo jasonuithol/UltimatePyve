@@ -1,4 +1,4 @@
-# file: player_state.py
+# file: game/player_state.py
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
