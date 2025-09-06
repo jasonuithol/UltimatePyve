@@ -56,7 +56,7 @@ class ServiceProvider:
         # 2. Skip pre-initialized
         current_val = getattr(instance, name, None)
         if current_val is not None:
-            log(f"[DI] Skipping pre-initialized property: {name} = {current_val!r}")
+            log(f"[DI] Skipping pre-initialized property: {name} =", f"{current_val!r}"[:100])
             return False
 
         # 3. Skip non-resolvable.

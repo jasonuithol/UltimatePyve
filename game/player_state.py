@@ -1,40 +1,52 @@
 # file: game/player_state.py
-from dataclasses import dataclass
 from typing import Optional, Tuple
 
 from dark_libraries.custom_decorators import auto_init
-from game.interactable import InteractionResult
-from game.u5map import U5Map
 from dark_libraries.dark_math import Coord, Vector2
-from loaders.location import LocationLoader
-from terrain import get_transport_modes, can_traverse
+
+from game.interactable import InteractionResult
 from game.map_transitions import get_entry_trigger
+from game.u5map import U5Map
 from game.world_state import WorldState
 
-from loaders.overworld import load_britannia
-from loaders.underworld import load_underworld
+from loaders.location import LocationLoader
+
+from terrain import get_transport_modes, can_traverse
+
+# TODO: Once testing is finished, delete these.
+from loaders.overworld import Britannia, load_britannia
+from loaders.underworld import UnderWorld, load_underworld
     
 #
 # An immutable state.  transitions return a cloned, modified copy of current state
 #
-@auto_init
 class PlayerState:
 
+    # Injectable
     world_state: WorldState
     location_loader: LocationLoader
 
     # either "britannia" or "underworld"
-    outer_map: U5Map          
-    outer_coord: Coord
+    outer_map: U5Map = None          
+    outer_coord: Coord = None
 
     inner_map: Optional[U5Map] = None
-    inner_map_level: int = None
+    inner_map_level: Optional[int] = None
     inner_coord: Optional[Coord] = None
 
     # options: walk, horse, carpet, skiff, ship
-    transport_mode: int = 0 # walk
-    last_east_west: int = 0 # east
-    last_nesw_dir: int = 1 # east
+    transport_mode: int = None
+    last_east_west: int = None
+    last_nesw_dir: int = None
+
+    def set_outer_position(self, u5Map: U5Map, coord: Coord):
+        self.outer_map = u5Map
+        self.outer_coord = coord
+
+    def set_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
+        self.transport_mode = transport_mode
+        self.last_east_west = last_east_west
+        self.last_nesw_dir = last_nesw_dir
 
     def is_in_outer_map(self) -> bool:
         return self.inner_map is None

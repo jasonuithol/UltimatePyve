@@ -1,19 +1,19 @@
 # file: main.py
 import pygame
 from dark_libraries.service_provider import ServiceProvider
-import game.doors as doors
-
-from game.interactable import InteractionResult
-from animation.sprite import Sprite, AvatarSpriteFactory
-from display.display_engine import DisplayEngine
-from game.player_state import PlayerState
 from dark_libraries.dark_math import Coord, Vector2
 
-import service_composition
+from animation.sprite import Sprite, AvatarSpriteFactory
+from display.display_engine import DisplayEngine
+import game.doors as doors
+from game.interactable import InteractionResult
+from game.player_state import PlayerState
+from game.world_state import WorldState
 from loaders.location import LocationLoader
 from loaders.overworld import Britannia #, load_britannia
 from loaders.tileset import TileSet #, load_tileset
-from game.world_state import WorldState
+
+import service_composition
 
 def process_event(player_state: PlayerState, event: pygame.event.Event) -> InteractionResult:
     if event.key == pygame.K_TAB:
@@ -32,76 +32,85 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) -> Inter
     # Nothing changed
     return InteractionResult.error("wtf ?")
 
-def main() -> None:
+class Main:
+
+    # Injectable
+    tileset: TileSet
+    world_state: WorldState
+    player_state: PlayerState
+    display_engine: DisplayEngine
+    avatar_sprite_factory: AvatarSpriteFactory
+
+    def _after_inject(self):
+
+        for tile_id, door_factory in doors.build_all_door_types().items():
+            self.world_state.register_interactable_factory(tile_id, door_factory)
+
+        self.player_state.set_outer_position(
+            u5Map = provider.resolve(Britannia),
+            coord = Coord(56, 72) # starting tile in world coords, just a bit SE of Iolo's Hut.
+        )
+
+        self.player_state.set_transport_state(
+            transport_mode = 0,  # walk
+            last_east_west = 0,  # east
+            last_nesw_dir = 1    # east
+        )
+
+        player_sprite: Sprite = self.avatar_sprite_factory.create_player(transport_mode=0, direction=0)
+        player_sprite.set_position(self.player_state.outer_coord)  
+        self.display_engine.register_sprite(player_sprite)
+
+    def run(self) -> None:
+
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                    else:
+                        interaction_result = process_event(self.player_state, event)
+                        if interaction_result is None:
+                            print("wtf ?")
+                        else:
+                            if interaction_result.message and len(interaction_result.message):
+                                if interaction_result.success == False:
+                                    print(f"{interaction_result.message} :(")
+                                else:
+                                    print(f"{interaction_result.message} :)")
+
+            #
+            # all events processed.
+            #  
+            new_map, new_level, new_coords = self.player_state.get_current_position()
+            self.display_engine.set_active_map(new_map, new_level)
+
+            # this will reset animations constantly - so sprites need to be stateless HAHAHAHAHAHAH
+            self.display_engine.clear_sprites()
+
+            # Player sprite
+            transport_mode, direction = self.player_state.get_current_transport_info()
+            player_sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
+            player_sprite.set_position(new_coords)
+            self.display_engine.register_sprite(player_sprite)
+
+            # update display
+            self.display_engine.render(new_coords)
+
+        pygame.quit()
+
+if __name__ == "__main__":
 
     provider = ServiceProvider()
     service_composition.compose(provider)
+
+    print("Pre-registering Main")
+    provider.register(Main)
+
     provider.inject_all()
 
-    tileset: TileSet = provider.resolve(TileSet)
-#    world_state = WorldState()
-    world_state: WorldState = provider.resolve(WorldState)
-
-    for tile_id, door_factory in doors.build_all_door_types().items():
-        world_state.register_interactable_factory(tile_id, door_factory)
-
-#    display_engine = DisplayEngine(world_state=world_state, tileset=tileset)
-    display_engine: DisplayEngine = provider.resolve(DisplayEngine)
-
-    player_state = PlayerState(
-        world_state=world_state,
-        location_loader=provider.resolve(LocationLoader),
-#        outer_map=load_britannia(), 
-        outer_map=provider.resolve(Britannia),
-        outer_coord=Coord(56, 72)    # starting tile in world coords, just a bit SE of Iolo's Hut.
-    )
-
-#    avatar_sprite_factory = AvatarSpriteFactory(tileset=tileset)
-    avatar_sprite_factory: AvatarSpriteFactory = provider.resolve(AvatarSpriteFactory)
-
-    player_sprite: Sprite = avatar_sprite_factory.create_player(transport_mode=0, direction=0)
-    player_sprite.set_position(player_state.outer_coord)  
-
-    display_engine.register_sprite(player_sprite)
-
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
-                else:
-                    interaction_result = process_event(player_state, event)
-                    if interaction_result is None:
-                        print("wtf ?")
-                    else:
-                        if interaction_result.message and len(interaction_result.message):
-                            if interaction_result.success == False:
-                                print(f"{interaction_result.message} :(")
-                            else:
-                                print(f"{interaction_result.message} :)")
-
-        #
-        # all events processed.
-        #  
-        new_map, new_level, new_coords = player_state.get_current_position()
-        display_engine.set_active_map(new_map, new_level)
-
-        # this will reset animations constantly - so sprites need to be stateless HAHAHAHAHAHAH
-        display_engine.clear_sprites()
-
-        # Player sprite
-        transport_mode, direction = player_state.get_current_transport_info()
-        player_sprite = avatar_sprite_factory.create_player(transport_mode, direction)
-        player_sprite.set_position(new_coords)
-        display_engine.register_sprite(player_sprite)
-
-        # update display
-        display_engine.render(new_coords)
-
-    pygame.quit()
-
-if __name__ == "__main__":
-    main()
+    main: Main = provider.resolve(Main)
+    main.run()
