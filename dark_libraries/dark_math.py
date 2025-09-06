@@ -36,8 +36,6 @@ class Vector2:
     def __repr__(self):
         return f"{self.__class__.__name__}(x={self.x},y={self.y})"
 
-@immutable
-@auto_init
 class Size(Vector2):
     @property
     def w(self) -> int:
@@ -55,8 +53,6 @@ class Size(Vector2):
     def h(self, value: int):
         self.y = value
 
-@immutable
-@auto_init
 class Coord(Vector2):
 
     def is_in_bounds(self, size: Size) -> bool:
@@ -70,3 +66,17 @@ if __name__ == "__main__":
     assert a == b, "__eq__ has a problem"
     assert hash(a) == hash(b), "__hash__ has a problem"
     assert {a: "one"}[b] == "one", "Being a stable dictionary key is a problem" 
+
+    try:
+        a.x = 1
+    except:
+        print("Coord confirmed immutable")
+    
+    s = Size(0,0)
+
+    try:
+        s.w = 1
+    except:
+        print("Size confirmed immutable")
+
+    print("All tests passed")

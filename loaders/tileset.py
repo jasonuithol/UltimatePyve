@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from dataclasses import dataclass
 
+from dark_libraries.custom_decorators import auto_init
 from dark_libraries.dark_math import Coord
 
 _TILES16_PATH = r".\u5\TILES.16"
@@ -14,10 +15,11 @@ _tileset16_cache = {}
 TILE_SIZE = 16
 TILE_ID_GRASS = 5
 
-EgaPalette = List[Tuple[int,int,int]]
+class EgaPalette(List[Tuple[int,int,int]]):
+    pass
 
 # EGA palette (RGB tuples)
-_ega_palette: EgaPalette = [
+_ega_palette = EgaPalette([
     (0, 0, 0),         # 0000: Black
     (0, 0, 170),       # 0001: Blue
     (0, 170, 0),       # 0010: Green
@@ -37,7 +39,7 @@ _ega_palette: EgaPalette = [
     (255, 85, 255),    # 1101: Light Magenta
     (255, 255, 85),    # 1110: Yellow
     (255, 255, 255),   # 1111: White
-]
+])
 
 
 # --- LZW decompression ---
@@ -90,7 +92,7 @@ def lzw_decompress(data: bytes) -> bytes:
 
 TileData = List[List[int]]
 
-@dataclass
+@auto_init
 class Tile:
     tile_id: int
     pixels: Optional[TileData] = None
@@ -146,7 +148,7 @@ class Tile:
         target_rectangle.topleft = tuple(pixel_offset)
         target_surface.blit(source_surface, target_rectangle)
 
-@dataclass
+@auto_init
 class TileSet:
     tiles: List[Tile]
     palette: EgaPalette

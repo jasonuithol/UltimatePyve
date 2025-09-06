@@ -1,10 +1,9 @@
 # file: display/main_display.py
 
-from dataclasses import dataclass
+from dark_libraries.custom_decorators import auto_init
 from dark_libraries.dark_math import Size
 from display.view_port import ViewPort
 
-@dataclass
 class MainDisplay:
     view_port: ViewPort
 

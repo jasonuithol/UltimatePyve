@@ -10,17 +10,16 @@ import animation.flames as flames
 from dark_libraries.dark_math import Coord
 from typing import Dict, Optional
 from game.u5map import U5Map
-from loaders.tileset import EgaPalette, TileSet
 
 class DisplayEngine(EngineProtocol):
 
-    def __init__(self, world_state: WorldState, tileset: TileSet):
+    # Injectable Properties
+    world_state: WorldState
+    main_display: MainDisplay
+    view_port: ViewPort
+    animated_tile_factory: sprite.AnimatedTileFactory
 
-        # Create and reference important components.
-        self.tileset = tileset
-        self.view_port = ViewPort(engine=self, palette=tileset.palette)
-        self.main_display = MainDisplay(view_port=self.view_port)
-        self.world_state = world_state
+    def _after_inject(self):
 
         # Set up pygame
         pygame.init()
@@ -37,6 +36,8 @@ class DisplayEngine(EngineProtocol):
         # Register tile_id hooks.
         self.register_special_tiles()
 
+        print(f"Initialised DisplayEngine(id={hex(id(self))})")
+
     def register_special_tiles(self):
 
         # Flaming objects 
@@ -44,8 +45,7 @@ class DisplayEngine(EngineProtocol):
             self.view_port.register_animated_tile(tile_id, sprite_master_copy)
 
         # Other animated tiles
-        animated_sprite_factory = sprite.AnimatedTileFactory(tileset=self.tileset)
-        for tile_id, sprite_master_copy in animated_sprite_factory.build_animated_tile_sprites().items():
+        for tile_id, sprite_master_copy in self.animated_tile_factory.build_animated_tile_sprites().items():
             self.view_port.register_animated_tile(tile_id, sprite_master_copy)
 
     def register_sprite(self, sprite: sprite.Sprite) -> None:

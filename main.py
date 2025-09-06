@@ -9,7 +9,7 @@ from display.display_engine import DisplayEngine
 from game.player_state import PlayerState
 from dark_libraries.dark_math import Coord, Vector2
 
-from loaders import service_composition
+import service_composition
 from loaders.location import LocationLoader
 from loaders.overworld import Britannia #, load_britannia
 from loaders.tileset import TileSet #, load_tileset
@@ -34,29 +34,30 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) -> Inter
 
 def main() -> None:
 
-    provider = ServiceProvider(allow_auto=True)
+    provider = ServiceProvider()
     service_composition.compose(provider)
+    provider.inject_all()
 
-    tileset: TileSet = provider.get(TileSet)
+    tileset: TileSet = provider.resolve(TileSet)
 #    world_state = WorldState()
-    world_state: WorldState = provider.get(WorldState)
+    world_state: WorldState = provider.resolve(WorldState)
 
     for tile_id, door_factory in doors.build_all_door_types().items():
         world_state.register_interactable_factory(tile_id, door_factory)
 
 #    display_engine = DisplayEngine(world_state=world_state, tileset=tileset)
-    display_engine: DisplayEngine = provider.get(DisplayEngine)
+    display_engine: DisplayEngine = provider.resolve(DisplayEngine)
 
     player_state = PlayerState(
         world_state=world_state,
-        location_loader=provider.get(LocationLoader),
+        location_loader=provider.resolve(LocationLoader),
 #        outer_map=load_britannia(), 
-        outer_map=provider.get(Britannia),
+        outer_map=provider.resolve(Britannia),
         outer_coord=Coord(56, 72)    # starting tile in world coords, just a bit SE of Iolo's Hut.
     )
 
 #    avatar_sprite_factory = AvatarSpriteFactory(tileset=tileset)
-    avatar_sprite_factory: AvatarSpriteFactory = provider.get(AvatarSpriteFactory)
+    avatar_sprite_factory: AvatarSpriteFactory = provider.resolve(AvatarSpriteFactory)
 
     player_sprite: Sprite = avatar_sprite_factory.create_player(transport_mode=0, direction=0)
     player_sprite.set_position(player_state.outer_coord)  

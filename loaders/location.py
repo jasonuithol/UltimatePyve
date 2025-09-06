@@ -13,6 +13,9 @@ from dark_libraries.dark_math import Coord, Size
 
 class LocationMetadataBuilder:
 
+    # Injectable
+    dataOvl: DataOVL
+
     '''
     LOCATION_METADATA
     List of Tuple(location_name_index, files_index, num_levels)
@@ -65,9 +68,6 @@ class LocationMetadataBuilder:
 
         # TODO: DUNGEONS
     ]
-    
-    def __init__(self, dataOvl: DataOVL):
-        self.dataOvl = dataOvl
 
     def build_location_names(self) -> list[str]:
         location_names = [p.decode('ascii') for p in self.dataOvl.city_names_caps.split(b'\x00') if p]
@@ -82,7 +82,7 @@ class LocationMetadataBuilder:
         ]        
         return location_names
 
-    def build_default_level_lists(self):
+    def build_default_level_lists(self) -> List[bytes]:
         return  [
             self.dataOvl.map_index_towne,
             self.dataOvl.map_index_dwelling,
@@ -90,7 +90,7 @@ class LocationMetadataBuilder:
             self.dataOvl.map_index_keep
         ]
 
-    def build_metadata(self):
+    def build_metadata(self) -> List[LocationMetadata]:
         #
         # Build sorted metadata list so metadata[trigger_index] works
         #
@@ -138,6 +138,10 @@ class LocationMetadataBuilder:
 
 class LocationLoader:
 
+    # Injectable
+    builder: LocationMetadataBuilder
+    tileset: TileSet
+
     FILES = [
         "TOWNE.DAT",
         "DWELLING.DAT",
@@ -145,13 +149,11 @@ class LocationLoader:
         "KEEP.DAT"
     ]
 
-    def __init__(self, builder: LocationMetadataBuilder, tileset: TileSet):
+    def _after_inject(self):
 
-        self.builder = builder
-        self.tileset = tileset
-        self.metadata = builder.build_metadata()
+        self.metadata = self.builder.build_metadata()
 
-    def get_number_locations(self):
+    def get_number_locations(self) -> int:
         return len(self.metadata)
 
     def load_location_map(self, trigger_index: int) -> U5Map:

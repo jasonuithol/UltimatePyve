@@ -1,26 +1,24 @@
 # file: display/view_port.py
 import pygame
-from typing import Tuple, List, Optional, Dict
-from dataclasses import dataclass, field
+from typing import Optional, Dict
 
 from display.engine_protocol import EngineProtocol
 import animation.sprite as sprite
 from game.u5map import U5Map
 
-from loaders.tileset import TILE_ID_GRASS, Tile
+from loaders.tileset import TILE_ID_GRASS, EgaPalette, Tile
 from dark_libraries.dark_math import Coord, Size
 
-@dataclass
 class ViewPort:
     engine: EngineProtocol
-    palette: List[Tuple[int,int,int]]
-    view_world_coord: Coord = field(default_factory=lambda: Coord(0, 0))
-    view_size_tiles: Size = field(default_factory=lambda: Size(21, 15))
+    palette: EgaPalette
+    view_world_coord: Coord = Coord(0, 0)
+    view_size_tiles: Size = Size(21, 15)
     tile_size_pixels: int = 16
     display_scale: int = 2
     _unscaled_surface: Optional[pygame.Surface] = None
     _scaled_surface: Optional[pygame.Surface] = None
-    _animated_tiles: Dict[int, sprite.Sprite] = field(default_factory=dict)
+    _animated_tiles: Optional[Dict[int, sprite.Sprite]] = None
 
     def view_size_in_pixels(self) -> Size:
          return self.view_size_tiles.scale(self.tile_size_pixels)
@@ -32,6 +30,8 @@ class ViewPort:
          self.display_scale = s
 
     def register_animated_tile(self, tile_id: int, sprite_master: sprite.Sprite) -> None:
+        if self._animated_tiles is None:
+            self._animated_tiles = dict()
         self._animated_tiles[tile_id] = sprite_master
 
     def centre_view_on(self, world_coords: Coord) -> None:

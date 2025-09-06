@@ -38,8 +38,9 @@ class Sprite:
         # TODO: Get time_offsets working...
         return sprite_copy
 
-@auto_init
 class AvatarSpriteFactory:
+
+    # Injectable
     tileset: TileSet
 
     # --- Factory function for the Avatar sprites ---
@@ -74,6 +75,9 @@ class AvatarSpriteFactory:
 
 class AnimatedTileFactory:
 
+    # Injectable
+    tileset: TileSet
+
     # (start tile, num frames)
     animated_tiles = [
         (128,2),    # axe table
@@ -87,9 +91,6 @@ class AnimatedTileFactory:
     ]
 
     _animated_tile_cache: Dict[int, Sprite] = None
-
-    def __init__(self, tileset: TileSet):
-        self.tileset = tileset
 
     def build_animated_tile_sprites(self) -> Dict[int, Sprite]:
         if AnimatedTileFactory._animated_tile_cache is None:

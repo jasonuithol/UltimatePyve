@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+from dark_libraries.custom_decorators import auto_init
 from game.interactable import InteractionResult
 from game.u5map import U5Map
 from dark_libraries.dark_math import Coord, Vector2
@@ -16,7 +17,7 @@ from loaders.underworld import load_underworld
 #
 # An immutable state.  transitions return a cloned, modified copy of current state
 #
-@dataclass
+@auto_init
 class PlayerState:
 
     world_state: WorldState

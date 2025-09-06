@@ -3,7 +3,7 @@ from typing import Dict
 import random
 
 from dark_libraries.dark_math import Coord
-from dark_libraries.custom_decorators import immutable
+from dark_libraries.custom_decorators import auto_init, immutable
 from loaders.tileset import load_tileset, TileSet
 
 from game.magic import S_MAGIC_UNLOCK

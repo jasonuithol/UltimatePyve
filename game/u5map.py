@@ -4,8 +4,8 @@ from dark_libraries.custom_decorators import auto_init, immutable
 from dark_libraries.dark_math import Coord, Size
 from loaders.tileset import TileSet
 
-@auto_init
 @immutable
+@auto_init
 class LocationMetadata:
     name: str                   # name of the location
     name_index: int             # which name the location takes.
@@ -16,8 +16,8 @@ class LocationMetadata:
     default_level: int          # which level the player spawns in when entering the location.
     trigger_index: int          # the index the entry triggers for this location are at.
 
-@auto_init
 @immutable
+@auto_init
 class U5Map:
     name: str
     size_in_tiles: Size
