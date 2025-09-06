@@ -1,4 +1,4 @@
-# file: dark_libraries/service_provider.py
+# file: the_ugly_corner/service_provider.py
 
 import inspect
 import sys

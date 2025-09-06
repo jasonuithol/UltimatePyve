@@ -1,8 +1,5 @@
 # file: utilities/dependencies.py
-import os
-import ast
-import subprocess
-import argparse
+import argparse, ast, os, subprocess
 
 def gather_module_dependencies(root_dir, exclude):
     deps = set()

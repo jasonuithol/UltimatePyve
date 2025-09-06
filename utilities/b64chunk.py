@@ -1,6 +1,5 @@
 # file: utilities/b64chunk.py
-# b64chunk.py
-import sys, base64
+import base64, sys
 
 CHUNK_SIZE = 10000  # characters per printed chunk
 

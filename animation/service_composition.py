@@ -1,4 +1,4 @@
-# file: display/service_composition.py
+# file: animation/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
 
 from animation.sprite import AnimatedTileFactory, AvatarSpriteFactory

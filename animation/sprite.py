@@ -2,9 +2,8 @@
 from copy import copy
 from typing import Dict, List, Optional, Self
 
-from dark_libraries.custom_decorators import auto_init
 from dark_libraries.dark_math import Coord
-from loaders.tileset import TileSet, load_tileset, Tile
+from loaders.tileset import TileSet, Tile
 
 class Sprite:
     def __init__(self, frames: Optional[List[Tile]] = None, frame_time: float = 0.5, frame_time_offset: float = 0.0):
