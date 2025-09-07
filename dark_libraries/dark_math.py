@@ -1,6 +1,6 @@
 # file: dark_libraries/dark_math.py
 
-from typing import Self
+from typing import Iterable, Self
 from dark_libraries.custom_decorators import immutable, auto_init
 
 @immutable
@@ -57,27 +57,39 @@ class Size(Vector2):
     def is_in_bounds(self, coord: Coord) -> bool:
         return 0 <= coord.x < self.w and 0 <= coord.y < self.h
     
-    def __iter__(self):
+    def to_rect(self, minimum_corner: Coord):
+        return Rect(minimum_corner, self)
+    
+    def to_offset(self):
+        return Coord(self.w, self.h)
+
+    def __iter__(self) -> Iterable[tuple[int,int]]:
         for y in range(self.h):
             for x in range(self.w):
                 yield x, y
 
+@immutable
 class Rect(Size, Coord):
 
-    def __init__(self, corner: Coord, size: Size):
-        self.x = corner.x
-        self.y = corner.y
-        self.w = size.w
-        self.h = size.h
+    def __init__(self, minimum_corner: Coord, size: Size):
+        self.minimum_corner = minimum_corner
+        self.size = size
 
     def is_in_bounds(self, coord: Coord) -> bool:
-        return self.x <= coord.x < (self.w + self.x) and self.y <= coord.y < (self.h + self.y)
+        shifted_coord = coord.subtract(self.minimum_corner)
+        return self.size.is_in_bounds(shifted_coord)
+    
+    def move(self, offset: Coord) -> Self:
+        return Rect(self.minimum_corner.add(offset), self.size())
 
-    def __iter__(self):
-        for y in range(self.y, self.h + self.y):
-            for x in range(self.x, self.w + self.x):
-                yield x, y
+    def __iter__(self) -> Iterable[tuple[int,int]]:
+        off_x, off_y = self.minimum_corner.to_tuple()
+        for x, y in self.size:
+            yield x + off_x, y + off_y
 
+#
+# MAIN: Tests
+#
 if __name__ == "__main__":
      
     a = Coord(1, 2)
@@ -85,6 +97,8 @@ if __name__ == "__main__":
     assert a == b, "__eq__ has a problem"
     assert hash(a) == hash(b), "__hash__ has a problem"
     assert {a: "one"}[b] == "one", "Being a stable dictionary key is a problem" 
+
+    assert a.subtract(b) == Coord(0,0), "subtract bokrne"
 
     try:
         immutable = False
@@ -105,6 +119,9 @@ if __name__ == "__main__":
 
     assert immutable == True, "Size failed immutable test"
 
+    for x,y in s:
+        assert s.is_in_bounds(Coord(x,y)), "Size generated an out of bounds iteratant"
+
     assert len(list(s)) == s.w * s.h, "Wrong number of iterated coords in Rect"
 
 
@@ -113,6 +130,18 @@ if __name__ == "__main__":
     assert r.is_in_bounds(Coord(5,5)), "Rect failed is in bounds"
     assert not r.is_in_bounds(Coord(50,50)), "Rect failed not in bounds"
 
-    assert len(list(r)) == r.w * r.h, "Wrong number of iterated coords in Rect"
+    for x,y in r:
+        assert r.is_in_bounds(Coord(x,y)), "Rect generated an out of bounds iteratant"
+
+    assert len(list(r)) == r.size.w * r.size.h, "Wrong number of iterated coords in Rect"
+
+    try:
+        immutable = False
+        r.w = 42
+    except:
+        print("Rect confirmed immutable")
+        immutable = True
+
+    assert immutable == True, "Rect failed immutable test"
 
     print("All tests passed")
