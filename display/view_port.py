@@ -64,6 +64,13 @@ class ViewPort:
         return self._unscaled_surface
 
     def get_output_surface(self) -> pygame.Surface:
+
+        pygame.transform.scale(
+            surface      = self._unscaled_surface,
+            size         = self.view_size_in_pixels_scaled().to_tuple(),
+            dest_surface = self._scaled_surface
+        )
+
         return self._scaled_surface
 
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
@@ -183,13 +190,10 @@ if __name__ == "__main__":
     view_port.centre_view_on(Coord(42,42))
     view_port.draw_map(u5map, 0)
 
-    # TODO: bake this into view_port.get_output_surface()
-    pygame.transform.scale(view_port.get_input_surface(),view_port.view_size_in_pixels_scaled().to_tuple(),view_port.get_output_surface())
-
-    # TODO: Probably same
     screen.blit(view_port.get_output_surface(),(0,0))
-
     pygame.display.flip()
+
+    # wait for "any" key to be pressed
     waiting = True
     while waiting:
         for event in pygame.event.get():

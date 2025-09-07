@@ -108,11 +108,6 @@ class DisplayEngine(EngineProtocol):
 
         # Scale for display
         scaled_surface = self.view_port.get_output_surface()
-        pygame.transform.scale(
-            surface = self.view_port.get_input_surface(),
-            size = scaled_surface.get_size(),
-            dest_surface = scaled_surface
-        )
 
         # Blit to screen
         self.screen.blit(scaled_surface, (0, 0))
