@@ -40,12 +40,12 @@ class ViewPort:
 
     def get_input_surface(self) -> pygame.Surface:
         if self._unscaled_surface is None:
-            self._unscaled_surface = pygame.Surface(tuple(self.view_size_in_pixels()))
+            self._unscaled_surface = pygame.Surface(self.view_size_in_pixels().to_tuple())
         return self._unscaled_surface
 
     def get_output_surface(self) -> pygame.Surface:
         if self._scaled_surface is None:
-            self._scaled_surface = pygame.Surface(tuple(self.view_size_in_pixels_scaled()))
+            self._scaled_surface = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
         return self._scaled_surface
 
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
@@ -98,7 +98,7 @@ class ViewPort:
         # Draw
         frame_tile.blit_to_surface(
             target_surface = self.get_input_surface(),
-            pixel_offset = tuple(screen_coord)
+            pixel_offset = screen_coord
         )
 
     '''

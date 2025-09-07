@@ -194,7 +194,7 @@ class LocationLoader:
         import pygame
         from loaders.tileset import Tile
         pygame.init()
-        surf = pygame.Surface(tuple(u5map.size_in_tiles.scale(self.tileset.tile_size)))
+        surf = pygame.Surface(u5map.size_in_tiles.scale(self.tileset.tile_size).to_tuple())
         for x in range(u5map.size_in_tiles.x):
             for y in range(u5map.size_in_tiles.y):
 

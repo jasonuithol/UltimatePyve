@@ -145,7 +145,7 @@ class Tile:
     def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord = Coord(0,0)):
         source_surface = self.to_surface()
         target_rectangle = source_surface.get_rect()
-        target_rectangle.topleft = tuple(pixel_offset)
+        target_rectangle.topleft = pixel_offset.to_tuple()
         target_surface.blit(source_surface, target_rectangle)
 
 @auto_init

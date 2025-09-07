@@ -25,7 +25,7 @@ class DisplayEngine(EngineProtocol):
         # Set up pygame
         pygame.init()
         pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
-        self.screen = pygame.display.set_mode(tuple(self.main_display.size_in_pixels()))
+        self.screen = pygame.display.set_mode(self.main_display.size_in_pixels().to_tuple())
         self.clock = pygame.time.Clock()
         self.fps = 60
 
