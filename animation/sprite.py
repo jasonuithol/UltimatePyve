@@ -1,8 +1,5 @@
 # file: animation/sprite.py
-from copy import copy
-from typing import Dict, List, Optional, Self
-
-from dark_libraries.dark_math import Coord
+from typing import Dict, List, Optional
 from loaders.tileset import TileSet, Tile
 
 class Sprite:
@@ -14,10 +11,6 @@ class Sprite:
 
         self.frame_time = frame_time                # in seconds
         self.frame_time_offset = frame_time_offset  # in seconds - btw this feature STILL doesn't work.
-        self.world_coord = Coord(0,0)
-
-    def set_position(self, coord: Coord):
-        self.world_coord = coord
 
     def set_frame_time(self, frame_time: float, frame_time_offset: float):
         self.frame_time = frame_time
@@ -29,13 +22,8 @@ class Sprite:
         return num_frames_elapsed % len(self.frames)
 
     def get_current_frame_tile(self, ticks_since_init: int) -> Tile:
-        return self.frames[self.get_current_frame_index(ticks_since_init)]
-
-    def spawn_from_master(self, coord: Coord) -> Self:
-        sprite_copy = copy(self)
-        sprite_copy.world_coord = coord
-        # TODO: Get time_offsets working...
-        return sprite_copy
+        frame_index = self.get_current_frame_index(ticks_since_init)
+        return self.frames[frame_index]
 
 class AvatarSpriteFactory:
 

@@ -1,21 +1,19 @@
 # file: game/player_state.py
 from typing import Optional, Tuple
 
-from dark_libraries.custom_decorators import auto_init
 from dark_libraries.dark_math import Coord, Vector2
 
-from game.interactable import InteractionResult
+from game.interactable import InteractableState, InteractionResult
 from game.map_transitions import get_entry_trigger
 from game.u5map import U5Map
-from game.world_state import WorldState
 
 from loaders.location import LocationLoader
 
 from terrain import get_transport_modes, can_traverse
 
 # TODO: Once testing is finished, delete these.
-from loaders.overworld import Britannia, load_britannia
-from loaders.underworld import UnderWorld, load_underworld
+from loaders.overworld import load_britannia
+from loaders.underworld import load_underworld
     
 #
 # An immutable state.  transitions return a cloned, modified copy of current state
@@ -23,8 +21,8 @@ from loaders.underworld import UnderWorld, load_underworld
 class PlayerState:
 
     # Injectable
-    world_state: WorldState
     location_loader: LocationLoader
+    interactable_state: InteractableState
 
     # either "britannia" or "underworld"
     outer_map: U5Map = None          
@@ -71,7 +69,7 @@ class PlayerState:
         transport_mode = get_transport_modes()[self.transport_mode]
         current_map, current_level, _ = self.get_current_position()
         target_tile_id = current_map.get_tile_id(current_level, target)
-        interactable = self.world_state.get_interactable(target_tile_id, target)      
+        interactable = self.interactable_state.get_interactable(target_tile_id, target)      
         if interactable:
             result = interactable.move_into()
             return result.success
@@ -82,7 +80,7 @@ class PlayerState:
     #
 
     def _on_changing_map(self) -> None:
-        self.world_state.clear_interactables()
+        self.interactable_state.clear_interactables()
 
     def _move_to_inner_map(self, u5map: U5Map) -> InteractionResult:
         self.inner_map = u5map

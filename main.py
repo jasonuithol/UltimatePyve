@@ -8,10 +8,8 @@ from display.display_engine import DisplayEngine
 import game.doors as doors
 from game.interactable import InteractionResult
 from game.player_state import PlayerState
-from game.world_state import WorldState
-from loaders.location import LocationLoader
-from loaders.overworld import Britannia #, load_britannia
-from loaders.tileset import TileSet #, load_tileset
+from loaders.overworld import Britannia
+from loaders.tileset import TileSet
 
 import service_composition
 
@@ -36,15 +34,11 @@ class Main:
 
     # Injectable
     tileset: TileSet
-    world_state: WorldState
     player_state: PlayerState
     display_engine: DisplayEngine
     avatar_sprite_factory: AvatarSpriteFactory
 
     def _after_inject(self):
-
-        for tile_id, door_factory in doors.build_all_door_types().items():
-            self.world_state.register_interactable_factory(tile_id, door_factory)
 
         self.player_state.set_outer_position(
             u5Map = provider.resolve(Britannia),
@@ -58,8 +52,17 @@ class Main:
         )
 
         player_sprite: Sprite = self.avatar_sprite_factory.create_player(transport_mode=0, direction=0)
-        player_sprite.set_position(self.player_state.outer_coord)  
-        self.display_engine.register_sprite(player_sprite)
+        self.display_engine.set_avatar_sprite(player_sprite)
+
+        # -----------------------------------------------------------------------------------------------------------------
+        #
+        # TODO: Every door/chest/orientable etc class will be passed this "state" to register each type of collection
+        #
+        # -----------------------------------------------------------------------------------------------------------------
+
+        for tile_id, door_factory in doors.build_all_door_types().items():
+            self.display_engine.view_port.interactable_state.register_interactable_factory(tile_id, door_factory)
+
 
     def run(self) -> None:
 
@@ -88,14 +91,10 @@ class Main:
             new_map, new_level, new_coords = self.player_state.get_current_position()
             self.display_engine.set_active_map(new_map, new_level)
 
-            # this will reset animations constantly - so sprites need to be stateless HAHAHAHAHAHAH
-            self.display_engine.clear_sprites()
-
             # Player sprite
             transport_mode, direction = self.player_state.get_current_transport_info()
             player_sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
-            player_sprite.set_position(new_coords)
-            self.display_engine.register_sprite(player_sprite)
+            self.display_engine.set_avatar_sprite(player_sprite)
 
             # update display
             self.display_engine.render(new_coords)

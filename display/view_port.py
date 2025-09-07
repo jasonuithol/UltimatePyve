@@ -2,8 +2,8 @@
 import pygame
 from typing import Optional, Dict
 
-from display.engine_protocol import EngineProtocol
 import animation.sprite as sprite
+from game.interactable import InteractableState
 from game.u5map import U5Map
 
 from loaders.tileset import TILE_ID_GRASS, EgaPalette, Tile
@@ -12,9 +12,8 @@ from dark_libraries.dark_math import Coord, Size, Rect
 class ViewPort:
 
     # Injectable Properties
-    engine: EngineProtocol
     palette: EgaPalette
-
+    interactable_state: InteractableState
 
     world_rect = Rect(Coord(0,0), Size(21,15))
     tile_size_pixels: int = 16
@@ -74,10 +73,8 @@ class ViewPort:
         return self._scaled_surface
 
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
-        viewport_surface = self.get_input_surface()
 
-        for world_x, world_y in self.world_rect:
-            world_coord = Coord(world_x, world_y)
+        for world_coord in self.world_rect:
 
             # Don't try to pull a tile from outside the source map.
             # If out of bounds, use grass tile.
@@ -86,47 +83,44 @@ class ViewPort:
             else:
                 tid = TILE_ID_GRASS
 
-            # if the tile is animated, register a sprite
+            # if the tile is animated, pull a frame tile from the sprite and draw that instead.
             if tid in self._animated_tiles.keys():
-                sprite_master = self._animated_tiles[tid]
-                sprite_copy = sprite_master.spawn_from_master(world_coord)
+                sprite = self._animated_tiles[tid]
+                self.draw_sprite(world_coord, sprite)
+                continue
 
-                self.engine.register_sprite(sprite_copy)
-
-            interactable = self.engine.world_state.get_interactable(tid, world_coord)
+            interactable = self.interactable_state.get_interactable(tid, world_coord)
             if interactable:
-                self.engine.register_sprite(interactable.create_sprite())
+                sprite = interactable.create_sprite()
+                self.draw_sprite(world_coord, sprite)
+                continue
 
             # Don't try to render a non-existant tile id.
             if 0 <= tid < len(u5map.tileset.tiles):
                 tile: Tile = u5map.tileset.tiles[tid]
-                screen_coord = self.to_view_port_coord(world_coord).scale(self.tile_size_pixels)
 
-                tile.blit_to_surface(
-                    viewport_surface, 
-                    screen_coord
-                )
+                self.draw_tile(world_coord, tile)
 
             else:
                 print(f"Warning: tile id {tid!r} out of range, skipping render.")
 
-    def draw_sprite(self, sprite: sprite.Sprite) -> None:
+    def draw_tile(self, world_coord: Coord, tile: Tile):
+        screen_coord = self.to_view_port_coord(world_coord).scale(self.tile_size_pixels)
+        tile.blit_to_surface(
+            self.get_input_surface(), 
+            screen_coord
+        )
+
+    def draw_sprite(self, world_coord: Coord, sprite: sprite.Sprite) -> None:
 
         """
         Draw a sprite to the Viewport
         """
-        # Determine screen position
-        screen_coord = sprite.world_coord.subtract(self.world_rect.minimum_corner).scale(self.tile_size_pixels)
-
         # Get the current animation frame tile.
         ticks = pygame.time.get_ticks()
         frame_tile = sprite.get_current_frame_tile(ticks)
 
-        # Draw
-        frame_tile.blit_to_surface(
-            target_surface = self.get_input_surface(),
-            pixel_offset = screen_coord
-        )
+        self.draw_tile(world_coord, frame_tile)
 
     '''
     def flood_fill_visibility(start_x, start_y, is_blocked, mark_visible):

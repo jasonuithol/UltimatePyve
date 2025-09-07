@@ -18,20 +18,20 @@ class Vector2:
     def subtract(self, other: Self) -> Self:
             return self.__class__(self.x - other.x, self.y - other.y)
 
-    def to_tuple(self):
+    def to_tuple(self) -> tuple[int,int]:
         return (self.x, self.y)
 
     # support for being a Dict key, will also support "v1 == v2" logical expression
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, self.__class__):
             return False
         return self.x == other.x and self.y == other.y
 
     # support for being a Dict key
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.x, self.y))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x},y={self.y})"
 
 class Coord(Vector2):
@@ -57,16 +57,16 @@ class Size(Vector2):
     def is_in_bounds(self, coord: Coord) -> bool:
         return 0 <= coord.x < self.w and 0 <= coord.y < self.h
     
-    def to_rect(self, minimum_corner: Coord):
+    def to_rect(self, minimum_corner: Coord) -> 'Rect':
         return Rect(minimum_corner, self)
     
-    def to_offset(self):
+    def to_offset(self) -> Coord:
         return Coord(self.w, self.h)
 
-    def __iter__(self) -> Iterable[tuple[int,int]]:
+    def __iter__(self) -> Iterable[Coord]:
         for y in range(self.h):
             for x in range(self.w):
-                yield x, y
+                yield Coord(x, y)
 
 @immutable
 class Rect(Size, Coord):
@@ -83,9 +83,9 @@ class Rect(Size, Coord):
         return Rect(self.minimum_corner.add(offset), self.size())
 
     def __iter__(self) -> Iterable[tuple[int,int]]:
-        off_x, off_y = self.minimum_corner.to_tuple()
-        for x, y in self.size:
-            yield x + off_x, y + off_y
+        self.minimum_corner
+        for offset in self.size:
+            yield self.minimum_corner.add(offset)
 
 #
 # MAIN: Tests
@@ -119,8 +119,8 @@ if __name__ == "__main__":
 
     assert immutable == True, "Size failed immutable test"
 
-    for x,y in s:
-        assert s.is_in_bounds(Coord(x,y)), "Size generated an out of bounds iteratant"
+    for coord in s:
+        assert s.is_in_bounds(coord), "Size generated an out of bounds iteratant"
 
     assert len(list(s)) == s.w * s.h, "Wrong number of iterated coords in Rect"
 
@@ -130,8 +130,8 @@ if __name__ == "__main__":
     assert r.is_in_bounds(Coord(5,5)), "Rect failed is in bounds"
     assert not r.is_in_bounds(Coord(50,50)), "Rect failed not in bounds"
 
-    for x,y in r:
-        assert r.is_in_bounds(Coord(x,y)), "Rect generated an out of bounds iteratant"
+    for coord in r:
+        assert r.is_in_bounds(coord), "Rect generated an out of bounds iteratant"
 
     assert len(list(r)) == r.size.w * r.size.h, "Wrong number of iterated coords in Rect"
 

@@ -120,7 +120,6 @@ class DoorInstance(Interactable):
         sprite = Sprite(
             frames=[frame]
         )
-        sprite.world_coord = self.coord
         return sprite
 
     def move_into(self, actor=None) -> InteractionResult:
