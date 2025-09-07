@@ -10,6 +10,7 @@ import animation.flames as flames
 from dark_libraries.dark_math import Coord
 from typing import Dict, Optional
 from game.u5map import U5Map
+from loaders.tileset import TILE_ID_GRASS
 
 class DisplayEngine(EngineProtocol):
 
@@ -60,6 +61,33 @@ class DisplayEngine(EngineProtocol):
     def set_active_map(self, u5map: U5Map, map_level: int) -> None:
         self.active_map = u5map
         self.active_level = map_level
+
+    def scan_for_special_tiles(self, player_coord: Coord, ):
+
+        view_world_coord = player_coord.subtract(self.view_port.view_size_tiles.w // 2, self.view_port.view_size_tiles.h // 2)
+
+        for y in range(self.view_port.view_size_tiles.h):
+            for x in range(self.view_port.view_size_tiles.w):
+                map_coord = Coord(x, y).add(view_world_coord)
+
+                # Don't try to pull a tile from outside the source map.
+                # If out of bounds, use grass tile.
+                if self.active_map.is_in_bounds(map_coord):
+                    tid = self.active_map.get_tile_id(self.active_level, map_coord)
+                else:
+                    tid = TILE_ID_GRASS
+
+                # if the tile is animated, register a sprite
+                if tid in self.view_port._animated_tiles.keys():
+                    sprite_master = self.view_port._animated_tiles[tid]
+                    sprite_copy = sprite_master.spawn_from_master(map_coord)
+
+                    self.view_port.engine.register_sprite(sprite_copy)
+
+                # if the tile is interactable, register a sprite
+                interactable = self.view_port.engine.world_state.get_interactable(tid, map_coord)
+                if interactable:
+                    self.view_port.engine.register_sprite(interactable.create_sprite())        
 
     def render(self, player_coord: Coord):
 

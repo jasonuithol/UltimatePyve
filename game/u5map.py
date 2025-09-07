@@ -27,15 +27,15 @@ class U5Map:
     grid_dim: int                         # size_in_tiles.w/chunk_dim
     location_metadata: Optional[LocationMetadata]   # if this is a sub-location of the world e.g. a town, keep, dwelling, castle.
 
-    def is_in_bounds(self, x: int, y: int) -> bool:
-        return Coord(x,y).is_in_bounds(self.size_in_tiles)
+    def is_in_bounds(self, coord: Coord) -> bool:
+        return self.size_in_tiles.is_in_bounds(coord)
 
     def get_wrapped_coord(self, coord: Coord) -> Coord:
         return Coord(coord.x % self.size_in_tiles.x, coord.y % self.size_in_tiles.y)
 
-    def get_tile_id(self, level_ix: int, x: int, y: int) -> int:
+    def get_tile_id(self, level_ix: int, coord: Coord) -> int:
 
-        assert self.is_in_bounds(x, y), f"Coordinates {x}, {y} out of bounds."
+        assert self.is_in_bounds(coord), f"Coordinates {coord} out of bounds."
 
         try:
             level = self.levels[level_ix]
@@ -44,7 +44,7 @@ class U5Map:
             raise
 
         try:
-            index = y * self.size_in_tiles.w + x
+            index = coord.y * self.size_in_tiles.w + coord.x
             return level[index]
         except Exception as e:
             print(f"Error accessing tile {index} from level, size {len(level)}: {e}")

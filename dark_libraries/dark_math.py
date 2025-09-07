@@ -36,6 +36,9 @@ class Vector2:
     def __repr__(self):
         return f"{self.__class__.__name__}(x={self.x},y={self.y})"
 
+class Coord(Vector2):
+    pass
+
 class Size(Vector2):
     @property
     def w(self) -> int:
@@ -53,11 +56,13 @@ class Size(Vector2):
     def h(self, value: int):
         self.y = value
 
-class Coord(Vector2):
+    def is_in_bounds(self, coord: Coord) -> bool:
+        return 0 <= coord.x < self.w and 0 <= coord.y < self.h
 
-    def is_in_bounds(self, size: Size) -> bool:
-        return 0 <= self.x < size.w and 0 <= self.y < size.h
+class Rect(Size, Coord):
 
+    def is_in_bounds(self, coord: Coord) -> bool:
+        return self.x <= coord.x < self.w and self.y <= coord.y < self.h
 
 if __name__ == "__main__":
      

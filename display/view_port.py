@@ -57,8 +57,8 @@ class ViewPort:
 
                 # Don't try to pull a tile from outside the source map.
                 # If out of bounds, use grass tile.
-                if map_coord.is_in_bounds(u5map.size_in_tiles):
-                    tid = u5map.get_tile_id(level_ix, map_coord.x, map_coord.y)
+                if u5map.is_in_bounds(map_coord):
+                    tid = u5map.get_tile_id(level_ix, map_coord)
                 else:
                     tid = TILE_ID_GRASS
 

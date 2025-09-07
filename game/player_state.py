@@ -70,7 +70,7 @@ class PlayerState:
     def _can_traverse(self, target: Coord) -> bool:
         transport_mode = get_transport_modes()[self.transport_mode]
         current_map, current_level, _ = self.get_current_position()
-        target_tile_id = current_map.get_tile_id(current_level, target.x, target.y)
+        target_tile_id = current_map.get_tile_id(current_level, target)
         interactable = self.world_state.get_interactable(target_tile_id, target)      
         if interactable:
             result = interactable.move_into()
@@ -133,7 +133,7 @@ class PlayerState:
 
         else:
             target = self.inner_coord.add(value)
-            if not target.is_in_bounds(self.inner_map.size_in_tiles):
+            if not self.inner_map.is_in_bounds(target):
                 # always succeeds.
                 return self._return_to_outer_map()
 

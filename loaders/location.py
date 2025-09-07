@@ -197,9 +197,13 @@ class LocationLoader:
         surf = pygame.Surface(tuple(u5map.size_in_tiles.scale(self.tileset.tile_size)))
         for x in range(u5map.size_in_tiles.x):
             for y in range(u5map.size_in_tiles.y):
-                tile_id = u5map.get_tile_id(level, x, y)
+
+                map_coord = Coord(x, y)
+                tile_id = u5map.get_tile_id(level, map_coord)
                 tile: Tile = self.tileset.tiles[tile_id]
-                tile.blit_to_surface(surf, Coord(x * self.tileset.tile_size, y * self.tileset.tile_size))
+
+                pixel_coord = map_coord.scale(self.tileset.tile_size)
+                tile.blit_to_surface(surf, pixel_coord)
         pygame.image.save(
             surf,
             f"{u5map.name}_{level}.png"
