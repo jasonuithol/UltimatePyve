@@ -17,8 +17,6 @@ class ViewPort:
 
 
     world_rect = Rect(Coord(0,0), Size(21,15))
-#    view_world_coord: Coord = Coord(0, 0)
-#    view_size_tiles: Size = Size(21, 15)
     tile_size_pixels: int = 16
     display_scale: int = 2
 
@@ -63,13 +61,9 @@ class ViewPort:
         return world_coord.subtract(self.world_rect.minimum_corner)
 
     def get_input_surface(self) -> pygame.Surface:
-#        if self._unscaled_surface is None:
-#            self._unscaled_surface = pygame.Surface(self.view_size_in_pixels().to_tuple())
         return self._unscaled_surface
 
     def get_output_surface(self) -> pygame.Surface:
-#        if self._scaled_surface is None:
-#            self._scaled_surface = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
         return self._scaled_surface
 
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
@@ -179,12 +173,28 @@ if __name__ == "__main__":
     view_port = ViewPort()
     view_port.engine = StubEngine()
     view_port.palette = _ega_palette
-    view_port.world_rect = Rect(Coord(40,40), Size(5,5))
 
-    screen = pygame.display.set_mode(view_port.world_rect.size.to_tuple())
+    view_port.world_rect = Rect(Coord(40,40), Size(5,5))
+    screen = pygame.display.set_mode(view_port.view_size_in_pixels_scaled().to_tuple())
+    
     view_port._after_inject()
 
     u5map = load_britannia()
     view_port.centre_view_on(Coord(42,42))
     view_port.draw_map(u5map, 0)
-    
+
+    # TODO: bake this into view_port.get_output_surface()
+    pygame.transform.scale(view_port.get_input_surface(),view_port.view_size_in_pixels_scaled().to_tuple(),view_port.get_output_surface())
+
+    # TODO: Probably same
+    screen.blit(view_port.get_output_surface(),(0,0))
+
+    pygame.display.flip()
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                waiting = False
+            elif event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
