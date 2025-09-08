@@ -1,25 +1,16 @@
-# file: terrain.py
-from dataclasses import dataclass
+from game.terrain import Terrain
+from game.terrain_registry import TerrainRegistry
 
-@dataclass
-class Terrain:
-    walk: bool = False
-    climb: bool = False
-    horse: bool = False
-    carpet: bool = False
-    skiff: bool = False
-    ship: bool = False
-    sail: bool = False
 
-_terrains = None
-_transport_modes = None
+class TerrainFactory:
 
-def get_terrains():
-    global _terrains
-    if _terrains is None:
+    # Injectable
+    terrain_registry: TerrainRegistry
+
+    def _build_terrains(self) -> list[Terrain]:
                 
         # make a list of the 256 terrains all set to false.
-        terrains = list(map(lambda _: Terrain(), range(256)))
+        terrains: list[Terrain] = list(map(lambda _: Terrain(), range(256)))
         
         # walkable terain
         for start, finish in [
@@ -96,41 +87,9 @@ def get_terrains():
             terrains[i].ship = True
             terrains[i].sail = True
 
-        _terrains = terrains
+        return terrains
 
-    return _terrains
-
-def can_traverse(transport_mode: str, tile_id: int):
-    terrain = get_terrains()[tile_id]
-    return getattr(terrain, transport_mode)
-
-def get_transport_modes():
-    global _transport_modes
-    if _transport_modes is None:
-        _transport_modes = [
-            "walk",
-            "horse",
-            "carpet",
-            "skiff",
-            "ship",
-            "sail"
-        ]
-    return _transport_modes
-
-
-moveable_tiles = [
-     91,    # pot plant
-    144,    # chair north
-    145,    # chair east
-    146,    # chair south
-    147,    # chair west
-    165,    # large desk
-    166,    # upright barrel
-    174,    # small table
-    175,    # foot locker,
-    180,    # cannon north
-    181,    # cannon east
-    182,    # cannon south
-    183,    # cannon west
-]
-
+    def register_terrains(self):
+        terrains = self._build_terrains()
+        for tile_id, terrain in enumerate(terrains):
+            self.terrain_registry.register_terrain(tile_id, terrain)

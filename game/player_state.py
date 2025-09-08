@@ -5,11 +5,11 @@ from dark_libraries.dark_math import Coord, Vector2
 
 from game.interactable import InteractableState, InteractionResult
 from game.map_transitions import get_entry_trigger
+from game.terrain_registry import TerrainRegistry
+from game.transport_mode_registry import TransportModeRegistry
 from game.u5map import U5Map
 
 from loaders.location import LocationLoader
-
-from terrain import get_transport_modes, can_traverse
 
 # TODO: Once testing is finished, delete these.
 from loaders.overworld import load_britannia
@@ -23,6 +23,8 @@ class PlayerState:
     # Injectable
     location_loader: LocationLoader
     interactable_state: InteractableState
+    terrain_registry: TerrainRegistry
+    transport_mode_registry: TransportModeRegistry
 
     # either "britannia" or "underworld"
     outer_map: U5Map = None          
@@ -66,14 +68,14 @@ class PlayerState:
         return self.transport_mode, direction
 
     def _can_traverse(self, target: Coord) -> bool:
-        transport_mode = get_transport_modes()[self.transport_mode]
+        transport_mode = self.transport_mode_registry.get_transport_mode(self.transport_mode)
         current_map, current_level, _ = self.get_current_position()
         target_tile_id = current_map.get_tile_id(current_level, target)
         interactable = self.interactable_state.get_interactable(target_tile_id, target)      
         if interactable:
             result = interactable.move_into()
             return result.success
-        return can_traverse(transport_mode, target_tile_id)
+        return self.terrain_registry.can_traverse(transport_mode, target_tile_id)
 
     #
     # Internal State transitions

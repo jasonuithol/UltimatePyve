@@ -11,6 +11,7 @@ from display.display_engine import DisplayEngine
 import game.doors as doors
 from game.interactable import InteractionResult
 from game.player_state import PlayerState
+from game.terrain_factory import TerrainFactory
 from loaders.overworld import Britannia
 from loaders.tileset import TileSet
 
@@ -43,6 +44,7 @@ class Main:
     avatar_sprite_factory: AvatarSpriteFactory
     animated_tile_factory: AnimatedTileFactory
     flame_sprite_factory: FlameSpriteFactory
+    terrain_factory: TerrainFactory
 
     def init(self):
 
@@ -71,6 +73,7 @@ class Main:
 
         self.animated_tile_factory.register_sprites()
         self.flame_sprite_factory.register_sprites()
+        self.terrain_factory.register_terrains()
 
     def run(self) -> None:
 
