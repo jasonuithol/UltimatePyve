@@ -154,9 +154,7 @@ class ViewPort:
 if __name__ == "__main__":
 
     from loaders.tileset import _ega_palette
-    from display.view_port import ViewPort
     from loaders.overworld import load_britannia
-
 
     class StubInteractableState:
         def get_interactable(self, tid, world_coord):
