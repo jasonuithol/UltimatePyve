@@ -1,9 +1,12 @@
 # file: main.py
 import pygame
+from animation.animated_tile_factory import AnimatedTileFactory
+from animation.flame_sprite_factory import FlameSpriteFactory
 from dark_libraries.service_provider import ServiceProvider
 from dark_libraries.dark_math import Coord, Vector2
 
-from animation.sprite import Sprite, AvatarSpriteFactory
+from animation.sprite import Sprite
+from animation.avatar_sprite_factory import AvatarSpriteFactory
 from display.display_engine import DisplayEngine
 import game.doors as doors
 from game.interactable import InteractionResult
@@ -36,9 +39,12 @@ class Main:
     tileset: TileSet
     player_state: PlayerState
     display_engine: DisplayEngine
-    avatar_sprite_factory: AvatarSpriteFactory
 
-    def _after_inject(self):
+    avatar_sprite_factory: AvatarSpriteFactory
+    animated_tile_factory: AnimatedTileFactory
+    flame_sprite_factory: FlameSpriteFactory
+
+    def init(self):
 
         self.player_state.set_outer_position(
             u5Map = provider.resolve(Britannia),
@@ -63,6 +69,8 @@ class Main:
         for tile_id, door_factory in doors.build_all_door_types().items():
             self.display_engine.view_port.interactable_state.register_interactable_factory(tile_id, door_factory)
 
+        self.animated_tile_factory.register_sprites()
+        self.flame_sprite_factory.register_sprites()
 
     def run(self) -> None:
 
@@ -112,4 +120,5 @@ if __name__ == "__main__":
     provider.inject_all()
 
     main: Main = provider.resolve(Main)
+    main.init()
     main.run()

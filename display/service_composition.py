@@ -1,5 +1,5 @@
 # file: display/service_composition.py
-from animation.sprite import AnimatedTileFactory
+from animation.animated_tile_factory import AnimatedTileFactory
 from dark_libraries.service_provider import ServiceProvider
 from display.display_engine import DisplayEngine
 from display.view_port import ViewPort

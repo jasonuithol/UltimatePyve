@@ -3,6 +3,7 @@ import pygame
 from typing import Optional, Dict
 
 import animation.sprite as sprite
+from animation.sprite_registry import SpriteRegistry
 from game.interactable import InteractableState
 from game.u5map import U5Map
 
@@ -14,6 +15,7 @@ class ViewPort:
     # Injectable Properties
     palette: EgaPalette
     interactable_state: InteractableState
+    sprite_registry: SpriteRegistry
 
     world_rect = Rect(Coord(0,0), Size(21,15))
     tile_size_pixels: int = 16
@@ -25,7 +27,6 @@ class ViewPort:
         # output surface
         self._scaled_surface: Optional[pygame.Surface] = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
 
-        self._animated_tiles: Dict[int, sprite.Sprite] = dict()
 
     def view_size_in_pixels(self) -> Size:
          return self.world_rect.size.scale(self.tile_size_pixels)
@@ -36,8 +37,6 @@ class ViewPort:
     def set_display_scale(self, s: int) -> None:
          self.display_scale = s
 
-    def register_animated_tile(self, tile_id: int, sprite_master: sprite.Sprite) -> None:
-        self._animated_tiles[tile_id] = sprite_master
 
     def _get_view_centre(self) -> Coord:
         width, height = self.world_rect.size.to_tuple()
@@ -78,14 +77,16 @@ class ViewPort:
 
             # Don't try to pull a tile from outside the source map.
             # If out of bounds, use grass tile.
-            if u5map.is_in_bounds(world_coord):
-                tid = u5map.get_tile_id(level_ix, world_coord)
-            else:
-                tid = TILE_ID_GRASS
+            if not u5map.is_in_bounds(world_coord):
+                tile = u5map.tileset.tiles[TILE_ID_GRASS]
+                self.draw_tile(world_coord, tile)
+                continue
+
+            tid = u5map.get_tile_id(level_ix, world_coord)
 
             # if the tile is animated, pull a frame tile from the sprite and draw that instead.
-            if tid in self._animated_tiles.keys():
-                sprite = self._animated_tiles[tid]
+            sprite = self.sprite_registry.get_sprite(tid)
+            if sprite:
                 self.draw_sprite(world_coord, sprite)
                 continue
 
@@ -157,22 +158,20 @@ if __name__ == "__main__":
     from loaders.overworld import load_britannia
 
 
-    class StubWorldState:
+    class StubInteractableState:
         def get_interactable(self, tid, world_coord):
             return None
         
-    class StubEngine:
-        def __init__(self):
-            self.world_state = StubWorldState()
-
-        def register_sprite(self, sprite_copy):
-            pass
+    class StubSpriteRegistry:
+        def get_sprite(self, tile_id):
+            return None
 
     pygame.init()
 
     # Manual injection
     view_port = ViewPort()
-    view_port.engine = StubEngine()
+    view_port.interactable_state = StubInteractableState()
+    view_port.sprite_registry = StubSpriteRegistry()
     view_port.palette = _ega_palette
 
     view_port.world_rect = Rect(Coord(40,40), Size(5,5))

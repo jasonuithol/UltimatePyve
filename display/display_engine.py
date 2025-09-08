@@ -1,12 +1,13 @@
 # file: display/display_engine.py
-from display.main_display import MainDisplay
-from display.view_port import ViewPort
+from typing import Optional
+
 import pygame
-import animation.sprite as sprite
-import animation.flames as flames
 
 from dark_libraries.dark_math import Coord
-from typing import Optional
+
+from display.main_display import MainDisplay
+from display.view_port import ViewPort
+import animation.sprite as sprite
 from game.u5map import U5Map
 
 class DisplayEngine:
@@ -14,7 +15,6 @@ class DisplayEngine:
     # Injectable Properties
     main_display: MainDisplay
     view_port: ViewPort
-    animated_tile_factory: sprite.AnimatedTileFactory
 
     def _after_inject(self):
 
@@ -30,26 +30,8 @@ class DisplayEngine:
         self.active_map: Optional[U5Map] = None
         self.active_level = 0
 
-        # Register tile_id hooks.
-        self.register_special_tiles()
-
         print(f"Initialised DisplayEngine(id={hex(id(self))})")
 
-    # -------------------------------------------------------------
-    #
-    # TODO: Build a SpriteRegistry, add it to ServiceProvider
-    #
-    #
-    # -------------------------------------------------------------
-    def register_special_tiles(self):
-
-        # Flaming objects 
-        for tile_id, sprite_master_copy in flames.build_all_sprites().items():
-            self.view_port.register_animated_tile(tile_id, sprite_master_copy)
-
-        # Other animated tiles
-        for tile_id, sprite_master_copy in self.animated_tile_factory.build_animated_tile_sprites().items():
-            self.view_port.register_animated_tile(tile_id, sprite_master_copy)
 
     def set_avatar_sprite(self, sprite: sprite.Sprite) -> None:
         self.avatar = sprite
