@@ -68,7 +68,9 @@ class FlameSpriteFactory:
                         if bit_selector & mask_val:
                             # RANDOMLY TOGGLE ORIGINAL
                             if random.choice([True, False]):
-                                composed_value ^= bit_selector
+                                composed_value ^= bit_selector   # XOR function - i.e. for every bit in the following values: e.g. 1010
+                                                                 #                          if bit_selector is 1, then: 
+                                                                 #                              if mask_val is 1, set to 0, and vice-versa
                         else:
                             # leave original alone
                             pass
