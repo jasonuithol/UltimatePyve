@@ -1,8 +1,10 @@
 # file: game/doors.py
 from typing import Callable
+
 from dark_libraries.dark_math import Coord
-from game.door_type_and_door_instance import DoorType
-from game.interactable_factory_registry import InteractableFactoryRegistry
+
+from .door_type_and_door_instance import DoorType
+from .interactable_factory_registry import InteractableFactoryRegistry
 
 class DoorTypeFactory:
 

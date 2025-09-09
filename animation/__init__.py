@@ -1,3 +1,15 @@
 # file: animation/__init__.py
-# loaders/__init__.py
-# This file marks 'loaders' as a package. No exports yet.
+
+from .animated_tile_factory import AnimatedTileFactory
+from .avatar_sprite_factory import AvatarSpriteFactory
+from .flame_sprite_factory import FlameSpriteFactory
+from .sprite_registry import SpriteRegistry
+from .sprite import Sprite
+
+__all__ = [
+    'AnimatedTileFactory',
+    'AvatarSpriteFactory',
+    'FlameSpriteFactory',
+    'SpriteRegistry',
+    'Sprite'
+]

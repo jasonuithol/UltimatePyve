@@ -3,19 +3,17 @@ from typing import Optional, Tuple
 
 from dark_libraries.dark_math import Coord, Vector2
 
-from game.interaction_result import InteractionResult
-from game.interactable_factory_registry import InteractableFactoryRegistry
-from game.map_transitions import get_entry_trigger
-from game.terrain_registry import TerrainRegistry
-from game.transport_mode_registry import TransportModeRegistry
-from game.u5map import U5Map
-
-from loaders.location import LocationLoader
+from loaders import LocationLoader, U5Map
 
 # TODO: Once testing is finished, delete these.
 from loaders.overworld import load_britannia
 from loaders.underworld import load_underworld
-    
+
+from .interactable import InteractionResult, InteractableFactoryRegistry
+from .map_transitions import get_entry_trigger
+from .terrain import TerrainRegistry
+from .transport_mode_registry import TransportModeRegistry
+
 #
 # An immutable state.  transitions return a cloned, modified copy of current state
 #

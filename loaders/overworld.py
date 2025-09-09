@@ -1,10 +1,11 @@
 # file: loaders/overworld.py
 from pathlib import Path
-from game.u5map import U5Map
+
 from dark_libraries.dark_math import Size
 
-from loaders.tileset import load_tileset
-from loaders.data import DataOVL
+from .u5map import U5Map
+from .tileset import load_tileset
+from .data import DataOVL
 
 # === CONFIG ===
 BRIT_DAT_PATH = r".\u5\BRIT.DAT"
@@ -44,6 +45,6 @@ def load_britannia() -> Britannia:
     return _map
 
 if __name__ == "__main__":
-    from loaders.location import render_location_map_to_disk
+    from loaders.location_loader import render_location_map_to_disk
     britannia = load_britannia()
     surf = render_location_map_to_disk(britannia, 0)

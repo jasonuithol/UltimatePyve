@@ -1,8 +1,8 @@
 # file: game/interactable.py
+
 from typing import Protocol
-from dark_libraries.dark_math import Coord
-#from animation.sprite import Sprite
-from game.interaction_result import InteractionResult
+from dark_libraries import Coord
+from .interaction_result import InteractionResult
 
 class Interactable(Protocol):
     coord: Coord

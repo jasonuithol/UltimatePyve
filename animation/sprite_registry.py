@@ -1,5 +1,5 @@
 from typing import Optional
-from animation.sprite import Sprite
+from .sprite import Sprite
 
 class SpriteRegistry:
 

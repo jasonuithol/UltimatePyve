@@ -1,5 +1,5 @@
-from animation.sprite import Sprite
-from loaders.tileset import TileSet
+from .sprite import Sprite
+from loaders import TileSet
 
 
 class AvatarSpriteFactory:

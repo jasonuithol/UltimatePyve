@@ -1,20 +1,17 @@
 # file: main.py
 import pygame
-from animation.animated_tile_factory import AnimatedTileFactory
-from animation.flame_sprite_factory import FlameSpriteFactory
+
 from dark_libraries.service_provider import ServiceProvider
 from dark_libraries.dark_math import Coord, Vector2
 
-from animation.sprite import Sprite
-from animation.avatar_sprite_factory import AvatarSpriteFactory
-from display.display_engine import DisplayEngine
-import game.door_type_factory as door_type_factory
-from game.interactable import InteractionResult
-from game.interactable_factory_registry import InteractableFactoryRegistry
-from game.player_state import PlayerState
-from game.terrain_factory import TerrainFactory
-from loaders.overworld import Britannia
-from loaders.tileset import TileSet
+from animation import AnimatedTileFactory, FlameSpriteFactory, AvatarSpriteFactory, Sprite
+
+from display import DisplayEngine
+
+from game.interactable import InteractionResult, InteractableFactoryRegistry, DoorTypeFactory
+from game import PlayerState
+from game.terrain import TerrainFactory
+from loaders import Britannia, TileSet
 
 import service_composition
 
@@ -47,7 +44,7 @@ class Main:
     animated_tile_factory: AnimatedTileFactory
     flame_sprite_factory: FlameSpriteFactory
     terrain_factory: TerrainFactory
-    door_type_factory: door_type_factory.DoorTypeFactory
+    door_type_factory: DoorTypeFactory
 
     def init(self):
 

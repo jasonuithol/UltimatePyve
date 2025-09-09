@@ -1,7 +1,9 @@
 from typing import Optional
+
 from dark_libraries.dark_math import Coord
-from game.interactable import Interactable
-from game.interactable_factory import InteractableFactory
+
+from .interactable import Interactable
+from .interactable_factory import InteractableFactory
 
 class InteractableFactoryRegistry:
     def _after_inject(self):

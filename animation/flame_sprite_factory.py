@@ -1,11 +1,12 @@
 # file: animation/flames.py
-from typing import Optional, Dict, Iterator
-from animation.sprite import Sprite
-from animation.sprite_registry import SpriteRegistry
-from loaders.tileset import Tile
 import pygame
-
 import random
+from typing import Optional, Iterator
+
+from loaders import Tile
+
+from .sprite import Sprite
+from .sprite_registry import SpriteRegistry
 
 '''
 TILE.16 contains 8 flame overlay tiles for animating specific "normal" tiles that have flames

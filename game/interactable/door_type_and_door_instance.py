@@ -1,15 +1,13 @@
 import random
 
-from animation.sprite import Sprite
-from dark_libraries.custom_decorators import immutable
-from dark_libraries.dark_math import Coord
-
-from game.interactable import Interactable
-from game.interactable_factory import InteractableFactory
-from game.interaction_result import InteractionResult
+from dark_libraries import immutable, Coord
 
 from game.magic import S_MAGIC_UNLOCK
 from game.usable_items import UsableItem
+
+from .interactable import Interactable
+from .interactable_factory import InteractableFactory
+from .interaction_result import InteractionResult
 
 @immutable
 class DoorType(InteractableFactory):

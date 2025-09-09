@@ -1,6 +1,5 @@
-from game.terrain import Terrain
-from game.terrain_registry import TerrainRegistry
-
+from .terrain import Terrain
+from .terrain_registry import TerrainRegistry
 
 class TerrainFactory:
 

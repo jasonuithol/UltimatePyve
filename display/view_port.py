@@ -2,13 +2,14 @@
 import pygame
 from typing import Optional
 
+from dark_libraries import Coord, Size, Rect
+
 import animation.sprite as sprite
-from animation.sprite_registry import SpriteRegistry
-from game.interactable_factory_registry import InteractableFactoryRegistry
-from game.u5map import U5Map
+from animation import SpriteRegistry
+from loaders import U5Map
+from game.interactable import InteractableFactoryRegistry
 
 from loaders.tileset import TILE_ID_GRASS, EgaPalette, Tile
-from dark_libraries.dark_math import Coord, Size, Rect
 
 class ViewPort:
 

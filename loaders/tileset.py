@@ -1,13 +1,9 @@
 # file: loaders/tileset.py
-import pygame
-import base64
-import struct
+import pygame, base64, struct
 from pathlib import Path
-from typing import List, Optional, Tuple
-from dataclasses import dataclass
 
-from dark_libraries.custom_decorators import auto_init
-from dark_libraries.dark_math import Coord
+from typing import List, Optional, Tuple
+from dark_libraries import auto_init, Coord
 
 _TILES16_PATH = r".\u5\TILES.16"
 _tileset16_cache = {}

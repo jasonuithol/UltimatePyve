@@ -1,11 +1,11 @@
 # file: loaders/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
 
-from loaders.data import DataOVL
-from loaders.location import LocationLoader, LocationMetadataBuilder
-from loaders.overworld import load_britannia
-from loaders.tileset import _ega_palette, load_tileset
-from loaders.underworld import load_underworld
+from .overworld import load_britannia
+from .tileset import _ega_palette, load_tileset
+from .underworld import load_underworld
+
+from loaders import DataOVL, LocationLoader, LocationMetadataBuilder
 
 def compose(provider: ServiceProvider):
     provider.register_instance(DataOVL.load())

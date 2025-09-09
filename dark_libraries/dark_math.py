@@ -1,7 +1,7 @@
 # file: dark_libraries/dark_math.py
 
 from typing import Iterable, Self
-from dark_libraries.custom_decorators import immutable, auto_init
+from .custom_decorators import immutable, auto_init
 
 @immutable
 @auto_init

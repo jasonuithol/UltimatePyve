@@ -1,4 +1,4 @@
-from dark_libraries.custom_decorators import immutable
+from dark_libraries import immutable
 
 @immutable
 class InteractionResult:

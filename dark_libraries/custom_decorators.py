@@ -1,6 +1,5 @@
 # file: dark_libraries/custom_decorators.py
-import functools
-import makefun
+import functools, makefun
 
 def immutable(cls):
     orig_setattr = cls.__setattr__

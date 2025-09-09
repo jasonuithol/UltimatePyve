@@ -1,7 +1,6 @@
-from typing import Dict
-from animation.sprite import Sprite
-from animation.sprite_registry import SpriteRegistry
-from loaders.tileset import TileSet
+from .sprite import Sprite
+from .sprite_registry import SpriteRegistry
+from loaders import TileSet
 
 class AnimatedTileFactory:
 

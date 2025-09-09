@@ -1,14 +1,14 @@
 # file: display/display_engine.py
-from typing import Optional
-
 import pygame
 
-from dark_libraries.dark_math import Coord
+from typing import Optional
+from dark_libraries import Coord
 
-from display.main_display import MainDisplay
-from display.view_port import ViewPort
 import animation.sprite as sprite
-from game.u5map import U5Map
+from loaders import U5Map
+
+from .main_display import MainDisplay
+from .view_port import ViewPort
 
 class DisplayEngine:
 

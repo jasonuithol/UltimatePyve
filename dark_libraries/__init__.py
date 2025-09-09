@@ -1,3 +1,11 @@
 # file: dark_libraries/__init__.py
-# loaders/__init__.py
-# This file marks 'loaders' as a package. No exports yet.
+from .custom_decorators import immutable, auto_init
+from .dark_math import Coord, Size, Rect
+
+__all__ = [
+    'immutable', 
+    'auto_init',
+    'Coord', 
+    'Size', 
+    'Rect'
+]

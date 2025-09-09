@@ -1,6 +1,6 @@
 # file: animation/sprite.py
-from typing import Dict, List, Optional
-from loaders.tileset import TileSet, Tile
+from typing import List, Optional
+from loaders.tileset import Tile
 
 class Sprite:
     def __init__(self, frames: Optional[List[Tile]] = None, frame_time: float = 0.5, frame_time_offset: float = 0.0):

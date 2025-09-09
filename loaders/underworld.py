@@ -1,9 +1,11 @@
 # file: loaders/underworld.py
 
 from pathlib import Path
-from game.u5map import U5Map
-from loaders.tileset import load_tileset
-from dark_libraries.dark_math import Size
+
+from dark_libraries import Size
+
+from .u5map import U5Map
+from .tileset import load_tileset
 
 # === CONFIG ===
 UNDER_DAT_PATH = r".\u5\UNDER.DAT"
@@ -38,7 +40,7 @@ def load_underworld() -> UnderWorld:
     return _map
 
 if __name__ == "__main__":
-    from loaders.location import render_location_map_to_disk
+    from loaders.location_loader import render_location_map_to_disk
     underworld = load_underworld()
     surf = render_location_map_to_disk(underworld, 0)
 
