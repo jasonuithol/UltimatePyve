@@ -84,12 +84,8 @@ class ViewPort:
 
             tid = u5map.get_tile_id(level_ix, world_coord)
 
-            # if the tile is animated, pull a frame tile from the sprite and draw that instead.
-            sprite = self.sprite_registry.get_sprite(tid)
-            if sprite:
-                self.draw_sprite(world_coord, sprite)
-                continue
-
+            # Allow interactables to change what state an object is e.g. allow doors to open/close/unlock
+            # or chests to have loot stacks on them (i.e. be open)
             interactable = self.interactable_factory_registry.get_interactable(tid, world_coord)
             if interactable:
                 tid = interactable.get_current_tile_id()
@@ -98,6 +94,12 @@ class ViewPort:
                 self.draw_sprite(world_coord, sprite)
                 continue
                 '''
+
+            # if the tile_id is animated, pull a frame tile from the sprite and draw that instead.
+            sprite = self.sprite_registry.get_sprite(tid)
+            if sprite:
+                self.draw_sprite(world_coord, sprite)
+                continue
 
             # Don't try to render a non-existant tile id.
             if 0 <= tid < len(u5map.tileset.tiles):
