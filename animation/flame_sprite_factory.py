@@ -102,12 +102,23 @@ class FlameSpriteFactory:
 #
 if __name__ == "__main__":
 
+    registry = SpriteRegistry()
+    registry._after_inject()
+
+    factory = FlameSpriteFactory()
+    factory.sprite_registry = registry
+    factory._after_inject()
+    
+    factory.register_sprites()
+
     from loaders.tileset import load_tileset
     tileset = load_tileset()
 
+    keys = list(registry._animated_tiles.keys())
+
     selection_index = 0
-    current_tile_id = _flame_animatable[selection_index]
-    current_sprite = build_sprite(current_tile_id)
+    current_tile_id = keys[selection_index]
+    current_sprite = registry._animated_tiles[current_tile_id]
     index_delta = 0
     frame_time = 0.2
 
@@ -146,9 +157,9 @@ if __name__ == "__main__":
                     frame_time_delta = -1
 
             if index_delta != 0:
-                selection_index = (selection_index + index_delta) % len(_flame_animatable)
-                current_tile_id = _flame_animatable[selection_index]
-                current_sprite = build_sprite(current_tile_id)
+                selection_index = (selection_index + index_delta) % len(registry._animated_tiles)
+                current_tile_id = keys[selection_index]
+                current_sprite = registry._animated_tiles[current_tile_id]
 
             frame_time += (frame_time_delta * 0.01)
             if frame_time < 0.01:
