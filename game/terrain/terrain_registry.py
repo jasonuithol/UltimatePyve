@@ -7,7 +7,6 @@ class TerrainRegistry:
         self._terrains: dict[int, Terrain] = dict()
 
     def register_terrain(self, tile_id: int, terrain: Terrain):
-        print(f"registered terrain {tile_id}")
         self._terrains[tile_id] = terrain
 
     def get_terrain(self, tile_id: int) -> Optional[Terrain]:
