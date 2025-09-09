@@ -1,10 +1,10 @@
 # file: display/view_port.py
 import pygame
-from typing import Optional, Dict
+from typing import Optional
 
 import animation.sprite as sprite
 from animation.sprite_registry import SpriteRegistry
-from game.interactable import InteractableState
+from game.interactable_factory_registry import InteractableFactoryRegistry
 from game.u5map import U5Map
 
 from loaders.tileset import TILE_ID_GRASS, EgaPalette, Tile
@@ -14,7 +14,7 @@ class ViewPort:
 
     # Injectable Properties
     palette: EgaPalette
-    interactable_state: InteractableState
+    interactable_factory_registry: InteractableFactoryRegistry
     sprite_registry: SpriteRegistry
 
     world_rect = Rect(Coord(0,0), Size(21,15))
@@ -90,11 +90,14 @@ class ViewPort:
                 self.draw_sprite(world_coord, sprite)
                 continue
 
-            interactable = self.interactable_state.get_interactable(tid, world_coord)
+            interactable = self.interactable_factory_registry.get_interactable(tid, world_coord)
             if interactable:
+                tid = interactable.get_current_tile_id()
+                '''
                 sprite = interactable.create_sprite()
                 self.draw_sprite(world_coord, sprite)
                 continue
+                '''
 
             # Don't try to render a non-existant tile id.
             if 0 <= tid < len(u5map.tileset.tiles):

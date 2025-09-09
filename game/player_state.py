@@ -3,7 +3,8 @@ from typing import Optional, Tuple
 
 from dark_libraries.dark_math import Coord, Vector2
 
-from game.interactable import InteractableState, InteractionResult
+from game.interaction_result import InteractionResult
+from game.interactable_factory_registry import InteractableFactoryRegistry
 from game.map_transitions import get_entry_trigger
 from game.terrain_registry import TerrainRegistry
 from game.transport_mode_registry import TransportModeRegistry
@@ -22,7 +23,7 @@ class PlayerState:
 
     # Injectable
     location_loader: LocationLoader
-    interactable_state: InteractableState
+    interactable_factory_registry: InteractableFactoryRegistry
     terrain_registry: TerrainRegistry
     transport_mode_registry: TransportModeRegistry
 
@@ -71,7 +72,7 @@ class PlayerState:
         transport_mode = self.transport_mode_registry.get_transport_mode(self.transport_mode)
         current_map, current_level, _ = self.get_current_position()
         target_tile_id = current_map.get_tile_id(current_level, target)
-        interactable = self.interactable_state.get_interactable(target_tile_id, target)      
+        interactable = self.interactable_factory_registry.get_interactable(target_tile_id, target)      
         if interactable:
             result = interactable.move_into()
             return result.success
@@ -82,7 +83,7 @@ class PlayerState:
     #
 
     def _on_changing_map(self) -> None:
-        self.interactable_state.clear_interactables()
+        self.interactable_factory_registry.clear_interactables()
 
     def _move_to_inner_map(self, u5map: U5Map) -> InteractionResult:
         self.inner_map = u5map
@@ -172,7 +173,7 @@ class PlayerState:
     
     def rotate_transport(self) -> InteractionResult:
 
-        self.transport_mode = (self.transport_mode + 1) % len(get_transport_modes())
+        self.transport_mode = (self.transport_mode + 1) % len(self.transport_mode_registry._transport_modes)
 
         # forbid turning into a ship on land, for example.
         _, _, target = self.get_current_position()

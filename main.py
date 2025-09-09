@@ -8,7 +8,7 @@ from dark_libraries.dark_math import Coord, Vector2
 from animation.sprite import Sprite
 from animation.avatar_sprite_factory import AvatarSpriteFactory
 from display.display_engine import DisplayEngine
-import game.doors as doors
+import game.door_type_factory as door_type_factory
 from game.interactable import InteractionResult
 from game.player_state import PlayerState
 from game.terrain_factory import TerrainFactory
@@ -45,6 +45,7 @@ class Main:
     animated_tile_factory: AnimatedTileFactory
     flame_sprite_factory: FlameSpriteFactory
     terrain_factory: TerrainFactory
+    door_type_factory: door_type_factory.DoorTypeFactory
 
     def init(self):
 
@@ -62,18 +63,13 @@ class Main:
         player_sprite: Sprite = self.avatar_sprite_factory.create_player(transport_mode=0, direction=0)
         self.display_engine.set_avatar_sprite(player_sprite)
 
-        # -----------------------------------------------------------------------------------------------------------------
-        #
-        # TODO: Every door/chest/orientable etc class will be passed this "state" to register each type of collection
-        #
-        # -----------------------------------------------------------------------------------------------------------------
-
-        for tile_id, door_factory in doors.build_all_door_types().items():
-            self.display_engine.view_port.interactable_state.register_interactable_factory(tile_id, door_factory)
-
         self.animated_tile_factory.register_sprites()
         self.flame_sprite_factory.register_sprites()
         self.terrain_factory.register_terrains()
+
+        # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
+        #       one day maybe even the avatar's transports could be these ?
+        self.door_type_factory.register_interactable_factories()
 
     def run(self) -> None:
 
