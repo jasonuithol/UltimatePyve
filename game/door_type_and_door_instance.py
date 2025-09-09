@@ -81,6 +81,7 @@ class DoorInstance(Interactable):
         self.tile_id:   int     = self.door_type.original_tile_id
         self.is_locked: bool    = self.door_type.original_lock_type in [DoorType.L_KEY_LOCKED, DoorType.L_MAGIC_LOCKED]
         self.is_open:   bool    = False
+        self.turns_until_close: int = 0
 
     def _close(self) -> None:
         self._become_unlocked()
@@ -119,6 +120,7 @@ class DoorInstance(Interactable):
 
         self.is_open = True
         self.tile_id = DoorType.D_OPENED
+        self.turns_until_close = 4
 
         return InteractionResult.R_QUIET_SUCCESS
 
@@ -147,6 +149,15 @@ class DoorInstance(Interactable):
         )
         return sprite
     '''
+
+    def pass_time(self):
+        if self.is_open and self.turns_until_close > 0:
+            self.turns_until_close -= 1
+
+            print(f"DOOR OPEN: Turns until door closes {self.turns_until_close}")
+
+            if self.turns_until_close == 0:
+                self._close()
 
     def move_into(self, actor=None) -> InteractionResult:
         if self.is_open:

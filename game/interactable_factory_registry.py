@@ -29,5 +29,9 @@ class InteractableFactoryRegistry:
         self.interactables[coord] = interactable
         return interactable
 
+    def pass_time(self):
+        for interactable in self.interactables.values():
+            interactable.pass_time()
+
     def clear_interactables(self) -> None:
         self.interactables.clear()    

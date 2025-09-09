@@ -10,6 +10,7 @@ from animation.avatar_sprite_factory import AvatarSpriteFactory
 from display.display_engine import DisplayEngine
 import game.door_type_factory as door_type_factory
 from game.interactable import InteractionResult
+from game.interactable_factory_registry import InteractableFactoryRegistry
 from game.player_state import PlayerState
 from game.terrain_factory import TerrainFactory
 from loaders.overworld import Britannia
@@ -40,6 +41,7 @@ class Main:
     tileset: TileSet
     player_state: PlayerState
     display_engine: DisplayEngine
+    interactable_factory_registry: InteractableFactoryRegistry
 
     avatar_sprite_factory: AvatarSpriteFactory
     animated_tile_factory: AnimatedTileFactory
@@ -91,6 +93,9 @@ class Main:
                                     print(f"{interaction_result.message} :(")
                                 else:
                                     print(f"{interaction_result.message} :)")
+
+                            # Allow "in=game" time to pass
+                            self.interactable_factory_registry.pass_time()
 
             #
             # all events processed.

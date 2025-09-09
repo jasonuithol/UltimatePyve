@@ -13,8 +13,12 @@ class Interactable(Protocol):
         ...
     '''
 
+
     def get_current_tile_id(self) -> int:
         ...
+
+    def pass_time(self):
+        return InteractionResult.nothing()
 
     def move_into(self, actor=None) -> InteractionResult:
         return InteractionResult.nothing()
