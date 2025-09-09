@@ -137,7 +137,6 @@ class DoorInstance(Interactable):
         return InteractionResult.R_LOUD_SUCCESS
 
     # Interactable implementation: Start
-    
     def get_current_tile_id(self):
         return self.tile_id
 
