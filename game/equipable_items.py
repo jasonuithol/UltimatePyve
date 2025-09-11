@@ -77,7 +77,7 @@ class EquipableItemFactory:
         
     def build(self):
 
-        mysterious_indexes_armour = to_ints(dataOvl.armor_index_plus10)
+#        mysterious_indexes_armour = to_ints(dataOvl.armor_index_plus10)
     
         descriptions_armour = to_strs(dataOvl.armour_strings)
         descriptions_weapons = to_strs(dataOvl.weapon_strings)
@@ -100,12 +100,18 @@ class EquipableItemFactory:
         items = []
 
         def build_item(description_index: tuple[int,int], short_index: int, dra_values_index: int, slot: Slot, tile_id: TileId, rune_id: RuneId):
+
+            if dra_values_index is None:
+                d,r,a = 0,0,0
+            else:
+                d,r,a = defence_values[dra_values_index], range_values[dra_values_index], attack_values[dra_values_index]
+
             item = EquipableItem(
                 name = descriptions[description_index[0]][description_index[1]],
                 short_name = None if short_index is None else shortened_names[short_index],
-                range_ = range_values[dra_values_index],
-                defence = defence_values[dra_values_index],
-                attack = attack_values[dra_values_index],
+                range_ = r,
+                defence = d,
+                attack = a,
                 slot = slot,
                 tile_id = tile_id,
                 rune_id = rune_id
@@ -178,6 +184,20 @@ class EquipableItemFactory:
         #
         # TODO: RINGS AND AMULETS
         #
+
+        def build_ring(description_index: tuple[int,int], short_index: int, dra_values_index: int):
+            build_item(description_index, short_index, dra_values_index, Slot.FINGER, TileId.RING, RuneId.RING)
+
+        build_ring((3,0),23,42) # Inv. Ring
+        build_ring((3,1),24,43) # Prot. Ring
+        build_ring((3,2),25,44) # Regen Ring
+
+        def build_amulet(description_index: tuple[int,int], short_index: int, dra_values_index: int, rune_id: RuneId):
+            build_item(description_index, short_index, dra_values_index, Slot.NECK, TileId.AMULET, rune_id)
+
+        build_amulet((3, 3),None,45,RuneId.AMULET) # Amulet of Turning
+        build_amulet((3, 4),None,46,RuneId.AMULET) # Spiked Collar
+        build_amulet((2,29),None,None,RuneId.ANKH  ) # Ankh
 
         for item in items:
             print(item)
