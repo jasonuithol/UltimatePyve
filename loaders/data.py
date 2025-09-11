@@ -13,6 +13,8 @@ class DataOVL:
         def slice_at(offset, length):
             return raw[offset:offset+length]
 
+        # ------------- thanks Co-pilot/ChatGpt4 --------------------
+
         # 0x00 0x18 Unknown
         self.unknown_00 = slice_at(0x00, 0x18)
         # 0x18 0x38 Licence for the MS-Runtime
@@ -188,6 +190,48 @@ class DataOVL:
         self.inn_bed_x_coords = slice_at(0x4e8a, 0x5)
         # 0x4e90 0x5 Inn bed Y-coordinate
         self.inn_bed_y_coords = slice_at(0x4e90, 0x5)
+
+        # --------- thanks Meta/Llama ------------------------
+
+        # 0x154C 0x30*2 Monster flags
+        self.monster_flags = slice_at(0x154C, 0x30*2)
+
+        # 0x1EEA 28*2 Moon phases
+        self.moon_phases = slice_at(0x1EEA, 28*2)
+
+        # 0x1F7E 8 Shrine x coordinates
+        self.shrine_x_coords = slice_at(0x1F7E, 8)
+        # 0x1F86 8 Shrine y coordinates
+        self.shrine_y_coords = slice_at(0x1F86, 8)
+
+        # 0x3E88 0x72 Hidden object tile indices
+        self.hidden_object_tiles = slice_at(0x3E88, 0x72)
+        # 0x3EFA 0x72 Hidden object qualities
+        self.hidden_object_qualities = slice_at(0x3EFA, 0x72)
+        # 0x3F6C 0x72 Hidden object location numbers
+        self.hidden_object_locations = slice_at(0x3F6C, 0x72)
+        # 0x3FDE 0x72 Hidden object z coordinates
+        self.hidden_object_z_coords = slice_at(0x3FDE, 0x72)
+        # 0x4050 0x72 Hidden object x coordinates
+        self.hidden_object_x_coords = slice_at(0x4050, 0x72)
+        # 0x40C2 0x72 Hidden object y coordinates
+        self.hidden_object_y_coords = slice_at(0x40C2, 0x72)
+
+        # 0x4513 0x8 Dungeon sprite indexes
+        self.dungeon_sprite_indexes = slice_at(0x4513, 0x8)
+
+        # 0x4D86 0x4 Dock x coordinates
+        self.dock_x_coords = slice_at(0x4D86, 0x4)
+        # 0x4D8A 0x4 Dock y coordinates
+        self.dock_y_coords = slice_at(0x4D8A, 0x4)
+
+        # 0x541E 8 Scan codes
+        self.scan_codes = slice_at(0x541E, 8)
+        # 0x5426 8 Internal codes
+        self.internal_codes = slice_at(0x5426, 8)
+
+        # 0x7252 0x32 Wishing well horse keywords
+        self.wishing_well_horse_keywords = slice_at(0x7252, 0x32)
 
     @classmethod
     def load(cls):
