@@ -197,7 +197,7 @@ class EquipableItemFactory:
 
         build_amulet((3, 3),None,45,RuneId.AMULET) # Amulet of Turning
         build_amulet((3, 4),None,46,RuneId.AMULET) # Spiked Collar
-        build_amulet((2,29),None,None,RuneId.ANKH) # Ankh
+        build_amulet((2,29),None,None,RuneId.ANKH) # Ankh 
 
         for item in items:
             print(item)
