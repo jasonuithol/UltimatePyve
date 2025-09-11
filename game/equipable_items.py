@@ -175,6 +175,10 @@ class EquipableItemFactory:
         build_weapon((1,  8),   21, 40) # Jewelled Sword	1	8	  21
         build_weapon((1,  9),   22, 41) # Mystic Sword	    1	9	  22
 
+        #
+        # TODO: RINGS AND AMULETS
+        #
+
         for item in items:
             print(item)
 
