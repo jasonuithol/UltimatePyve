@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from dark_libraries.custom_decorators import auto_init
+
 from loaders import DataOVL
 
 class Slot(Enum):
@@ -99,7 +99,7 @@ class EquipableItemFactory:
 
         items = []
 
-        def build_armour(description_index: int, short_index: int, dra_values_index: int, slot: Slot, tile_id: TileId, rune_id: RuneId):
+        def build_item(description_index: tuple[int,int], short_index: int, dra_values_index: int, slot: Slot, tile_id: TileId, rune_id: RuneId):
             item = EquipableItem(
                 name = descriptions[description_index[0]][description_index[1]],
                 short_name = None if short_index is None else shortened_names[short_index],
@@ -113,29 +113,67 @@ class EquipableItemFactory:
             items.append(item)
             return item
         
+        def build_helm(description_index: tuple[int,int], short_index: int, dra_values_index: int):
+            build_item(description_index, short_index, dra_values_index, Slot.HEAD, TileId.HELM, RuneId.HELM)
+
         # Helms
-        build_armour(  (0, 0),  0  ,  0, Slot.HEAD, TileId.HELM, RuneId.HELM)
-        build_armour(  (2, 0), None,  1, Slot.HEAD, TileId.HELM, RuneId.HELM)
-        build_armour(  (2, 1), None,  2, Slot.HEAD, TileId.HELM, RuneId.HELM)
-        build_armour(  (0, 1),  1  ,  3, Slot.HEAD, TileId.HELM, RuneId.HELM)
+        build_helm((0, 0),    0, 0) # Leather Helm
+        build_helm((2, 0), None, 1) # Chain Coif
+        build_helm((2, 2), None, 2) # Iron Helm
+        build_helm((0, 1),    1, 3) # Spiked Helm
         
+        def build_shield(description_index: tuple[int,int], short_index: int, dra_values_index: int):
+            build_item(description_index, short_index, dra_values_index, Slot.ONE_HAND, TileId.SHIELD, RuneId.SHIELD)
+
         # Shields
-        build_armour(  (0, 2),  2  ,  4, Slot.ONE_HAND, TileId.SHIELD, RuneId.SHIELD)
-        build_armour(  (0, 3),  3  ,  5, Slot.ONE_HAND, TileId.SHIELD, RuneId.SHIELD)
-        build_armour(  (0, 4),  4  ,  6, Slot.ONE_HAND, TileId.SHIELD, RuneId.SHIELD)
-        build_armour(  (0, 5),  5  ,  7, Slot.ONE_HAND, TileId.SHIELD, RuneId.SHIELD)
-        build_armour(  (0, 6),  6  ,  8, Slot.ONE_HAND, TileId.SHIELD, RuneId.SHIELD)
+        build_shield((0, 2), 2, 4) # Small Shield
+        build_shield((0, 3), 3, 5) # Large Shield
+        build_shield((0, 4), 4, 6) # Spiked Shield
+        build_shield((0, 5), 5, 7) # Magic Shield
+        build_shield((0, 6), 6, 8) # Jewelled Shield
+
+        def build_armour(description_index: tuple[int,int], short_index: int, dra_values_index: int):
+            build_item(description_index, short_index, dra_values_index, Slot.BODY, TileId.ARMOUR, RuneId.ARMOR)
 
         # Armour
-        build_armour(  (0, 7),  7  ,  9, Slot.BODY, TileId.ARMOUR, RuneId.ARMOR)
-        build_armour(  (0, 8),  8  , 10, Slot.BODY, TileId.ARMOUR, RuneId.ARMOR)
-        build_armour(  (2, 2), None, 11, Slot.BODY, TileId.ARMOUR, RuneId.ARMOR)
-        build_armour(  (0, 9),  9  , 12, Slot.BODY, TileId.ARMOUR, RuneId.ARMOR)
-        build_armour(  (0,10), 10  , 13, Slot.BODY, TileId.ARMOUR, RuneId.ARMOR)
+        build_armour((0,  7),    7,  9) # Cloth Armour
+        build_armour((0,  8),    8, 10) # Leather Armour
+        build_armour((2,  3), None, 11) # Ring Mail
+        build_armour((0,  9),    9, 12) # Scale Main
+        build_armour((0, 10),   10, 13) # Chain Mail
+        build_armour((0, 11),   11, 14) # Plate Mail
+        build_armour((0, 12),   12, 15) # Mystic Armour
 
-        # Plate and mystic armour, TODO
-        #build_armour(  (0, 2), 2   , 4, Slot.BODY, TileId.ARMOUR, RuneId.ARMOR)
-        #build_armour(  (0, 2), 2   , 4, Slot.BODY, TileId.ARMOUR, RuneId.ARMOR)
+        def build_weapon(description_index: tuple[int,int], short_index: int, dra_values_index: int, two_handed: bool = False, rune_id: RuneId = RuneId.SWORD):
+            slot = Slot.TWO_HAND if two_handed else Slot.ONE_HAND
+            build_item(description_index, short_index, dra_values_index, slot, TileId.WEAPON, rune_id)
+
+        build_weapon((2,  4), None, 16) # Dagger	        2	4	None
+        build_weapon((2,  6), None, 17) # Sling	            2 	6	None
+        build_weapon((2,  7), None, 18) # Club	            2	7	None
+        build_weapon((1,  0),   13, 19) # Flaming Oil	    1	0	  13
+        build_weapon((1,  1),   14, 20) # Main Gauche	    1	1	  14
+        build_weapon((2,  9), None, 21) # Spear	            2	9	None
+        build_weapon((1,  2),   15, 22) # Throwing Axe	    1	2	  15
+        build_weapon((1,  3),   16, 23) # Short Sword	    1	3	  16
+        build_weapon((2, 10), None, 24) # Mace	            2	10	None
+        build_weapon((1,  4),   17, 25) # Morning Star	    1	4	  17
+        build_weapon((2, 12), None, 26) # Bow	            2	12	None
+
+        build_weapon((2, 15), None, 28) # Crossbow	        2	15	None
+
+        build_weapon((2, 19), None, 30) # Long Sword	    2	19	None
+        build_weapon((2, 21), None, 31) # 2H Hammer	        2	21	None
+        build_weapon((2, 22), None, 32) # 2H Axe	        2	22	None
+        build_weapon((2, 24), None, 33) # 2H Sword	        2	24	None
+        build_weapon((2, 26), None, 34) # Halberd	        2	26	None
+        build_weapon((1,  5),   18, 35) # Chaos Sword	    1	5	  18
+        build_weapon((2, 27), None, 36) # Magic Bow	        2	27	None
+        build_weapon((1,  6),   19, 37) # Silver Sword	    1	6	  19
+        build_weapon((2, 28), None, 38) # Magic Axe	        2	28	None
+        build_weapon((1,  7),   20, 39) # Glass Sword	    1	7	  20
+        build_weapon((1,  8),   21, 40) # Jewelled Sword	1	8	  21
+        build_weapon((1,  9),   22, 41) # Mystic Sword	    1	9	  22
 
         for item in items:
             print(item)
@@ -152,6 +190,19 @@ if __name__ == "__main__":
 
     factory.build()
 
+    '''
+    rda_values = zip(dataOvl.range_values, dataOvl.defense_values, dataOvl.attack_values)
+    min_range = min(len(dataOvl.range_values), len(dataOvl.defense_values), len(dataOvl.attack_values))
+    max_range = max(len(dataOvl.range_values), len(dataOvl.defense_values), len(dataOvl.attack_values))
+    for i in range(max_range):
+        r = dataOvl.range_values[i]   if i < len(dataOvl.range_values)   else None
+        d = dataOvl.defense_values[i] if i < len(dataOvl.defense_values) else None
+        a = dataOvl.attack_values[i]  if i < len(dataOvl.attack_values)  else None
+        print(",".join(map(lambda x: str(x),[r,d,a])))
 
+    descriptions_weapons = to_strs(dataOvl.weapon_strings)
+    descriptions_weapons_plus10 = to_strs(dataOvl.weapon_strings_plus10)
 
-
+    for name in descriptions_weapons + descriptions_weapons_plus10:
+        print(str(name)[2:].replace("'", ""))
+    '''
