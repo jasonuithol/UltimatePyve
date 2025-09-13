@@ -3,11 +3,11 @@ from typing import Optional, Tuple
 
 from dark_libraries.dark_math import Coord, Vector2
 
-from loaders import LocationLoader, U5Map
+from maps import LocationLoader, U5Map
 
 # TODO: Once testing is finished, delete these.
-from loaders.overworld import load_britannia
-from loaders.underworld import load_underworld
+from maps.overworld import load_britannia
+from maps.underworld import load_underworld
 
 from .interactable import InteractionResult, InteractableFactoryRegistry
 from .map_transitions import get_entry_trigger

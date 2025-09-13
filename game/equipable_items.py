@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from loaders import DataOVL
+from maps import DataOVL
 
 class Slot(Enum):
     HEAD = 0
@@ -51,9 +51,9 @@ class RuneId(Enum):
     POTION = 29
     MORNING_STAR = 30
 
-
 @dataclass
-class EquipableItem:
+class EquipableItemType:
+    index: int
     name: str
     short_name: str
     range_: int
@@ -69,11 +69,19 @@ def to_ints(bytes: bytearray):
 def to_strs(bytes: bytearray):
     return bytes.split(b"\0")
 
+class ItemTypeRegistry:
+
+    def _after_inject(self):
+        self.item_types: dict[int, EquipableItemType] = dict()
+
+    def register_item_type(self, item_type: EquipableItemType):
+        self.item_types[item_type.index] = item_type
+
 class EquipableItemFactory:
 
     # Injectable
     dataOvl: DataOVL
-
+    item_type_registry: ItemTypeRegistry
         
     def build(self):
 
@@ -101,17 +109,13 @@ class EquipableItemFactory:
 
         def build_item(description_index: tuple[int,int], short_index: int, dra_values_index: int, slot: Slot, tile_id: TileId, rune_id: RuneId):
 
-            if dra_values_index is None:
-                d,r,a = 0,0,0
-            else:
-                d,r,a = defence_values[dra_values_index], range_values[dra_values_index], attack_values[dra_values_index]
-
-            item = EquipableItem(
+            item = EquipableItemType(
+                index = dra_values_index,
                 name = descriptions[description_index[0]][description_index[1]],
                 short_name = None if short_index is None else shortened_names[short_index],
-                range_ = r,
-                defence = d,
-                attack = a,
+                range_ = 0 if dra_values_index > len(range_values) else range_values[dra_values_index],
+                defence = 0 if dra_values_index > len(defence_values) else defence_values[dra_values_index],
+                attack = 0 if dra_values_index > len(attack_values) else attack_values[dra_values_index],
                 slot = slot,
                 tile_id = tile_id,
                 rune_id = rune_id
@@ -197,9 +201,10 @@ class EquipableItemFactory:
 
         build_amulet((3, 3),None,45,RuneId.AMULET) # Amulet of Turning
         build_amulet((3, 4),None,46,RuneId.AMULET) # Spiked Collar
-        build_amulet((2,29),None,None,RuneId.ANKH) # Ankh 
+        build_amulet((2,29),None,47,RuneId.ANKH) # Ankh 
 
         for item in items:
+            self.item_type_registry.register_item_type(item)
             print(item)
 
 #
@@ -213,20 +218,3 @@ if __name__ == "__main__":
     factory.dataOvl = dataOvl
 
     factory.build()
-
-    '''
-    rda_values = zip(dataOvl.range_values, dataOvl.defense_values, dataOvl.attack_values)
-    min_range = min(len(dataOvl.range_values), len(dataOvl.defense_values), len(dataOvl.attack_values))
-    max_range = max(len(dataOvl.range_values), len(dataOvl.defense_values), len(dataOvl.attack_values))
-    for i in range(max_range):
-        r = dataOvl.range_values[i]   if i < len(dataOvl.range_values)   else None
-        d = dataOvl.defense_values[i] if i < len(dataOvl.defense_values) else None
-        a = dataOvl.attack_values[i]  if i < len(dataOvl.attack_values)  else None
-        print(",".join(map(lambda x: str(x),[r,d,a])))
-
-    descriptions_weapons = to_strs(dataOvl.weapon_strings)
-    descriptions_weapons_plus10 = to_strs(dataOvl.weapon_strings_plus10)
-
-    for name in descriptions_weapons + descriptions_weapons_plus10:
-        print(str(name)[2:].replace("'", ""))
-    '''

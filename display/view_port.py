@@ -6,14 +6,15 @@ from dark_libraries import Coord, Size, Rect
 
 import animation.sprite as sprite
 from animation import SpriteRegistry
-from loaders import U5Map
+from maps import U5Map
 from game.interactable import InteractableFactoryRegistry
 
-from loaders.tileset import TILE_ID_GRASS, EgaPalette, Tile
+from tileset import TILE_ID_GRASS, EgaPalette, Tile, TileSet
 
 class ViewPort:
 
     # Injectable Properties
+    tileset: TileSet
     palette: EgaPalette
     interactable_factory_registry: InteractableFactoryRegistry
     sprite_registry: SpriteRegistry
@@ -79,7 +80,7 @@ class ViewPort:
             # Don't try to pull a tile from outside the source map.
             # If out of bounds, use grass tile.
             if not u5map.is_in_bounds(world_coord):
-                tile = u5map.tileset.tiles[TILE_ID_GRASS]
+                tile = self.tileset.tiles[TILE_ID_GRASS]
                 self.draw_tile(world_coord, tile)
                 continue
 
@@ -103,8 +104,8 @@ class ViewPort:
                 continue
 
             # Don't try to render a non-existant tile id.
-            if 0 <= tid < len(u5map.tileset.tiles):
-                tile: Tile = u5map.tileset.tiles[tid]
+            if 0 <= tid < len(self.tileset.tiles):
+                tile: Tile = self.tileset.tiles[tid]
 
                 self.draw_tile(world_coord, tile)
 
@@ -159,8 +160,8 @@ class ViewPort:
 #
 if __name__ == "__main__":
 
-    from loaders.tileset import _ega_palette
-    from loaders.overworld import load_britannia
+    from tileset.tileset import _ega_palette
+    from maps.overworld import load_britannia
 
     class StubInteractableState:
         def get_interactable(self, tid, world_coord):

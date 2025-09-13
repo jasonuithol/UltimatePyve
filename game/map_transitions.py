@@ -1,7 +1,7 @@
 # file: game/map_transitions.py
 
 from typing import Optional, Dict
-from loaders import DataOVL
+from maps import DataOVL
 from dark_libraries import Coord
 
 Triggers = Dict[Coord, int]  # (x, y, location_index)

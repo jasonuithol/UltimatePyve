@@ -5,7 +5,7 @@ from typing import Optional
 from dark_libraries import Coord
 
 import animation.sprite as sprite
-from loaders import U5Map
+from maps import U5Map
 
 from .main_display import MainDisplay
 from .view_port import ViewPort

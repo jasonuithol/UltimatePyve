@@ -1,6 +1,5 @@
 from .sprite import Sprite
-from loaders import TileSet
-
+from tileset import TileSet
 
 class AvatarSpriteFactory:
 

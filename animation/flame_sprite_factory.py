@@ -3,7 +3,7 @@ import pygame
 import random
 from typing import Optional, Iterator
 
-from loaders import Tile
+from tileset import Tile
 
 from .sprite import Sprite
 from .sprite_registry import SpriteRegistry
@@ -50,7 +50,7 @@ class FlameSpriteFactory:
     def _build_frames(self, original_tile_id: int) -> Iterator[Tile]:
         assert self._has_flame_animation(original_tile_id), f"Tile id={original_tile_id} is not flame-animatable."
 
-        from loaders.tileset import load_tileset
+        from tileset.tileset import load_tileset
         tileset = load_tileset()
 
         original_tile: Tile = tileset.tiles[original_tile_id]
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     
     factory.register_sprites()
 
-    from loaders.tileset import load_tileset
+    from tileset.tileset import load_tileset
     tileset = load_tileset()
 
     keys = list(registry._animated_tiles.keys())

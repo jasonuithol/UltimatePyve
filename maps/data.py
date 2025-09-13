@@ -1,4 +1,4 @@
-# file: loaders/data.py
+# file: maps/data.py
 from pathlib import Path
 
 class DataOVL:

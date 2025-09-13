@@ -1,7 +1,6 @@
 # file: game/u5map.py
 from typing import List, Optional
 from dark_libraries import auto_init, immutable, Coord, Size
-from .tileset import TileSet
 from .location_metadata import LocationMetadata
 
 @immutable
@@ -9,7 +8,6 @@ from .location_metadata import LocationMetadata
 class U5Map:
     name: str
     size_in_tiles: Size
-    tileset: TileSet                      # tile pixel data and metadata
     levels: List[bytearray]               # width*height tile IDs per level
     chunk_dim: int                        # 16 for U5
     grid_dim: int                         # size_in_tiles.w/chunk_dim
@@ -37,3 +35,26 @@ class U5Map:
         except Exception as e:
             print(f"Error accessing tile {index} from level, size {len(level)}: {e}")
             raise
+
+    def render_to_disk(self, level: int):
+        import pygame
+        from tileset.tileset import Tile, TileSet, load_tileset
+        pygame.init()
+        tile_set: TileSet = load_tileset()
+        surf = pygame.Surface(self.size_in_tiles.scale(tile_set.tile_size).to_tuple())
+        for x in range(self.size_in_tiles.x):
+            for y in range(self.size_in_tiles.y):
+
+                map_coord = Coord(x, y)
+                tile_id = self.get_tile_id(level, map_coord)
+                tile: Tile = tile_set.tiles[tile_id]
+
+                pixel_coord = map_coord.scale(tile_set.tile_size)
+                tile.blit_to_surface(surf, pixel_coord)
+        pygame.image.save(
+            surf,
+            f"{self.name}_{level}.png"
+        )
+        pygame.quit()
+
+        return surf

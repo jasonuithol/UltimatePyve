@@ -1,6 +1,6 @@
 from .sprite import Sprite
 from .sprite_registry import SpriteRegistry
-from loaders import TileSet
+from tileset import TileSet
 
 class AnimatedTileFactory:
 

@@ -11,7 +11,7 @@ from display import DisplayEngine
 from game.interactable import InteractionResult, InteractableFactoryRegistry, DoorTypeFactory
 from game import PlayerState
 from game.terrain import TerrainFactory
-from loaders import Britannia, TileSet
+from maps import Britannia
 
 import service_composition
 
@@ -35,7 +35,6 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) -> Inter
 class Main:
 
     # Injectable
-    tileset: TileSet
     player_state: PlayerState
     display_engine: DisplayEngine
     interactable_factory_registry: InteractableFactoryRegistry
@@ -69,6 +68,8 @@ class Main:
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
         #       one day maybe even the avatar's transports could be these ?
         self.door_type_factory.register_interactable_factories()
+
+        
 
     def run(self) -> None:
 

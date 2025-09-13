@@ -1,17 +1,15 @@
-# file: loaders/location.py
+# file: maps/location.py
 
 from pathlib import Path
-from dark_libraries import Coord, Size
+from dark_libraries import Size
 
 from .location_metadata_builder import LocationMetadataBuilder
-from .tileset import TileSet
 from .u5map import U5Map
 
 class LocationLoader:
 
     # Injectable
     builder: LocationMetadataBuilder
-    tileset: TileSet
 
     FILES = [
         "TOWNE.DAT",
@@ -54,51 +52,30 @@ class LocationLoader:
         return U5Map(
             name                = meta.name,
             size_in_tiles       = Size(LOCATION_WIDTH,LOCATION_HEIGHT),
-            tileset             = self.tileset,  # raw pixel data
             levels              = levels,
             chunk_dim           = CHUNK_DIM,
             grid_dim            = GRID_DIM,
             location_metadata   = meta
         )
 
-    def render_location_map_to_disk(self, u5map: U5Map, level: int) -> U5Map:
-        import pygame
-        from loaders.tileset import Tile
-        pygame.init()
-        surf = pygame.Surface(u5map.size_in_tiles.scale(self.tileset.tile_size).to_tuple())
-        for x in range(u5map.size_in_tiles.x):
-            for y in range(u5map.size_in_tiles.y):
 
-                map_coord = Coord(x, y)
-                tile_id = u5map.get_tile_id(level, map_coord)
-                tile: Tile = self.tileset.tiles[tile_id]
-
-                pixel_coord = map_coord.scale(self.tileset.tile_size)
-                tile.blit_to_surface(surf, pixel_coord)
-        pygame.image.save(
-            surf,
-            f"{u5map.name}_{level}.png"
-        )
-        pygame.quit()
-
-        return surf
 
 
 if __name__ == "__main__":
 
     from dark_libraries.service_provider import ServiceProvider
-    import loaders.service_composition
+    import maps.service_composition
 
     provider = ServiceProvider()
-    loaders.service_composition.compose(provider)
+    maps.service_composition.compose(provider)
 
     loader: LocationLoader = provider.get(LocationLoader)
     trigger_index = 0
     for trigger_index in range(loader.get_number_locations()):
-        u5map = loader.load_location_map(trigger_index)
+        u5map: U5Map = loader.load_location_map(trigger_index)
         for level in range(len(u5map.levels)):
             try:
-                surf = loader.render_location_map_to_disk(u5map, level)
+                surf = u5map.render_to_disk(level)
             except Exception as e:
                 print(f"Error rendering {u5map.name!r} level {level!r}: {e}")
                 raise e

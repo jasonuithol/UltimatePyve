@@ -1,4 +1,4 @@
-# file: loaders/tileset.py
+# file: maps/tileset.py
 import pygame, base64, struct
 from pathlib import Path
 
