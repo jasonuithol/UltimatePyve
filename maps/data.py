@@ -2,11 +2,14 @@
 from pathlib import Path
 
 class DataOVL:
-    """
-    Container for all parsed DATA.OVL sections.
-    Each attribute is a raw bytes slice from the file.
-    """
-    _instance = None  # class-level cache
+
+    @classmethod
+    def to_ints(cls, bytes: bytearray):
+        return list(map(lambda byte: int(byte), bytes))
+
+    @classmethod
+    def to_strs(cls, bytes: bytearray):
+        return bytes.split(b"\0")
 
     def __init__(self, path: Path):
         raw = path.read_bytes()
@@ -235,13 +238,7 @@ class DataOVL:
 
     @classmethod
     def load(cls):
-        """
-        Factory method: returns the singleton instance,
-        creating it if it doesn't exist yet.
-        """
-        if cls._instance is None:
-            cls._instance = cls(Path("u5/DATA.OVL"))
-        return cls._instance
+        return cls(Path("u5/DATA.OVL"))
 
 if __name__ == "__main__":
 

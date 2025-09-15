@@ -19,12 +19,17 @@ class LocationMetadataBuilder:
         This is the same order of appearance that the maps make in the .DAT files/entry trigger co-ordinate lists.
     '''
 
+    '''
+    IMPORTANT: When looking up world loot locations, the BRITANNIA and UNDERWORLD maps are inserted into location 0 (levels 0 and 255 respectively)
+               Then it would appear that all these locations's trigger_index's have 1 added to them to give the actual world loot location id.
+    '''
+
     #
     # INNER LOCATIONS (i.e. TOWNES KEEPS CASTLES DWELLINGS)   TODO: DUNGEONS
     #
     LOCATION_METADATA = [
         # === TOWNE.DAT ===
-        (0, 0, 2),   # 0  MOONGLOW                  [ 0]            
+        (0, 0, 2),   # 0  MOONGLOW                  [ 0]    - world loot id 1        
         (1, 0, 2),   # 1  BRITAIN                   [ 1]
         (2, 0, 2),   # 2  JHELOM                    [ 2]
         (3, 0, 2),   # 3  YEW                       [ 3]
@@ -45,7 +50,7 @@ class LocationMetadataBuilder:
             
         # === CASTLE.DAT ===
         (27, 2, 5),  # 27 LORD BRITISH'S CASTLE     [16]
-        (28, 2, 5),  # 28 BLACKTHORN'S CASTLE       [17]
+        (28, 2, 5),  # 28 BLACKTHORN'S CASTLE       [17] - world loot id 18
         (13, 2, 1),  # 13 WEST BRITANNY             [18]  
         (14, 2, 1),  # 14 NORTH BRITANNY            [19]
         (15, 2, 1),  # 15 EAST BRITANNY             [20]

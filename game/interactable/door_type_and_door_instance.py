@@ -3,7 +3,7 @@ import random
 from dark_libraries import immutable, Coord
 
 from game.magic import S_MAGIC_UNLOCK
-from game.usable_items import UsableItem
+from items.consumable_items import ConsumableItemType
 
 from .interactable import Interactable
 from .interactable_factory import InteractableFactory
@@ -168,11 +168,13 @@ class DoorInstance(Interactable):
         return InteractionResult.result(msg)
     
     def use_item_on(self, item, actor=None) -> InteractionResult:
-        if item != UsableItem.I_SKULL_KEY:
+        raise NotImplementedError()
+        if item != ConsumableItemType.I_SKULL_KEY:
             return InteractionResult.error()
         return InteractionResult.result(self._magic_unlock())
 
     def cast_spell_on(self, spell, actor=None):
+        raise NotImplementedError()
         if spell != S_MAGIC_UNLOCK:
             return InteractionResult.error()
         return InteractionResult.result(self._magic_unlock())

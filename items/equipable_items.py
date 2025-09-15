@@ -1,6 +1,8 @@
-from dataclasses import dataclass
 from enum import Enum
 
+from dark_libraries.custom_decorators import auto_init, immutable
+from .item_type import ItemType
+from .item_type_registry import ItemTypeRegistry
 from maps import DataOVL
 
 class Slot(Enum):
@@ -51,9 +53,9 @@ class RuneId(Enum):
     POTION = 29
     MORNING_STAR = 30
 
-@dataclass
-class EquipableItemType:
-    index: int
+@immutable
+@auto_init
+class EquipableItemType(ItemType):
     name: str
     short_name: str
     range_: int
@@ -63,21 +65,7 @@ class EquipableItemType:
     tile_id: TileId
     rune_id: RuneId
 
-def to_ints(bytes: bytearray):
-    return list(map(lambda byte: int(byte), bytes))
-
-def to_strs(bytes: bytearray):
-    return bytes.split(b"\0")
-
-class ItemTypeRegistry:
-
-    def _after_inject(self):
-        self.item_types: dict[int, EquipableItemType] = dict()
-
-    def register_item_type(self, item_type: EquipableItemType):
-        self.item_types[item_type.index] = item_type
-
-class EquipableItemFactory:
+class EquipableItemTypeFactory:
 
     # Injectable
     dataOvl: DataOVL
@@ -87,10 +75,10 @@ class EquipableItemFactory:
 
 #        mysterious_indexes_armour = to_ints(dataOvl.armor_index_plus10)
     
-        descriptions_armour = to_strs(dataOvl.armour_strings)
-        descriptions_weapons = to_strs(dataOvl.weapon_strings)
-        descriptions_weapons_plus10 = to_strs(dataOvl.weapon_strings_plus10)
-        descriptions_rings_amulets = to_strs(dataOvl.ring_amulet_strings)
+        descriptions_armour = DataOVL.to_strs(self.dataOvl.armour_strings)
+        descriptions_weapons = DataOVL.to_strs(self.dataOvl.weapon_strings)
+        descriptions_weapons_plus10 = DataOVL.to_strs(self.dataOvl.weapon_strings_plus10)
+        descriptions_rings_amulets = DataOVL.to_strs(self.dataOvl.ring_amulet_strings)
     
         descriptions = [
             descriptions_armour,
@@ -99,25 +87,28 @@ class EquipableItemFactory:
             descriptions_rings_amulets
         ]
 
-        shortened_names = to_strs(dataOvl.shortened_names)
+        shortened_names = DataOVL.to_strs(self.dataOvl.shortened_names)
 
-        defence_values = to_ints(dataOvl.defense_values)
-        range_values = to_ints(dataOvl.range_values)
-        attack_values = to_ints(dataOvl.attack_values)        
+        defence_values = DataOVL.to_ints(self.dataOvl.defense_values)
+        range_values = DataOVL.to_ints(self.dataOvl.range_values)
+        attack_values = DataOVL.to_ints(self.dataOvl.attack_values)        
 
         items = []
 
         def build_item(description_index: tuple[int,int], short_index: int, dra_values_index: int, slot: Slot, tile_id: TileId, rune_id: RuneId):
 
             item = EquipableItemType(
-                index = dra_values_index,
-                name = descriptions[description_index[0]][description_index[1]],
-                short_name = None if short_index is None else shortened_names[short_index],
-                range_ = 0 if dra_values_index > len(range_values) else range_values[dra_values_index],
-                defence = 0 if dra_values_index > len(defence_values) else defence_values[dra_values_index],
-                attack = 0 if dra_values_index > len(attack_values) else attack_values[dra_values_index],
-                slot = slot,
+                # ItemType
+                item_id = dra_values_index,
                 tile_id = tile_id,
+                name = descriptions[description_index[0]][description_index[1]],
+
+                # EquipableItemType
+                short_name = None if short_index is None else shortened_names[short_index],
+                range_ = 0 if dra_values_index >= len(range_values) else range_values[dra_values_index],
+                defence = 0 if dra_values_index >= len(defence_values) else defence_values[dra_values_index],
+                attack = 0 if dra_values_index >= len(attack_values) else attack_values[dra_values_index],
+                slot = slot,
                 rune_id = rune_id
             )
             items.append(item)
@@ -205,16 +196,20 @@ class EquipableItemFactory:
 
         for item in items:
             self.item_type_registry.register_item_type(item)
-            print(item)
 
 #
 # MAIN
 #
 if __name__ == "__main__":
 
-    dataOvl = DataOVL.load()
+    registry = ItemTypeRegistry()
+    registry._after_inject()
 
-    factory = EquipableItemFactory()
-    factory.dataOvl = dataOvl
+    factory = EquipableItemTypeFactory()
+    factory.dataOvl = DataOVL.load()
+    factory.item_type_registry = registry
 
     factory.build()
+    for item in registry.item_types.values():
+        print(f"ItemType: item_id={item.item_id}, tile_name={item.tile_id}, tile_id={item.tile_id.value}, name={item.name}")
+
