@@ -5,11 +5,11 @@ class DataOVL:
 
     @classmethod
     def to_ints(cls, bytes: bytearray):
-        return list(map(lambda byte: int(byte), bytes))
+        return [int(b) for b in bytes]
 
     @classmethod
     def to_strs(cls, bytes: bytearray):
-        return bytes.split(b"\0")
+        return [ba.decode('ascii') for ba in bytes.split(b"\0")]
 
     def __init__(self, path: Path):
         raw = path.read_bytes()

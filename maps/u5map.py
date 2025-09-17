@@ -1,17 +1,15 @@
 # file: game/u5map.py
-from typing import List, Optional
 from dark_libraries import auto_init, immutable, Coord, Size
 from .location_metadata import LocationMetadata
 
 @immutable
 @auto_init
 class U5Map:
-    name: str
     size_in_tiles: Size
-    levels: List[bytearray]               # width*height tile IDs per level
+    levels: dict[int, bytearray]          # size_in_tiles x size_in_tiles tile IDs per level
     chunk_dim: int                        # 16 for U5
     grid_dim: int                         # size_in_tiles.w/chunk_dim
-    location_metadata: Optional[LocationMetadata]   # if this is a sub-location of the world e.g. a town, keep, dwelling, castle.
+    location_metadata: LocationMetadata
 
     def is_in_bounds(self, coord: Coord) -> bool:
         return self.size_in_tiles.is_in_bounds(coord)
@@ -36,7 +34,12 @@ class U5Map:
             print(f"Error accessing tile {index} from level, size {len(level)}: {e}")
             raise
 
-    def render_to_disk(self, level: int):
+    def get_coord_iteration(self):
+        for y in range(self.size_in_tiles.h):
+            for x in range(self.size_in_tiles.w):
+                yield Coord(x,y)
+
+    def render_to_disk(self, level_index: int):
         import pygame
         from tileset.tileset import Tile, TileSet, load_tileset
         pygame.init()
@@ -46,14 +49,14 @@ class U5Map:
             for y in range(self.size_in_tiles.y):
 
                 map_coord = Coord(x, y)
-                tile_id = self.get_tile_id(level, map_coord)
+                tile_id = self.get_tile_id(level_index, map_coord)
                 tile: Tile = tile_set.tiles[tile_id]
 
                 pixel_coord = map_coord.scale(tile_set.tile_size)
                 tile.blit_to_surface(surf, pixel_coord)
         pygame.image.save(
             surf,
-            f"{self.name}_{level}.png"
+            f"{self.location_metadata.name}_{level_index}.png"
         )
         pygame.quit()
 

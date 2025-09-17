@@ -43,7 +43,7 @@ class DisplayEngine:
     def render(self, player_coord: Coord):
 
         # Update window title with current location/world of player.
-        pygame.display.set_caption(f"{self.active_map.name} [{player_coord}]")
+        pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}]")
 
         # Centre the viewport on the player.
         self.view_port.centre_view_on(player_coord)

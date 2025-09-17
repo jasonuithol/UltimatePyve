@@ -1,45 +1,42 @@
 # file: game/player_state.py
-from typing import Optional, Tuple
+from typing import Tuple
 
 from dark_libraries.dark_math import Coord, Vector2
 
-from maps import LocationLoader, U5Map
+from maps import U5Map, U5MapRegistry
 
-# TODO: Once testing is finished, delete these.
-from maps.overworld import load_britannia
-from maps.underworld import load_underworld
+from .interactable.interaction_result import InteractionResult
+from .interactable.interactable_factory_registry import InteractableFactoryRegistry
 
-from .interactable import InteractionResult, InteractableFactoryRegistry
 from .map_transitions import get_entry_trigger
 from .terrain import TerrainRegistry
 from .transport_mode_registry import TransportModeRegistry
 
-#
-# An immutable state.  transitions return a cloned, modified copy of current state
-#
 class PlayerState:
 
     # Injectable
-    location_loader: LocationLoader
+    u5map_registry: U5MapRegistry
     interactable_factory_registry: InteractableFactoryRegistry
     terrain_registry: TerrainRegistry
     transport_mode_registry: TransportModeRegistry
 
     # either "britannia" or "underworld"
-    outer_map: U5Map = None          
+    outer_map: U5Map = None
+    outer_map_level: int = None          
     outer_coord: Coord = None
 
-    inner_map: Optional[U5Map] = None
-    inner_map_level: Optional[int] = None
-    inner_coord: Optional[Coord] = None
+    inner_map: U5Map = None
+    inner_map_level: int = None
+    inner_coord: Coord = None
 
     # options: walk, horse, carpet, skiff, ship
     transport_mode: int = None
     last_east_west: int = None
     last_nesw_dir: int = None
 
-    def set_outer_position(self, u5Map: U5Map, coord: Coord):
+    def set_outer_position(self, u5Map: U5Map, level_index: int, coord: Coord):
         self.outer_map = u5Map
+        self.outer_map_level = level_index
         self.outer_coord = coord
 
     def set_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
@@ -80,8 +77,8 @@ class PlayerState:
     # Internal State transitions
     #
 
-    def _on_changing_map(self) -> None:
-        self.interactable_factory_registry.clear_interactables()
+    def _on_changing_map(self, location_index: int, level_index: int) -> None:
+        self.interactable_factory_registry.load_level(location_index, level_index)
 
     def _move_to_inner_map(self, u5map: U5Map) -> InteractionResult:
         self.inner_map = u5map
@@ -90,16 +87,16 @@ class PlayerState:
             (u5map.size_in_tiles.w - 1) // 2,
             (u5map.size_in_tiles.h - 2)
         )
-        self._on_changing_map()
-        return InteractionResult.ok(f"Entered {u5map.name}")
+        self._on_changing_map(u5map.location_metadata.location_index, u5map.location_metadata.default_level)
+        return InteractionResult.ok(f"Entered {u5map.location_metadata.name}")
 
     def _return_to_outer_map(self) -> InteractionResult:
-        msg = f"Exited {self.inner_map.name}"
+        msg = f"Exited {self.inner_map.location_metadata.name}"
 
         self.inner_map = None
         self.inner_map_level = None
         self.inner_coord = None
-        self._on_changing_map()
+        self._on_changing_map(self.outer_map.location_metadata.location_index, self.outer_map_level)
         return InteractionResult.ok(msg)
 
     #
@@ -124,7 +121,7 @@ class PlayerState:
             # Check map transitions
             trigger_index = get_entry_trigger(target)
             if not trigger_index is None:
-                inner_map = self.location_loader.load_location_map(trigger_index)
+                inner_map = self.u5map_registry.get_map_by_trigger_index(trigger_index)
                 # always succeeds.
                 return self._move_to_inner_map(inner_map)
 
@@ -163,10 +160,10 @@ class PlayerState:
     #
 
     def switch_outer_map(self) -> InteractionResult:
-        if self.outer_map.name == "BRITANNIA":
-            self.outer_map = load_underworld()
+        if self.outer_map_level == 0:
+            self.outer_map_level = 255 # underworld
         else:
-            self.outer_map = load_britannia()
+            self.outer_map_level = 0   # britannia
         return InteractionResult.ok()
     
     def rotate_transport(self) -> InteractionResult:

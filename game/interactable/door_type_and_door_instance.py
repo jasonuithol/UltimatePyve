@@ -2,8 +2,10 @@ import random
 
 from dark_libraries import immutable, Coord
 
+from game.interactable.interactable_factory_registry import InteractableFactoryRegistry
 from game.magic import S_MAGIC_UNLOCK
 from items.consumable_items import ConsumableItemType
+from maps.u5map import U5Map
 
 from .interactable import Interactable
 from .interactable_factory import InteractableFactory
@@ -53,8 +55,15 @@ class DoorType(InteractableFactory):
 
         raise ValueError(f"Unknown original tile_id for doors: {tile_id}")
 
+    # InteractableFactory implementation: start
     def create_interactable(self, coord: Coord) -> 'DoorInstance':
         return DoorInstance(door_type=self, coord=coord)
+    
+    def load_level(self, factory_registry: InteractableFactoryRegistry, u5map: U5Map, level_index: int):
+        for coord in u5map.get_coord_iteration():
+            if self.original_tile_id == u5map.get_tile_id(level_ix=level_index, coord=coord):
+                factory_registry.register_interactable(coord, self.create_interactable(coord))
+    # InteractableFactory implementation: end
 
     @classmethod
     def is_door_tile(cls, tile_id: int):

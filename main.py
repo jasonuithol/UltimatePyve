@@ -11,8 +11,9 @@ from display import DisplayEngine
 from game.interactable import InteractionResult, InteractableFactoryRegistry, DoorTypeFactory
 from game import PlayerState
 from game.terrain import TerrainFactory
-from maps import Britannia
 
+from maps.u5map_loader import U5MapLoader
+from maps.u5map_registry import U5MapRegistry
 import service_composition
 
 def process_event(player_state: PlayerState, event: pygame.event.Event) -> InteractionResult:
@@ -38,18 +39,26 @@ class Main:
     player_state: PlayerState
     display_engine: DisplayEngine
     interactable_factory_registry: InteractableFactoryRegistry
+    u5map_registry: U5MapRegistry
 
     avatar_sprite_factory: AvatarSpriteFactory
     animated_tile_factory: AnimatedTileFactory
     flame_sprite_factory: FlameSpriteFactory
     terrain_factory: TerrainFactory
     door_type_factory: DoorTypeFactory
+    u5map_loader: U5MapLoader
 
     def init(self):
 
+        self.animated_tile_factory.register_sprites()
+        self.flame_sprite_factory.register_sprites()
+        self.terrain_factory.register_terrains()
+        self.u5map_loader.register_maps()
+
         self.player_state.set_outer_position(
-            u5Map = provider.resolve(Britannia),
-            coord = Coord(56, 72) # starting tile in world coords, just a bit SE of Iolo's Hut.
+            u5Map = self.u5map_registry.get_map(0), # britannia/underworld
+            level_index = 0,                        # britannia
+            coord = Coord(56, 72)                   # starting tile in world coords, just a bit SE of Iolo's Hut.
         )
 
         self.player_state.set_transport_state(
@@ -61,15 +70,11 @@ class Main:
         player_sprite: Sprite = self.avatar_sprite_factory.create_player(transport_mode=0, direction=0)
         self.display_engine.set_avatar_sprite(player_sprite)
 
-        self.animated_tile_factory.register_sprites()
-        self.flame_sprite_factory.register_sprites()
-        self.terrain_factory.register_terrains()
-
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
         #       one day maybe even the avatar's transports could be these ?
         self.door_type_factory.register_interactable_factories()
-
         
+        self.interactable_factory_registry.load_level(0,0)
 
     def run(self) -> None:
 

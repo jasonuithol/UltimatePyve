@@ -3,6 +3,7 @@ from dark_libraries import immutable, auto_init
 @immutable
 @auto_init
 class LocationMetadata:
+    location_index: int         # index of the location for things like WorldLootLoader, and GlobalLocation references.
     name: str                   # name of the location
     name_index: int             # which name the location takes.
     files_index: int            # which file the location is in

@@ -3,8 +3,8 @@ from dark_libraries.service_provider import ServiceProvider
 
 from .item_type_registry import ItemTypeRegistry
 from .equipable_items import EquipableItemTypeFactory
-from .world_loot import WorldLootLoader
-from .world_loot import WorldLootRegistry
+from .world_loot_loader import WorldLootLoader
+from .world_loot_loader import WorldLootRegistry
 
 def compose(provider: ServiceProvider):
     provider.register(ItemTypeRegistry)

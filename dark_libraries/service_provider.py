@@ -2,9 +2,22 @@
 import inspect, typing, sys
 
 class ServiceProvider:
+
+    _instance: typing.Self = None
+
+    @classmethod
+    def get_provider(cls):
+        if cls._instance is None:
+            return ServiceProvider()
+        return cls._instance
+
     def __init__(self):
-        self._instances = {}
-        self._mappings = {}
+        if ServiceProvider._instance is None:
+            self._instances = {}
+            self._mappings = {}
+            ServiceProvider._instance = self
+        else:
+            raise ValueError("Cannot instantiate multiple ServiceProvider roots.")
 
     def _assert_is_class(self, cls, needs_empty_constructor=True):
         if not inspect.isclass(cls):

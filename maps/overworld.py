@@ -35,7 +35,7 @@ def load_britannia() -> Britannia:
                 dst = (gy*CHUNK_DIM + cy) * MAP_DIM + gx*CHUNK_DIM
                 src = cy * CHUNK_DIM
                 tiles[dst:dst+CHUNK_DIM] = chunk[src:src+CHUNK_DIM]
-    return Britannia("BRITANNIA", Size(MAP_DIM, MAP_DIM), [tiles], CHUNK_DIM, GRID_DIM, None)
+    return Britannia(Size(MAP_DIM, MAP_DIM), [tiles], CHUNK_DIM, GRID_DIM, None)
 
 if __name__ == "__main__":
     u5map: U5Map = load_britannia()

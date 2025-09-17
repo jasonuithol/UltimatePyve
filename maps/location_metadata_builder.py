@@ -28,7 +28,13 @@ class LocationMetadataBuilder:
     # INNER LOCATIONS (i.e. TOWNES KEEPS CASTLES DWELLINGS)   TODO: DUNGEONS
     #
     LOCATION_METADATA = [
-        # === TOWNE.DAT ===
+
+        # overworld  - world loot id 0, level 0
+        # underworld - world loot id 0, level 255
+
+        #                                        trigger
+        #                                          index
+        # === TOWNE.DAT ===                     --------
         (0, 0, 2),   # 0  MOONGLOW                  [ 0]    - world loot id 1        
         (1, 0, 2),   # 1  BRITAIN                   [ 1]
         (2, 0, 2),   # 2  JHELOM                    [ 2]
@@ -120,10 +126,11 @@ class LocationMetadataBuilder:
             default_level = default_level_lists[files_index][group_index] - map_index_offset
 
             meta = LocationMetadata(
-                name        = location_names[name_index],
-                name_index  = name_index,
-                files_index = files_index,
-                group_index = group_index,
+                location_index = trigger_index + 1,
+                name           = location_names[name_index],
+                name_index     = name_index,
+                files_index    = files_index,
+                group_index    = group_index,
                 
                 map_index_offset= map_index_offset,
                 num_levels      = num_levels,
@@ -137,3 +144,19 @@ class LocationMetadataBuilder:
         # NOT OPTIONAL: order of appearance serves as index by trigger_index.
         metadata.sort(key=lambda m: m.trigger_index)
         return metadata
+    
+    def build_overworld_metadata(self):
+        meta = LocationMetadata(
+            location_index = 0,
+            name           = "WORLD",
+            name_index     = None,
+            files_index    = None,
+            group_index    = None,
+            
+            map_index_offset= None,
+            num_levels      = 255,
+            default_level   = 0,
+            trigger_index   = None
+        )
+        return meta
+    

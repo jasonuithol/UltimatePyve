@@ -1,3 +1,5 @@
+raise NotImplementedError("This has a bug that creates spurious dependencies from nothing.")
+
 # file: utilities/dependencies.py
 import argparse, ast, os, subprocess
 

@@ -31,7 +31,7 @@ def load_underworld() -> UnderWorld:
                 dst = (gy*CHUNK_DIM + cy) * MAP_DIM + gx*CHUNK_DIM
                 src = cy * CHUNK_DIM
                 tiles[dst:dst+CHUNK_DIM] = chunk[src:src+CHUNK_DIM]
-    return UnderWorld("UNDERWORLD", Size(MAP_DIM, MAP_DIM), [tiles], CHUNK_DIM, GRID_DIM, None)
+    return UnderWorld(Size(MAP_DIM, MAP_DIM), [tiles], CHUNK_DIM, GRID_DIM, None)
 
 if __name__ == "__main__":
     u5map: U5Map = load_underworld()
