@@ -3,11 +3,10 @@ from typing import Tuple
 
 from dark_libraries.dark_math import Coord, Vector2
 
+from game.interactable.interactable import Action, ActionType, Interactable
 from maps import U5Map, U5MapRegistry
 
-from .interactable.interaction_result import InteractionResult
 from .interactable.interactable_factory_registry import InteractableFactoryRegistry
-
 from .map_transitions import get_entry_trigger
 from .terrain import TerrainRegistry
 from .transport_mode_registry import TransportModeRegistry
@@ -67,10 +66,20 @@ class PlayerState:
         transport_mode = self.transport_mode_registry.get_transport_mode(self.transport_mode)
         current_map, current_level, _ = self.get_current_position()
         target_tile_id = current_map.get_tile_id(current_level, target)
-        interactable = self.interactable_factory_registry.get_interactable(target_tile_id, target)      
+        interactable: Interactable = self.interactable_factory_registry.get_interactable(target)      
+
         if interactable:
-            result = interactable.move_into()
-            return result.success
+            #
+            # TODO: If you walk into a closed loot container, open it.
+            #       If you walk into an open loot container, take the top item.
+            #       If you walk into an empty loot container, raise an error.
+            #
+            result = ActionType.MOVE_INTO.to_action().execute(interactable)
+            if result.action_type == ActionType.MOVE_INTO:
+                return True
+            else:
+                return False
+
         return self.terrain_registry.can_traverse(transport_mode, target_tile_id)
 
     #
@@ -80,7 +89,7 @@ class PlayerState:
     def _on_changing_map(self, location_index: int, level_index: int) -> None:
         self.interactable_factory_registry.load_level(location_index, level_index)
 
-    def _move_to_inner_map(self, u5map: U5Map) -> InteractionResult:
+    def _move_to_inner_map(self, u5map: U5Map) -> Action:
         self.inner_map = u5map
         self.inner_map_level = u5map.location_metadata.default_level
         self.inner_coord = Coord(
@@ -88,22 +97,22 @@ class PlayerState:
             (u5map.size_in_tiles.h - 2)
         )
         self._on_changing_map(u5map.location_metadata.location_index, u5map.location_metadata.default_level)
-        return InteractionResult.ok(f"Entered {u5map.location_metadata.name}")
+        return Action(ActionType.MOVE_INTO, { "msg": f"Entered {u5map.location_metadata.name}"})
 
-    def _return_to_outer_map(self) -> InteractionResult:
+    def _return_to_outer_map(self) -> Action:
         msg = f"Exited {self.inner_map.location_metadata.name}"
 
         self.inner_map = None
         self.inner_map_level = None
         self.inner_coord = None
         self._on_changing_map(self.outer_map.location_metadata.location_index, self.outer_map_level)
-        return InteractionResult.ok(msg)
+        return Action(ActionType.MOVE_INTO, { "msg": msg })
 
     #
     # Player driven State transitions
     #
 
-    def move(self, value: Vector2) -> InteractionResult:
+    def move(self, value: Vector2) -> Action | ActionType:
 
         #
         # Check map transitions
@@ -116,7 +125,7 @@ class PlayerState:
             # Check traversability before transitions.
             # A ship cannot enter a town, for example, so we must forbid it here.
             if not self._can_traverse(target):
-                return InteractionResult.error("Blocked")
+                return ActionType.BLOCKED
             
             # Check map transitions
             trigger_index = get_entry_trigger(target)
@@ -134,7 +143,7 @@ class PlayerState:
                 return self._return_to_outer_map()
 
             if not self._can_traverse(target):
-                return InteractionResult.error("Blocked")
+                return ActionType.BLOCKED
             
             self.inner_coord = target
 
@@ -153,27 +162,27 @@ class PlayerState:
             # north
             self.last_nesw_dir = 0
 
-        return InteractionResult.ok()
+        return ActionType.MOVE_INTO
 
     #
     # Testing only
     #
 
-    def switch_outer_map(self) -> InteractionResult:
+    def switch_outer_map(self) -> ActionType:
         if self.outer_map_level == 0:
             self.outer_map_level = 255 # underworld
         else:
             self.outer_map_level = 0   # britannia
-        return InteractionResult.ok()
+        return ActionType.MOVE_INTO
     
-    def rotate_transport(self) -> InteractionResult:
+    def rotate_transport(self) -> ActionType:
 
         self.transport_mode = (self.transport_mode + 1) % len(self.transport_mode_registry._transport_modes)
 
         # forbid turning into a ship on land, for example.
         _, _, target = self.get_current_position()
         if not self._can_traverse(target):
-            return InteractionResult.error()
+            return ActionType.BLOCKED
         
-        return InteractionResult.ok()
+        return ActionType.MOVE_INTO
 

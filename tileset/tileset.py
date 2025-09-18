@@ -180,6 +180,7 @@ def load_tiles16_raw(path: str=_TILES16_PATH) -> List[Tile]:
             tiles.append(tile)
 
         _tileset16_cache[path] = tiles
+    print(f"[tileset] Loaded {len(tiles)} tiles from {path}")
     return _tileset16_cache[path]
     
 if __name__ == "__main__":

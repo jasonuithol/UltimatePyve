@@ -42,14 +42,12 @@ class WorldLootLoader:
                 quantity = 1
                 item_id  = hidden_object_qualities[index]
 
-            # even worse, what IS an item_id ?
-
             location_ix = hidden_object_locations[index]
             world_coord = Coord(
                 hidden_object_x_coords[index],
                 hidden_object_y_coords[index]
             )
-            level = hidden_object_z_coords[index]
+            level_index = hidden_object_z_coords[index]
 
             item_type = self.item_type_registry.get_item_type(item_id)
 
@@ -59,9 +57,10 @@ class WorldLootLoader:
                 self.item_type_registry.register_item_type(item_type)
 
             world_item = WorldItem(item_type = item_type, quantity = quantity)
-            global_location = GlobalLocation(location_index = location_ix, level = level, coord = world_coord)
+            global_location = GlobalLocation(location_index = location_ix, level_index = level_index, coord = world_coord)
             
             self.world_loot_registry.register_loot(world_item=world_item, global_location=global_location)
+            print(f"[items] Loaded world loot {world_item.item_type.name} x {world_item.quantity} at {global_location}")
 
 #
 # MAIN

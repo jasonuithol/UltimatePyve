@@ -8,15 +8,17 @@ from animation import AnimatedTileFactory, FlameSpriteFactory, AvatarSpriteFacto
 
 from display import DisplayEngine
 
-from game.interactable import InteractionResult, InteractableFactoryRegistry, DoorTypeFactory
+from game.interactable import Action, InteractableFactoryRegistry, DoorTypeFactory
 from game import PlayerState
 from game.terrain import TerrainFactory
 
+from items.equipable_items import EquipableItemTypeFactory
+from items.world_loot_loader import WorldLootLoader
 from maps.u5map_loader import U5MapLoader
 from maps.u5map_registry import U5MapRegistry
 import service_composition
 
-def process_event(player_state: PlayerState, event: pygame.event.Event) -> InteractionResult:
+def process_event(player_state: PlayerState, event: pygame.event.Event) -> Action:
     if event.key == pygame.K_TAB:
         return player_state.switch_outer_map()
     elif event.key == pygame.K_BACKQUOTE:
@@ -31,7 +33,7 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) -> Inter
         return player_state.move(Vector2(0, +1))
     
     # Nothing changed
-    return InteractionResult.error("wtf ?")
+    return None
 
 class Main:
 
@@ -47,6 +49,8 @@ class Main:
     terrain_factory: TerrainFactory
     door_type_factory: DoorTypeFactory
     u5map_loader: U5MapLoader
+    world_loot_loader: WorldLootLoader
+    equipable_item_type_factory: EquipableItemTypeFactory
 
     def init(self):
 
@@ -73,6 +77,8 @@ class Main:
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
         #       one day maybe even the avatar's transports could be these ?
         self.door_type_factory.register_interactable_factories()
+        self.equipable_item_type_factory.build()
+        self.world_loot_loader.register_loot_containers()
         
         self.interactable_factory_registry.load_level(0,0)
 
@@ -87,16 +93,10 @@ class Main:
                     if event.key == pygame.K_ESCAPE:
                         running = False
                     else:
-                        interaction_result = process_event(self.player_state, event)
-                        if interaction_result is None:
+                        result_action = process_event(self.player_state, event)
+                        if result_action is None:
                             print("wtf ?")
                         else:
-                            if interaction_result.message and len(interaction_result.message):
-                                if interaction_result.success == False:
-                                    print(f"{interaction_result.message} :(")
-                                else:
-                                    print(f"{interaction_result.message} :)")
-
                             # Allow "in=game" time to pass
                             self.interactable_factory_registry.pass_time()
 

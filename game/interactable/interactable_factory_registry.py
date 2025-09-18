@@ -22,13 +22,13 @@ class InteractableFactoryRegistry:
         self.level_index: int = None
 
         self.interactables: dict[Coord, Interactable] = dict()
-        self.interactable_factories: dict[int, InteractableFactory] = dict()
+        self.interactable_factories: list[InteractableFactory] = list()
 
     def _clear_interactables(self) -> None:
         self.interactables.clear()    
         
-    def register_interactable_factory(self, tile_id: int, factory: InteractableFactory) -> None:
-        self.interactable_factories[tile_id] = factory
+    def register_interactable_factory(self, factory: InteractableFactory) -> None:
+        self.interactable_factories.append(factory)
 
     def register_interactable(self, coord: Coord, interactable: Interactable):
         self.interactables[coord] = interactable
@@ -40,13 +40,15 @@ class InteractableFactoryRegistry:
 
         u5map = self.u5map_registry.get_map(location_index)
 
-        for factory in self.interactable_factories.values():
+        for factory in self.interactable_factories:
             factory.load_level(self, u5map, level_index)
+
+        print(f"[game.interactable] Switched to map {u5map.location_metadata.name}, level {level_index}")
 
     # TODO: Abstract out the need for tile_id
     # This means every map load will create ALL interactables for that level,
     # instead of having ViewPort create them on the fly via tile_id.
-    def get_interactable(self, tile_id: int, coord: Coord) -> Optional[Interactable]:
+    def get_interactable(self, coord: Coord) -> Optional[Interactable]:
 
         assert len(self.interactable_factories) > 0, "no interactable factories registered before we need them."
         assert (not self.location_index is None) and (not self.level_index is None), "Need to call load_level before calling get_interactable."
@@ -56,14 +58,7 @@ class InteractableFactoryRegistry:
         if interactable:
             return interactable
         
-        # If this is a false alarm, bail.
-        if not tile_id in self.interactable_factories.keys():
-            return None
-        
-        # Create an interactable, store and return it.
-        interactable = self.interactable_factories[tile_id].create_interactable(coord)
-        self.interactables[coord] = interactable
-        return interactable
+        return None
 
     def pass_time(self):
         for interactable in self.interactables.values():

@@ -7,9 +7,8 @@ from game.magic import S_MAGIC_UNLOCK
 from items.consumable_items import ConsumableItemType
 from maps.u5map import U5Map
 
-from .interactable import Interactable
+from .interactable import Action, ActionType, Interactable
 from .interactable_factory import InteractableFactory
-from .interaction_result import InteractionResult
 
 @immutable
 class DoorType(InteractableFactory):
@@ -56,13 +55,18 @@ class DoorType(InteractableFactory):
         raise ValueError(f"Unknown original tile_id for doors: {tile_id}")
 
     # InteractableFactory implementation: start
-    def create_interactable(self, coord: Coord) -> 'DoorInstance':
-        return DoorInstance(door_type=self, coord=coord)
-    
     def load_level(self, factory_registry: InteractableFactoryRegistry, u5map: U5Map, level_index: int):
+        if u5map.location_metadata.location_index == 0:
+            # There are ZERO doors in the WORLD maps, lets save a bit of loading time.
+            return
         for coord in u5map.get_coord_iteration():
             if self.original_tile_id == u5map.get_tile_id(level_ix=level_index, coord=coord):
-                factory_registry.register_interactable(coord, self.create_interactable(coord))
+                door = DoorInstance(door_type=self, coord=coord)
+                factory_registry.register_interactable(coord, door)
+                print(f"[doors] registered door instance at {coord}: ",
+                      f"windowed={door.door_type.original_windowed}, ",
+                      f"locked={door.is_locked}, ",
+                      f"magic={door.door_type.original_lock_type == DoorType.L_MAGIC_LOCKED}")
     # InteractableFactory implementation: end
 
     @classmethod
@@ -106,42 +110,30 @@ class DoorInstance(Interactable):
 
     def _jimmy(self, force_success: bool = False) -> str:
         if self.is_open:
-            return InteractionResult.R_NOTHING_THERE
+            return None
         if not self.is_locked:
-            return InteractionResult.R_NOTHING_THERE
+            return None
         if self.door_type.original_lock_type == DoorType.L_MAGIC_LOCKED:
-            return InteractionResult.R_KEYBROKE
+            return ActionType.KEY_BROKE
 
         success = force_success or random.choice([True, False])
         if success:
             self._become_unlocked()
-            return InteractionResult.R_LOUD_SUCCESS
+            return ActionType.JIMMY
         else:
-            return InteractionResult.R_KEYBROKE
-        
-    def _open(self) -> str:
+            return ActionType.KEY_BROKE
+
+    def _magic_unlock(self) -> ActionType:
         if self.is_open:
-            return InteractionResult.R_NOTHING_THERE
-        if self.is_locked:
-            return InteractionResult.R_LOCKED
-
-        self.is_open = True
-        self.tile_id = DoorType.D_OPENED
-        self.turns_until_close = 4
-
-        return InteractionResult.R_QUIET_SUCCESS
-
-    def _magic_unlock(self) -> str:
-        if self.is_open:
-            return InteractionResult.R_NOTHING_THERE
+            return None
         if not self.is_locked:
-            return InteractionResult.R_NOTHING_THERE
+            return None
         if not self.door_type.original_lock_type == DoorType.L_MAGIC_LOCKED:
-            return InteractionResult.R_NOTHING_THERE
+            return None
         
         self._become_unlocked()
 
-        return InteractionResult.R_LOUD_SUCCESS
+        return ActionType.UNLOCKED
 
     # Interactable implementation: Start
     def get_current_tile_id(self):
@@ -165,18 +157,28 @@ class DoorInstance(Interactable):
             if self.turns_until_close == 0:
                 self._close()
 
-    def move_into(self, actor=None) -> InteractionResult:
+    def move_into(self, actor=None) -> Action:
         if self.is_open:
-            msg = InteractionResult.R_QUIET_SUCCESS
+            return ActionType.MOVE_INTO
         else:
-            msg = self._open()
-        return InteractionResult.result(msg)
+            return self.open()
 
-    def jimmy(self, actor=None) -> InteractionResult:
-        msg = self._jimmy()
-        return InteractionResult.result(msg)
+    def open(self, actor=None) -> Action:
+        if self.is_open:
+            return None
+        if self.is_locked:
+            return ActionType.LOCKED
+
+        self.is_open = True
+        self.tile_id = DoorType.D_OPENED
+        self.turns_until_close = 4
+
+        return ActionType.OPEN
     
-    def use_item_on(self, item, actor=None) -> InteractionResult:
+    def jimmy(self, actor=None) -> Action:
+        return self._jimmy()
+    
+    def use_item_on(self, item, actor=None) -> Action:
         raise NotImplementedError()
         if item != ConsumableItemType.I_SKULL_KEY:
             return InteractionResult.error()

@@ -1,3 +1,4 @@
+'''
 from typing import Any
 from dark_libraries import immutable
 
@@ -36,3 +37,4 @@ class InteractionResult:
     def error(cls, message=R_FAILED, payload: Any = None):
         return cls(success=False, message=message, payload=payload)
 
+'''

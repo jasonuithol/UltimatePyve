@@ -56,13 +56,11 @@ class RuneId(Enum):
 @immutable
 @auto_init
 class EquipableItemType(ItemType):
-    name: str
     short_name: str
     range_: int
     defence: int
     attack: int
     slot: Slot
-    tile_id: TileId
     rune_id: RuneId
 
 class EquipableItemTypeFactory:
@@ -93,14 +91,12 @@ class EquipableItemTypeFactory:
         range_values = DataOVL.to_ints(self.dataOvl.range_values)
         attack_values = DataOVL.to_ints(self.dataOvl.attack_values)        
 
-        items = []
-
         def build_item(description_index: tuple[int,int], short_index: int, dra_values_index: int, slot: Slot, tile_id: TileId, rune_id: RuneId):
 
-            item = EquipableItemType(
+            item_type = EquipableItemType(
                 # ItemType
                 item_id = dra_values_index,
-                tile_id = tile_id,
+                tile_id = tile_id.value,
                 name = descriptions[description_index[0]][description_index[1]],
 
                 # EquipableItemType
@@ -111,8 +107,8 @@ class EquipableItemTypeFactory:
                 slot = slot,
                 rune_id = rune_id
             )
-            items.append(item)
-            return item
+            self.item_type_registry.register_item_type(item_type)
+            print(f"[items] Registered equippable item type: name={item_type.name}")
         
         def build_helm(description_index: tuple[int,int], short_index: int, dra_values_index: int):
             build_item(description_index, short_index, dra_values_index, Slot.HEAD, TileId.HELM, RuneId.HELM)
@@ -193,9 +189,6 @@ class EquipableItemTypeFactory:
         build_amulet((3, 3),None,45,RuneId.AMULET) # Amulet of Turning
         build_amulet((3, 4),None,46,RuneId.AMULET) # Spiked Collar
         build_amulet((2,29),None,47,RuneId.ANKH) # Ankh 
-
-        for item in items:
-            self.item_type_registry.register_item_type(item)
 
 #
 # MAIN

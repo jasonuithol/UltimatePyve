@@ -29,7 +29,6 @@ class ViewPort:
         # output surface
         self._scaled_surface: Optional[pygame.Surface] = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
 
-
     def view_size_in_pixels(self) -> Size:
          return self.world_rect.size.scale(self.tile_size_pixels)
     
@@ -84,18 +83,23 @@ class ViewPort:
                 self.draw_tile(world_coord, tile)
                 continue
 
-            tid = u5map.get_tile_id(level_ix, world_coord)
-
             # Allow interactables to change what state an object is e.g. allow doors to open/close/unlock
             # or chests to have loot stacks on them (i.e. be open)
-            interactable = self.interactable_factory_registry.get_interactable(tid, world_coord)
+            interactable = self.interactable_factory_registry.get_interactable(world_coord)
             if interactable:
-                tid = interactable.get_current_tile_id()
+                # Allow get_current_tile_id to return None to signify that the container/interactable is hidden/invisible.
+                tid: int = interactable.get_current_tile_id()
                 '''
                 sprite = interactable.create_sprite()
                 self.draw_sprite(world_coord, sprite)
                 continue
                 '''
+            else:
+                # There is no interactable, but we'll pretend it's just an invisible one.
+                tid: int = None
+
+            if tid is None:
+                tid = u5map.get_tile_id(level_ix, world_coord)
 
             # if the tile_id is animated, pull a frame tile from the sprite and draw that instead.
             sprite = self.sprite_registry.get_sprite(tid)
@@ -163,8 +167,8 @@ if __name__ == "__main__":
     from tileset.tileset import _ega_palette
     from maps.overworld import load_britannia
 
-    class StubInteractableState:
-        def get_interactable(self, tid, world_coord):
+    class StubInteractableFactoryRegistry:
+        def get_interactable(self, world_coord):
             return None
         
     class StubSpriteRegistry:
@@ -175,7 +179,7 @@ if __name__ == "__main__":
 
     # Manual injection
     view_port = ViewPort()
-    view_port.interactable_state = StubInteractableState()
+    view_port.interactable_factory_registry = StubInteractableFactoryRegistry()
     view_port.sprite_registry = StubSpriteRegistry()
     view_port.palette = _ega_palette
 

@@ -84,8 +84,10 @@ class U5MapLoader:
         for trigger_index in range(self.get_number_locations()):
             u5map: U5Map = self.load_location_map(trigger_index)
             self.registry.register_map(u5map)
+            print(f"[maps] Loaded map {u5map.location_metadata.name} containing {len(u5map.levels)} levels.")
 
         world = self.build_world_map()
+        print(f"[maps] Loaded map {world.location_metadata.name} containing {len(world.levels)} levels.")
         self.registry.register_map(world)
 
 if __name__ == "__main__":

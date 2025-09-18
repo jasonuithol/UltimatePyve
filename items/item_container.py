@@ -1,5 +1,5 @@
 from typing import List
-from game.interactable import Interactable, InteractionResult
+from game.interactable import Interactable, ActionType
 from .world_item import WorldItem
 from .global_location import GlobalLocation
 
@@ -20,7 +20,7 @@ class ItemContainer(Interactable):
 
     def peek(self) -> WorldItem:
         assert self.opened, "Cannot peek into an unopened ItemContainer."
-        return next(self.world_items)
+        return self.world_items[0]
 
     def has_items(self) -> bool:
         assert self.opened, "Should not check has_items on an unopened ItemContainer."
@@ -37,15 +37,15 @@ class ItemContainer(Interactable):
         if self.opened and self.has_items():
             return self.peek().item_type.tile_id
         else:
-            return self.original_tile_id
+            return None
 
-    def move_into(self, actor=None) -> InteractionResult:
+    def move_into(self, actor=None) -> ActionType:
         if not self.opened:
             self.open()
-            return InteractionResult.ok(message=InteractionResult.R_FOUND_ITEM)
+            return ActionType.OPEN
         elif self.has_items():
             item = self.pop()
-            return InteractionResult.ok(message=InteractionResult.R_FOUND_ITEM, payload=item)
+            return ActionType.GET
         
-        return InteractionResult.nothing()
+        return ActionType.MOVE_INTO
     # Interactable implementation: end
