@@ -12,6 +12,7 @@ from game.interactable import Action, InteractableFactoryRegistry, DoorTypeFacto
 from game import PlayerState
 from game.terrain import TerrainFactory
 
+from items.consumable_items import ConsumableItemTypeLoader
 from items.equipable_items import EquipableItemTypeFactory
 from items.world_loot_loader import WorldLootLoader
 from maps.u5map_loader import U5MapLoader
@@ -51,6 +52,7 @@ class Main:
     u5map_loader: U5MapLoader
     world_loot_loader: WorldLootLoader
     equipable_item_type_factory: EquipableItemTypeFactory
+    consumable_item_type_loader: ConsumableItemTypeLoader
 
     def init(self):
 
@@ -78,6 +80,7 @@ class Main:
         #       one day maybe even the avatar's transports could be these ?
         self.door_type_factory.register_interactable_factories()
         self.equipable_item_type_factory.build()
+        self.consumable_item_type_loader.register_item_types()
         self.world_loot_loader.register_loot_containers()
         
         self.interactable_factory_registry.load_level(0,0)
