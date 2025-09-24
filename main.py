@@ -25,14 +25,14 @@ def process_event(player_state: PlayerState, event: pygame.event.Event) -> Actio
     if event.key == pygame.K_TAB:
         return player_state.switch_outer_map()
 
-    elif event.key == pygame.K_BACKQUOTE:
+    if event.key == pygame.K_BACKQUOTE:
         return player_state.rotate_transport()
 
     move_direction = get_direction(event)
-    if move_direction:
+    if not move_direction is None:
         return player_state.move(move_direction)
 
-    elif event.key == pygame.K_j:
+    if event.key == pygame.K_j:
         return player_state.jimmy()
 
     # Nothing changed

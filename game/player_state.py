@@ -171,7 +171,7 @@ class PlayerState:
 
     def jimmy(self) -> Action:
         if self.party_inventory.get_quantity(InventoryOffset.KEYS) == 0:
-            return ActionType.NO_KEYS
+            return Action(ActionType.NO_KEYS, {"msg": "No keys !"})
         else:
             return Action(ActionType.JIMMY, {"msg": "Jimmying !"})
 

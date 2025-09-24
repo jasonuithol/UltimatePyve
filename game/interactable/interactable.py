@@ -31,6 +31,9 @@ class ActionType(Enum):
 class Action:
 
     def __init__(self, action_type: ActionType, action_parameters: dict[str, Any] = {}):
+
+        assert isinstance(action_parameters, dict)
+
         self.action_type = action_type
         self.action_parameters = action_parameters
 
