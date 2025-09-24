@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from .item_type import ItemType
+from .item_type import InventoryOffset, ItemType
 from .item_type_registry import ItemTypeRegistry
 
 class TileId(Enum):
@@ -29,9 +29,10 @@ class ConsumableItemTypeLoader:
     # Injectable
     item_type_registry: ItemTypeRegistry
 
-    def build_consumable(self, tile_id: TileId):
+    def build_consumable(self, tile_id: TileId, inventory_offset: InventoryOffset):
         item_type = ConsumableItemType(
             item_id=tile_id.value,
+            inventory_offset=inventory_offset,
             tile_id=tile_id.value,
             name=tile_id.name.capitalize()
         )
@@ -39,8 +40,10 @@ class ConsumableItemTypeLoader:
         print(f"[items] registered consumable item type: {item_type.name}")
 
     def register_item_types(self):
-        self.build_consumable(TileId.CHEST)
-        self.build_consumable(TileId.GOLD)
-        self.build_consumable(TileId.GEM)
-        self.build_consumable(TileId.TORCH)
-        self.build_consumable(TileId.FOOD)
+        self.build_consumable(TileId.CHEST, None)
+        self.build_consumable(TileId.GOLD, InventoryOffset.GOLD)
+        self.build_consumable(TileId.GEM, InventoryOffset.GEMS)
+        self.build_consumable(TileId.TORCH, InventoryOffset.TORCHES)
+        self.build_consumable(TileId.FOOD, InventoryOffset.FOOD)
+
+        

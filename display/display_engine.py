@@ -5,6 +5,7 @@ from typing import Optional
 from dark_libraries import Coord
 
 import animation.sprite as sprite
+from display.interactive_console import InteractiveConsole
 from maps import U5Map
 
 from .main_display import MainDisplay
@@ -15,6 +16,7 @@ class DisplayEngine:
     # Injectable Properties
     main_display: MainDisplay
     view_port: ViewPort
+    interactive_console: InteractiveConsole
 
     def _after_inject(self):
 
@@ -40,10 +42,19 @@ class DisplayEngine:
         self.active_map = u5map
         self.active_level = map_level
 
+
+    #
+    # TODO: Most of this is ViewPort logic.  Fix
+    #       The rest contains visual composition logic, move to MainDisplay
+    #
     def render(self, player_coord: Coord):
 
         # Update window title with current location/world of player.
         pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}]")
+
+        #
+        # ViewPort
+        #
 
         # Centre the viewport on the player.
         self.view_port.centre_view_on(player_coord)
@@ -58,9 +69,16 @@ class DisplayEngine:
         self.view_port.draw_sprite(player_coord, self.avatar)
 
         # Scale for display
-        scaled_surface = self.view_port.get_output_surface()
+        vp_scaled_surface = self.view_port.get_output_surface()
 
         # Blit to screen
-        self.screen.blit(scaled_surface, (0, 0))
+        self.screen.blit(vp_scaled_surface, (0, 0))
+
+        #
+        # InteractiveConsole
+        #
+        ic_scaled_surface = self.interactive_console.get_output_surface()
+
+        self.screen.blit(ic_scaled_surface, (vp_scaled_surface.get_width(), vp_scaled_surface.get_height() - ic_scaled_surface.get_height()))
 
         pygame.display.flip()

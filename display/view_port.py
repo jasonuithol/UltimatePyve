@@ -2,7 +2,7 @@
 import pygame
 from typing import Optional
 
-from dark_libraries import Coord, Size, Rect
+from dark_libraries import Coord, Size, Rect, Vector2
 
 import animation.sprite as sprite
 from animation import SpriteRegistry
@@ -25,9 +25,9 @@ class ViewPort:
 
     def _after_inject(self):
         # input surface
-        self._unscaled_surface: Optional[pygame.Surface] = pygame.Surface(self.view_size_in_pixels().to_tuple())
+        self._unscaled_surface: pygame.Surface = pygame.Surface(self.view_size_in_pixels().to_tuple())
         # output surface
-        self._scaled_surface: Optional[pygame.Surface] = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
+        self._scaled_surface: pygame.Surface = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
 
     def view_size_in_pixels(self) -> Size:
          return self.world_rect.size.scale(self.tile_size_pixels)
@@ -37,7 +37,6 @@ class ViewPort:
 
     def set_display_scale(self, s: int) -> None:
          self.display_scale = s
-
 
     def _get_view_centre(self) -> Coord:
         width, height = self.world_rect.size.to_tuple()

@@ -8,41 +8,57 @@ from animation import AnimatedTileFactory, FlameSpriteFactory, AvatarSpriteFacto
 
 from display import DisplayEngine
 
+from display.interactive_console import InteractiveConsole
+from game import PlayerState #, SavedGame, SavedGameLoader
 from game.interactable import Action, InteractableFactoryRegistry, DoorTypeFactory
-from game import PlayerState
 from game.terrain import TerrainFactory
 
-from items.consumable_items import ConsumableItemTypeLoader
-from items.equipable_items import EquipableItemTypeFactory
-from items.world_loot_loader import WorldLootLoader
-from maps.u5map_loader import U5MapLoader
-from maps.u5map_registry import U5MapRegistry
+from items import ConsumableItemTypeLoader, EquipableItemTypeFactory, PartyInventory, WorldLootLoader
+from items.consumable_items import TileId as ConsumableTileId
+
+from maps import U5MapLoader, U5MapRegistry
+
 import service_composition
 
 def process_event(player_state: PlayerState, event: pygame.event.Event) -> Action:
+
     if event.key == pygame.K_TAB:
         return player_state.switch_outer_map()
+
     elif event.key == pygame.K_BACKQUOTE:
         return player_state.rotate_transport()
-    elif event.key == pygame.K_LEFT:
-        return player_state.move(Vector2(-1, 0))
-    elif event.key == pygame.K_RIGHT:
-        return player_state.move(Vector2(+1, 0))
-    elif event.key == pygame.K_UP:
-        return player_state.move(Vector2(0, -1))
-    elif event.key == pygame.K_DOWN:
-        return player_state.move(Vector2(0, +1))
-    
+
+    move_direction = get_direction(event)
+    if move_direction:
+        return player_state.move(move_direction)
+
+    elif event.key == pygame.K_j:
+        return player_state.jimmy()
+
     # Nothing changed
+    return None
+
+def get_direction(event: pygame.event.Event) -> Vector2:
+    if event.key == pygame.K_LEFT:
+        return Vector2(-1, 0)
+    elif event.key == pygame.K_RIGHT:
+        return Vector2(+1, 0)
+    elif event.key == pygame.K_UP:
+        return Vector2(0, -1)
+    elif event.key == pygame.K_DOWN:
+        return Vector2(0, +1)
     return None
 
 class Main:
 
     # Injectable
     player_state: PlayerState
+    party_inventory: PartyInventory
     display_engine: DisplayEngine
     interactable_factory_registry: InteractableFactoryRegistry
     u5map_registry: U5MapRegistry
+    interactive_console: InteractiveConsole
+#    saved_game: SavedGame
 
     avatar_sprite_factory: AvatarSpriteFactory
     animated_tile_factory: AnimatedTileFactory
@@ -53,6 +69,7 @@ class Main:
     world_loot_loader: WorldLootLoader
     equipable_item_type_factory: EquipableItemTypeFactory
     consumable_item_type_loader: ConsumableItemTypeLoader
+#    saved_game_loader: SavedGameLoader
 
     def init(self):
 
@@ -60,6 +77,7 @@ class Main:
         self.flame_sprite_factory.register_sprites()
         self.terrain_factory.register_terrains()
         self.u5map_loader.register_maps()
+#        self.saved_game_loader.load_existing()
 
         self.player_state.set_outer_position(
             u5Map = self.u5map_registry.get_map(0), # britannia/underworld
@@ -72,6 +90,16 @@ class Main:
             last_east_west = 0,  # east
             last_nesw_dir = 1    # east
         )
+
+        #
+        # TODO: Need something way better than this
+        #
+
+        self.party_inventory.add(ConsumableTileId.GOLD.value, 150)
+        self.party_inventory.add(ConsumableTileId.FOOD.value,  63)
+        self.party_inventory.add(ConsumableTileId.KEY.value,    2)
+        self.party_inventory.add(ConsumableTileId.TORCH.value,  4)
+    
 
         player_sprite: Sprite = self.avatar_sprite_factory.create_player(transport_mode=0, direction=0)
         self.display_engine.set_avatar_sprite(player_sprite)
@@ -100,6 +128,10 @@ class Main:
                         if result_action is None:
                             print("wtf ?")
                         else:
+                            result_action = result_action.to_action()
+                            assert isinstance(result_action, Action), f"Did not receive an Action from process_events, got {result_action!r}"
+                            if "msg" in result_action.action_parameters:
+                                self.interactive_console.print_ascii(result_action.action_parameters["msg"])
                             # Allow "in=game" time to pass
                             self.interactable_factory_registry.pass_time()
 

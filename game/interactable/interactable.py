@@ -16,9 +16,16 @@ class ActionType(Enum):
     LOCKED      = 'locked'
     KEY_BROKE   = 'key_broke'
     UNLOCKED    = 'unlocked'
+    NO_KEYS     = 'no_keys'
 
     def to_action(self, action_parameters: dict[str, Any] = {}) -> 'Action':
         return Action(self, action_parameters)
+
+    def execute(self, target: 'Interactable') -> Self:
+        return self.to_action().execute(target)
+
+    def get_action_type(self) -> Self:
+        return self
 
 @immutable
 class Action:
@@ -35,6 +42,12 @@ class Action:
         if "msg" in result.action_parameters:
             print(result.action_parameters["msg"])
         return result
+
+    def to_action(self) -> Self:
+        return self
+    
+    def get_action_type(self) -> ActionType:
+        return self.action_type
 
 class Interactable(Protocol):
     coord: Coord

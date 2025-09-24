@@ -1,6 +1,7 @@
 # file: game/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
 
+from .party_inventory import PartyInventory
 from .item_type_registry import ItemTypeRegistry
 from .equipable_items import EquipableItemTypeFactory
 from .world_loot_loader import WorldLootLoader
@@ -13,3 +14,4 @@ def compose(provider: ServiceProvider):
     provider.register(WorldLootRegistry)
     provider.register(WorldLootLoader)
     provider.register(ConsumableItemTypeLoader)
+    provider.register(PartyInventory)

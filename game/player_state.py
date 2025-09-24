@@ -3,9 +3,12 @@ from typing import Tuple
 
 from dark_libraries.dark_math import Coord, Vector2
 
-from game.interactable.interactable import Action, ActionType, Interactable
+from items.item_type import InventoryOffset
 from maps import U5Map, U5MapRegistry
+from items import PartyInventory, InventoryOffset
 
+from .interactable.interactable import Action, ActionType, Interactable
+#from .saved_game import SavedGame
 from .interactable.interactable_factory_registry import InteractableFactoryRegistry
 from .map_transitions import get_entry_trigger
 from .terrain import TerrainRegistry
@@ -18,6 +21,7 @@ class PlayerState:
     interactable_factory_registry: InteractableFactoryRegistry
     terrain_registry: TerrainRegistry
     transport_mode_registry: TransportModeRegistry
+    party_inventory: PartyInventory
 
     # either "britannia" or "underworld"
     outer_map: U5Map = None
@@ -34,6 +38,7 @@ class PlayerState:
     last_nesw_dir: int = None
 
     def set_outer_position(self, u5Map: U5Map, level_index: int, coord: Coord):
+
         self.outer_map = u5Map
         self.outer_map_level = level_index
         self.outer_coord = coord
@@ -74,7 +79,7 @@ class PlayerState:
             #       If you walk into an open loot container, take the top item.
             #       If you walk into an empty loot container, raise an error.
             #
-            result = ActionType.MOVE_INTO.to_action().execute(interactable)
+            result = ActionType.MOVE_INTO.execute(interactable)
             if result.action_type == ActionType.MOVE_INTO:
                 return True
             else:
@@ -163,6 +168,13 @@ class PlayerState:
             self.last_nesw_dir = 0
 
         return ActionType.MOVE_INTO
+
+    def jimmy(self) -> Action:
+        if self.party_inventory.get_quantity(InventoryOffset.KEYS) == 0:
+            return ActionType.NO_KEYS
+        else:
+            return Action(ActionType.JIMMY, {"msg": "Jimmying !"})
+
 
     #
     # Testing only

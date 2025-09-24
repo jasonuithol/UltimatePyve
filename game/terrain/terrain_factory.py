@@ -21,7 +21,7 @@ class TerrainFactory:
             ( 68, 69),
             ( 71, 73),
             (106,107), # BRIDGES
-            (134,134),
+            (134,135), # A grate you can Klimb down, and an arch you can walk under
             (140,140), # TRAPDOOR
             (143,147), # INCLUDES LAVA AND CHAIRS
             (170,172), # includes BEDS

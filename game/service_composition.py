@@ -11,4 +11,8 @@ def compose(provider: ServiceProvider):
     provider.register(PlayerState)
     provider.register(TransportModeRegistry)
     provider.register(TerrainRegistry)        
-    provider.register(TerrainFactory)    
+    provider.register(TerrainFactory)
+    provider.register(SavedGame)
+    provider.register(SavedGameLoader)
+
+    

@@ -1,7 +1,7 @@
 from enum import Enum
 
 from dark_libraries.custom_decorators import auto_init, immutable
-from .item_type import ItemType
+from .item_type import InventoryOffset, ItemType
 from .item_type_registry import ItemTypeRegistry
 from maps import DataOVL
 
@@ -87,15 +87,19 @@ class EquipableItemTypeFactory:
 
         shortened_names = DataOVL.to_strs(self.dataOvl.shortened_names)
 
-        defence_values = DataOVL.to_ints(self.dataOvl.defense_values)
-        range_values = DataOVL.to_ints(self.dataOvl.range_values)
-        attack_values = DataOVL.to_ints(self.dataOvl.attack_values)        
+        defence_values  = DataOVL.to_ints(self.dataOvl.defense_values)
+        range_values    = DataOVL.to_ints(self.dataOvl.range_values)
+        attack_values   = DataOVL.to_ints(self.dataOvl.attack_values)        
 
         def build_item(description_index: tuple[int,int], short_index: int, dra_values_index: int, slot: Slot, tile_id: TileId, rune_id: RuneId):
+
+            inventory_offset_value = dra_values_index + InventoryOffset.LEATHER_HELM.value
+            inventory_offset = InventoryOffset(inventory_offset_value)
 
             item_type = EquipableItemType(
                 # ItemType
                 item_id = dra_values_index,
+                inventory_offset = inventory_offset,
                 tile_id = tile_id.value,
                 name = descriptions[description_index[0]][description_index[1]],
 

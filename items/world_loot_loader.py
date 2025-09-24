@@ -51,10 +51,10 @@ class WorldLootLoader:
 
             item_type = self.item_type_registry.get_item_type(item_id)
 
-            # TODO: probably should build consumables separately
+#            assert item_type, f"Unregistered ItemType item_id: {item_id}"
             if item_type is None:
-                item_type = ItemType(item_id = item_id, tile_id = tile_id, name = ConsumableTileId(tile_id).name)
-                self.item_type_registry.register_item_type(item_type)
+                print(f"[items] ERROR: Skipping loot placement for unregistered item_id: {item_id}")
+                continue
 
             world_item = WorldItem(item_type = item_type, quantity = quantity)
             global_location = GlobalLocation(location_index = location_ix, level_index = level_index, coord = world_coord)
