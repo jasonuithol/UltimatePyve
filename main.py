@@ -16,27 +16,10 @@ from game.terrain import TerrainFactory
 from items import ConsumableItemTypeLoader, EquipableItemTypeFactory, PartyInventory, WorldLootLoader
 from items.consumable_items import TileId as ConsumableTileId
 
+from items.item_type import InventoryOffset
 from maps import U5MapLoader, U5MapRegistry
 
 import service_composition
-
-def process_event(player_state: PlayerState, event: pygame.event.Event) -> Action:
-
-    if event.key == pygame.K_TAB:
-        return player_state.switch_outer_map()
-
-    if event.key == pygame.K_BACKQUOTE:
-        return player_state.rotate_transport()
-
-    move_direction = get_direction(event)
-    if not move_direction is None:
-        return player_state.move(move_direction)
-
-    if event.key == pygame.K_j:
-        return player_state.jimmy()
-
-    # Nothing changed
-    return None
 
 def get_direction(event: pygame.event.Event) -> Vector2:
     if event.key == pygame.K_LEFT:
@@ -113,6 +96,64 @@ class Main:
         
         self.interactable_factory_registry.load_level(0,0)
 
+        self.party_inventory.add(InventoryOffset.KEYS, 10)
+
+    def update(self) -> None:
+        new_map, new_level, new_coords = self.player_state.get_current_position()
+        self.display_engine.set_active_map(new_map, new_level)
+
+        # Player sprite
+        transport_mode, direction = self.player_state.get_current_transport_info()
+        player_sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
+        self.display_engine.set_avatar_sprite(player_sprite)
+
+        # update display
+        self.display_engine.render(new_coords)
+
+    def obtain_action_direction(self) -> Action:
+
+        self.interactive_console.print_ascii("Direction ?")
+
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                    else:
+                        direction = get_direction(event)
+                        if not direction is None:
+                            return direction
+
+            #
+            # all events processed.
+            #  
+            self.update()
+
+        return None
+    
+    def process_event(self, player_state: PlayerState, event: pygame.event.Event) -> Action:
+
+        if event.key == pygame.K_TAB:
+            return player_state.switch_outer_map()
+
+        if event.key == pygame.K_BACKQUOTE:
+            return player_state.rotate_transport()
+
+        move_direction = get_direction(event)
+        if not move_direction is None:
+            return player_state.move(move_direction)
+
+        if event.key == pygame.K_j:
+            direction = self.obtain_action_direction()
+            if direction:
+                return player_state.jimmy(direction)
+
+        # Nothing changed
+        return None
+    
     def run(self) -> None:
 
         running = True
@@ -124,7 +165,7 @@ class Main:
                     if event.key == pygame.K_ESCAPE:
                         running = False
                     else:
-                        result_action = process_event(self.player_state, event)
+                        result_action = self.process_event(self.player_state, event)
                         if result_action is None:
                             print("wtf ?")
                         else:
@@ -138,16 +179,7 @@ class Main:
             #
             # all events processed.
             #  
-            new_map, new_level, new_coords = self.player_state.get_current_position()
-            self.display_engine.set_active_map(new_map, new_level)
-
-            # Player sprite
-            transport_mode, direction = self.player_state.get_current_transport_info()
-            player_sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
-            self.display_engine.set_avatar_sprite(player_sprite)
-
-            # update display
-            self.display_engine.render(new_coords)
+            self.update()
 
         pygame.quit()
 

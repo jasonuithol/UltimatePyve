@@ -169,11 +169,18 @@ class PlayerState:
 
         return ActionType.MOVE_INTO
 
-    def jimmy(self) -> Action:
+    def jimmy(self, direction: Vector2) -> Action:
+        if self.is_in_outer_map():
+            return None
         if self.party_inventory.get_quantity(InventoryOffset.KEYS) == 0:
             return Action(ActionType.NO_KEYS, {"msg": "No keys !"})
-        else:
-            return Action(ActionType.JIMMY, {"msg": "Jimmying !"})
+
+        target = self.inner_coord.add(direction)
+        interactable: Interactable = self.interactable_factory_registry.get_interactable(target)      
+        if interactable:
+            return ActionType.JIMMY.execute(interactable)
+
+        return None
 
 
     #
