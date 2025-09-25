@@ -1,5 +1,5 @@
 # file: game/interactable/__init__.py
-from .interactable import Interactable, ActionType, Action
+from .interactable import Interactable
 from .interactable_factory import InteractableFactory
 from .interactable_factory_registry import InteractableFactoryRegistry
 

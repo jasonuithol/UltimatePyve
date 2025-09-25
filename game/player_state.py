@@ -3,11 +3,12 @@ from typing import Tuple
 
 from dark_libraries.dark_math import Coord, Vector2
 
+from display.interactive_console import InteractiveConsole
 from items.item_type import InventoryOffset
 from maps import U5Map, U5MapRegistry
 from items import PartyInventory, InventoryOffset
 
-from .interactable.interactable import Action, ActionType, Interactable
+from .interactable.interactable import Interactable, MoveIntoResult
 #from .saved_game import SavedGame
 from .interactable.interactable_factory_registry import InteractableFactoryRegistry
 from .map_transitions import get_entry_trigger
@@ -22,6 +23,7 @@ class PlayerState:
     terrain_registry: TerrainRegistry
     transport_mode_registry: TransportModeRegistry
     party_inventory: PartyInventory
+    interactive_console: InteractiveConsole
 
     # either "britannia" or "underworld"
     outer_map: U5Map = None
@@ -67,7 +69,7 @@ class PlayerState:
 
         return self.transport_mode, direction
 
-    def _can_traverse(self, target: Coord) -> bool:
+    def _can_traverse(self, target: Coord) -> MoveIntoResult:
         transport_mode = self.transport_mode_registry.get_transport_mode(self.transport_mode)
         current_map, current_level, _ = self.get_current_position()
         target_tile_id = current_map.get_tile_id(current_level, target)
@@ -79,29 +81,14 @@ class PlayerState:
             #       If you walk into an open loot container, take the top item.
             #       If you walk into an empty loot container, raise an error.
             #
-            result = ActionType.MOVE_INTO.execute(interactable)
-            if result.get_action_type() == ActionType.MOVE_INTO:
-                # It's interactable, but you can walk over it.
-                is_traversable = True
-            else:
-                # It's interactable, and it's blocking
-                is_traversable = False
-
-            # TODO: Move to Action.execute or better yet, something like DoorType
-            if "inv" in result.action_parameters:
-                inventory_delta = result.action_parameters["inv"]
-                for inventory_offset in inventory_delta.keys():
-                    delta_quantity = inventory_delta[inventory_offset]
-                    self.party_inventory.add(inventory_offset, delta_quantity)
-
-            # This is a disaster of a place to have this code.
-            if "msg" in result.action_parameters:
-                print(f"ERROR: About to lose message: {result.action_parameters['msg']}")
-
-            return is_traversable
+            return interactable.move_into()
 
         # It's just regular terrain.
-        return self.terrain_registry.can_traverse(transport_mode, target_tile_id)
+        can_traverse_base_terrain = self.terrain_registry.can_traverse(transport_mode, target_tile_id)
+
+        return MoveIntoResult(
+            traversal_allowed = can_traverse_base_terrain
+        )
 
     #
     # Internal State transitions
@@ -110,7 +97,7 @@ class PlayerState:
     def _on_changing_map(self, location_index: int, level_index: int) -> None:
         self.interactable_factory_registry.load_level(location_index, level_index)
 
-    def _move_to_inner_map(self, u5map: U5Map) -> Action:
+    def _move_to_inner_map(self, u5map: U5Map):
         self.inner_map = u5map
         self.inner_map_level = u5map.location_metadata.default_level
         self.inner_coord = Coord(
@@ -118,22 +105,24 @@ class PlayerState:
             (u5map.size_in_tiles.h - 2)
         )
         self._on_changing_map(u5map.location_metadata.location_index, u5map.location_metadata.default_level)
-        return Action(ActionType.MOVE_INTO, { "msg": f"Entered {u5map.location_metadata.name}"})
+        self.interactive_console.print_ascii(f"Entered {u5map.location_metadata.name.capitalize()}")
 
-    def _return_to_outer_map(self) -> Action:
-        msg = f"Exited {self.inner_map.location_metadata.name}"
+    def _return_to_outer_map(self):
+        self.interactive_console.print_ascii(f"Exited {self.inner_map.location_metadata.name.capitalize()}")
 
         self.inner_map = None
         self.inner_map_level = None
         self.inner_coord = None
         self._on_changing_map(self.outer_map.location_metadata.location_index, self.outer_map_level)
-        return Action(ActionType.MOVE_INTO, { "msg": msg })
 
     #
     # Player driven State transitions
     #
 
-    def move(self, value: Vector2) -> Action | ActionType:
+    def _blocked(self):
+        self.interactive_console.print_ascii("Blocked !")
+
+    def move(self, value: Vector2):
 
         #
         # Check map transitions
@@ -145,27 +134,31 @@ class PlayerState:
 
             # Check traversability before transitions.
             # A ship cannot enter a town, for example, so we must forbid it here.
-            if not self._can_traverse(target):
-                return ActionType.BLOCKED
-            
+            if not self._can_traverse(target).traversal_allowed:
+                self._blocked()
+                return
+
+            # Move            
+            self.outer_coord = target
+
             # Check map transitions
             trigger_index = get_entry_trigger(target)
-            if not trigger_index is None:
+            if trigger_index:
                 inner_map = self.u5map_registry.get_map_by_trigger_index(trigger_index)
                 # always succeeds.
                 return self._move_to_inner_map(inner_map)
 
-            self.outer_coord = target
-
         else:
             target = self.inner_coord.add(value)
             if not self.inner_map.is_in_bounds(target):
-                # always succeeds.
-                return self._return_to_outer_map()
+                self._return_to_outer_map()
+                return
 
-            if not self._can_traverse(target):
-                return ActionType.BLOCKED
+            if not self._can_traverse(target).traversal_allowed:
+                self._blocked()
+                return
             
+            # Move            
             self.inner_coord = target
 
         if value.x == 1:
@@ -187,41 +180,37 @@ class PlayerState:
             self.last_nesw_dir = 0
             msg = "North"
 
-        return ActionType.MOVE_INTO.to_action({"msg": msg})
+        self.interactive_console.print_ascii(msg)
 
-    def jimmy(self, direction: Vector2) -> Action:
+    def jimmy(self, direction: Vector2):
+
         if self.is_in_outer_map():
-            return None
+            return
         if self.party_inventory.get_quantity(InventoryOffset.KEYS) == 0:
-            return Action(ActionType.NO_KEYS, {"msg": "No keys !"})
+            self.interactive_console.print_ascii("No keys !")
+            return
 
         target = self.inner_coord.add(direction)
         interactable: Interactable = self.interactable_factory_registry.get_interactable(target)      
         if interactable:
-            return ActionType.JIMMY.execute(interactable)
-
-        return None
-
+            interactable.jimmy()
 
     #
     # Testing only
     #
 
-    def switch_outer_map(self) -> ActionType:
+    def switch_outer_map(self):
         if self.outer_map_level == 0:
             self.outer_map_level = 255 # underworld
         else:
             self.outer_map_level = 0   # britannia
-        return ActionType.MOVE_INTO
     
-    def rotate_transport(self) -> ActionType:
-
+    def rotate_transport(self):
+        old_proposed_mode = self.transport_mode
         self.transport_mode = (self.transport_mode + 1) % len(self.transport_mode_registry._transport_modes)
-
         # forbid turning into a ship on land, for example.
         _, _, target = self.get_current_position()
         if not self._can_traverse(target):
-            return ActionType.BLOCKED
+            self.transport_mode = old_proposed_mode
         
-        return ActionType.MOVE_INTO
 

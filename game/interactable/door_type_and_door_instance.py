@@ -2,12 +2,15 @@ import random
 
 from dark_libraries import immutable, Coord
 
+from dark_libraries.service_provider import ServiceProvider
+from display.interactive_console import InteractiveConsole
 from game.interactable.interactable_factory_registry import InteractableFactoryRegistry
 from game.magic import S_MAGIC_UNLOCK
-from items.consumable_items import ConsumableItemType
+from items.item_type import InventoryOffset
+from items.party_inventory import PartyInventory
 from maps.u5map import U5Map
 
-from .interactable import Action, ActionType, Interactable
+from .interactable import Interactable, MoveIntoResult
 from .interactable_factory import InteractableFactory
 
 @immutable
@@ -83,7 +86,9 @@ class DoorType(InteractableFactory):
 class DoorInstance(Interactable):
     def __init__(self, door_type: DoorType, coord: Coord):
         self.door_type: DoorType = door_type
-        self.coord = coord
+        self.coord: Coord = coord
+        self.interactive_console: InteractiveConsole = ServiceProvider.get_provider().resolve(InteractiveConsole)
+        self.party_inventory: PartyInventory = ServiceProvider.get_provider().resolve(PartyInventory)
 
         # Set Current state
         self._restore()
@@ -108,32 +113,35 @@ class DoorInstance(Interactable):
         else:
             self.tile_id = DoorType.D_UNLOCKED_NORMAL
 
-    def _jimmy(self, force_success: bool = False) -> str:
+    def _break_key(self):
+        self.party_inventory.add(InventoryOffset.KEYS, -1)
+        self.interactive_console.print_ascii("Key broke !")
+
+    def _jimmy(self, force_success: bool = False):
         if self.is_open:
-            return None
+            return
         if not self.is_locked:
-            return None
+            return
         if self.door_type.original_lock_type == DoorType.L_MAGIC_LOCKED:
-            return ActionType.KEY_BROKE
+            self._break_key()
+            return
 
         success = force_success or random.choice([True, False])
         if success:
             self._become_unlocked()
-            return ActionType.JIMMY
-        else:
-            return ActionType.KEY_BROKE
+            self.interactive_console.print_ascii("Unlocked !")
+            return
 
-    def _magic_unlock(self) -> ActionType:
+        self._break_key()
+    
+    def _magic_unlock(self):
         if self.is_open:
-            return None
+            return
         if not self.is_locked:
-            return None
+            return
         if not self.door_type.original_lock_type == DoorType.L_MAGIC_LOCKED:
-            return None
-        
+            return
         self._become_unlocked()
-
-        return ActionType.UNLOCKED
 
     # Interactable implementation: Start
     def get_current_tile_id(self):
@@ -157,27 +165,27 @@ class DoorInstance(Interactable):
             if self.turns_until_close == 0:
                 self._close()
 
-    def move_into(self, actor=None) -> Action:
+    def move_into(self) -> MoveIntoResult:
         if self.is_open:
-            return ActionType.MOVE_INTO
+            return MoveIntoResult(traversal_allowed = True)
         else:
-            return self.open()
+            self.open()
+            return MoveIntoResult(traversal_allowed = False)
 
-    def open(self, actor=None) -> Action:
+    def open(self):
         if self.is_open:
-            return None
+            return
         if self.is_locked:
-            return ActionType.LOCKED
+            return
 
         self.is_open = True
         self.tile_id = DoorType.D_OPENED
         self.turns_until_close = 4
-
-        return ActionType.OPEN
     
-    def jimmy(self, actor=None) -> Action:
-        return self._jimmy()
+    def jimmy(self):
+        return self._jimmy(force_success=False)
     
+    '''
     def use_item_on(self, item, actor=None) -> Action:
         raise NotImplementedError()
         if item != ConsumableItemType.I_SKULL_KEY:
@@ -189,4 +197,5 @@ class DoorInstance(Interactable):
         if spell != S_MAGIC_UNLOCK:
             return InteractionResult.error()
         return InteractionResult.result(self._magic_unlock())
+    '''
     # Interactable implementation: End

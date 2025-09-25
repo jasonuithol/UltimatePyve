@@ -3,8 +3,8 @@
 from enum import Enum
 from typing import Any, Protocol, Self
 from dark_libraries import Coord
-from dark_libraries.custom_decorators import immutable
-
+from dark_libraries.custom_decorators import auto_init, immutable
+'''
 class ActionType(Enum):
     MOVE_INTO   = 'move_into'
     OPEN        = 'open'    
@@ -53,6 +53,12 @@ class Action:
     
     def get_action_type(self) -> ActionType:
         return self.action_type
+'''
+
+@immutable
+@auto_init
+class MoveIntoResult:
+    traversal_allowed: bool
 
 class Interactable(Protocol):
     coord: Coord
@@ -84,21 +90,22 @@ class Interactable(Protocol):
     # ACTION IMPLEMENTORS
     #
 
-    def move_into(self, actor=None) -> Action:
-        return None
+    def move_into(self) -> MoveIntoResult:
+        return MoveIntoResult(False)
 
-    def open(self, actor=None) -> Action:
-        return None
+    def open(self):
+        return
 
-    def search(self, actor=None) -> Action:
-        return None
+    def search(self):
+        return
 
-    def get(self, actor=None) -> Action:
-        return None
+    def get(self):
+        return
+
+    def jimmy(self):
+        return
 
     '''
-    def jimmy(self, actor=None) -> InteractionResult:
-        return InteractionResult.nothing()
 
     def yell_near(self, actor=None) -> InteractionResult:
         return InteractionResult.nothing()

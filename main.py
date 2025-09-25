@@ -10,11 +10,10 @@ from display import DisplayEngine
 
 from display.interactive_console import InteractiveConsole
 from game import PlayerState #, SavedGame, SavedGameLoader
-from game.interactable import Action, InteractableFactoryRegistry, DoorTypeFactory
+from game.interactable import InteractableFactoryRegistry, DoorTypeFactory
 from game.terrain import TerrainFactory
 
 from items import ConsumableItemTypeLoader, EquipableItemTypeFactory, PartyInventory, WorldLootLoader
-from items.consumable_items import TileId as ConsumableTileId
 
 from items.item_type import InventoryOffset
 from maps import U5MapLoader, U5MapRegistry
@@ -94,8 +93,8 @@ class Main:
         self.party_inventory.add(InventoryOffset.FOOD,    63)
         self.party_inventory.add(InventoryOffset.KEYS,     2)
         self.party_inventory.add(InventoryOffset.TORCHES,  4)
-        
-    def update(self) -> None:
+
+    def update(self):
         new_map, new_level, new_coords = self.player_state.get_current_position()
         self.display_engine.set_active_map(new_map, new_level)
 
@@ -107,18 +106,18 @@ class Main:
         # update display
         self.display_engine.render(new_coords)
 
-    def obtain_action_direction(self) -> Action:
+    def obtain_action_direction(self) -> Vector2:
 
         self.interactive_console.print_ascii("Direction ?")
 
-        running = True
-        while running:
+        in_loop = True
+        while in_loop:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    in_loop = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        running = False
+                        in_loop = False
                     else:
                         direction = get_direction(event)
                         if not direction is None:
@@ -131,27 +130,29 @@ class Main:
 
         return None
     
-    def process_event(self, player_state: PlayerState, event: pygame.event.Event) -> Action:
+    def process_event(self, player_state: PlayerState, event: pygame.event.Event):
 
         if event.key == pygame.K_TAB:
-            return player_state.switch_outer_map()
+            player_state.switch_outer_map()
+            return
 
         if event.key == pygame.K_BACKQUOTE:
-            return player_state.rotate_transport()
-
+            player_state.rotate_transport()
+            return
+         
         move_direction = get_direction(event)
         if not move_direction is None:
-            return player_state.move(move_direction)
+            player_state.move(move_direction)
+            return 
 
         if event.key == pygame.K_j:
             direction = self.obtain_action_direction()
             if direction:
-                return player_state.jimmy(direction)
-
+                player_state.jimmy(direction)
+                return
         # Nothing changed
-        return None
     
-    def run(self) -> None:
+    def run(self):
 
         running = True
         while running:
@@ -162,16 +163,10 @@ class Main:
                     if event.key == pygame.K_ESCAPE:
                         running = False
                     else:
-                        result_action = self.process_event(self.player_state, event)
-                        if result_action is None:
-                            print("wtf ?")
-                        else:
-                            result_action = result_action.to_action()
-                            assert isinstance(result_action, Action), f"Did not receive an Action from process_events, got {result_action!r}"
-                            if "msg" in result_action.action_parameters:
-                                self.interactive_console.print_ascii(result_action.action_parameters["msg"])
-                            # Allow "in=game" time to pass
-                            self.interactable_factory_registry.pass_time()
+                        self.process_event(self.player_state, event)
+
+                # Allow "in=game" time to pass
+                self.interactable_factory_registry.pass_time()
 
             #
             # all events processed.
