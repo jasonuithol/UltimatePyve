@@ -74,16 +74,6 @@ class Main:
             last_nesw_dir = 1    # east
         )
 
-        #
-        # TODO: Need something way better than this
-        #
-
-        self.party_inventory.add(ConsumableTileId.GOLD.value, 150)
-        self.party_inventory.add(ConsumableTileId.FOOD.value,  63)
-        self.party_inventory.add(ConsumableTileId.KEY.value,    2)
-        self.party_inventory.add(ConsumableTileId.TORCH.value,  4)
-    
-
         player_sprite: Sprite = self.avatar_sprite_factory.create_player(transport_mode=0, direction=0)
         self.display_engine.set_avatar_sprite(player_sprite)
 
@@ -96,8 +86,15 @@ class Main:
         
         self.interactable_factory_registry.load_level(0,0)
 
-        self.party_inventory.add(InventoryOffset.KEYS, 10)
+        #
+        # TODO: Need something way better than this
+        #
 
+        self.party_inventory.add(InventoryOffset.GOLD,   150)
+        self.party_inventory.add(InventoryOffset.FOOD,    63)
+        self.party_inventory.add(InventoryOffset.KEYS,     2)
+        self.party_inventory.add(InventoryOffset.TORCHES,  4)
+        
     def update(self) -> None:
         new_map, new_level, new_coords = self.player_state.get_current_position()
         self.display_engine.set_active_map(new_map, new_level)

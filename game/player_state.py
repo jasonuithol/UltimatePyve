@@ -80,11 +80,27 @@ class PlayerState:
             #       If you walk into an empty loot container, raise an error.
             #
             result = ActionType.MOVE_INTO.execute(interactable)
-            if result.action_type == ActionType.MOVE_INTO:
-                return True
+            if result.get_action_type() == ActionType.MOVE_INTO:
+                # It's interactable, but you can walk over it.
+                is_traversable = True
             else:
-                return False
+                # It's interactable, and it's blocking
+                is_traversable = False
 
+            # TODO: Move to Action.execute or better yet, something like DoorType
+            if "inv" in result.action_parameters:
+                inventory_delta = result.action_parameters["inv"]
+                for inventory_offset in inventory_delta.keys():
+                    delta_quantity = inventory_delta[inventory_offset]
+                    self.party_inventory.add(inventory_offset, delta_quantity)
+
+            # This is a disaster of a place to have this code.
+            if "msg" in result.action_parameters:
+                print(f"ERROR: About to lose message: {result.action_parameters['msg']}")
+
+            return is_traversable
+
+        # It's just regular terrain.
         return self.terrain_registry.can_traverse(transport_mode, target_tile_id)
 
     #
@@ -156,18 +172,22 @@ class PlayerState:
             # east
             self.last_east_west = 0
             self.last_nesw_dir = 1
+            msg = "East"
         elif value.x == -1:
             # west
             self.last_east_west = 1
             self.last_nesw_dir = 3
+            msg = "West"
         elif value.y == 1:
             # south
             self.last_nesw_dir = 2
+            msg = "South"
         elif value.y == -1:
             # north
             self.last_nesw_dir = 0
+            msg = "North"
 
-        return ActionType.MOVE_INTO
+        return ActionType.MOVE_INTO.to_action({"msg": msg})
 
     def jimmy(self, direction: Vector2) -> Action:
         if self.is_in_outer_map():

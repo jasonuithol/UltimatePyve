@@ -45,7 +45,8 @@ class ItemContainer(Interactable):
             return ActionType.OPEN
         elif self.has_items():
             item = self.pop()
-            return ActionType.GET
+            inventory_delta = { item.item_type.inventory_offset : item.quantity }
+            return ActionType.GET.to_action({ "inv": inventory_delta, "msg": item.item_type.name })
         
         return ActionType.MOVE_INTO
     # Interactable implementation: end

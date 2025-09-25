@@ -8,7 +8,8 @@ class PartyInventory:
         current_qty = self.inventory.get(inventory_offset, 0)
         self.inventory[inventory_offset] = current_qty + additional_qty
         assert self.inventory[inventory_offset] >= 0, "Cannot have a negative amount of something, it's the dark ages."
-    
+        print(f"[inventory] Updated party inventory: {inventory_offset.name} {current_qty} -> {current_qty + additional_qty}")
+
     def get_quantity(self, inventory_offset: InventoryOffset):
         return self.inventory.get(inventory_offset, 0)
     

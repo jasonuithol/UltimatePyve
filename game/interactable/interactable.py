@@ -21,7 +21,7 @@ class ActionType(Enum):
     def to_action(self, action_parameters: dict[str, Any] = {}) -> 'Action':
         return Action(self, action_parameters)
 
-    def execute(self, target: 'Interactable') -> Self:
+    def execute(self, target: 'Interactable') -> 'Action':
         return self.to_action().execute(target)
 
     def get_action_type(self) -> Self:
@@ -42,6 +42,8 @@ class Action:
         result: Action | ActionType = func(target, **self.action_parameters)
         if isinstance(result, ActionType):
             result = result.to_action()
+        if result is None:
+            return None
         if "msg" in result.action_parameters:
             print(result.action_parameters["msg"])
         return result
