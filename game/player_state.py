@@ -92,6 +92,9 @@ class PlayerState:
         # It's just regular terrain.
         can_traverse_base_terrain = self.terrain_registry.can_traverse(transport_mode, target_tile_id)
 
+        if not can_traverse_base_terrain:
+            self._blocked()
+
         return MoveIntoResult(
             traversal_allowed = can_traverse_base_terrain
         )
@@ -161,7 +164,6 @@ class PlayerState:
                 return
 
             if not self._can_traverse(target).traversal_allowed:
-                self._blocked()
                 return
             
             # Move            

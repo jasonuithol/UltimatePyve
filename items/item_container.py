@@ -3,18 +3,20 @@ from dark_libraries.service_provider import ServiceProvider
 from display.interactive_console import InteractiveConsole
 from game.interactable import Interactable
 from game.interactable.interactable import MoveIntoResult
+from game.interactable.interactable_factory_registry import InteractableFactoryRegistry
 from items.party_inventory import PartyInventory
 from .world_item import WorldItem
 from .global_location import GlobalLocation
 
 class ItemContainer(Interactable):
-    def __init__(self, global_location: GlobalLocation, original_tile_id: int):
+    def __init__(self, global_location: GlobalLocation):
         self.world_items: List[WorldItem] = []
         self.global_location = global_location
-        self.original_tile_id = original_tile_id
         self.opened = False
-        self.interactive_console: InteractiveConsole = ServiceProvider.get_provider().resolve(InteractiveConsole)
-        self.party_inventory: PartyInventory = ServiceProvider.get_provider().resolve(PartyInventory)
+
+        self.interactive_console: InteractiveConsole                    = ServiceProvider.get_provider().resolve(InteractiveConsole)
+        self.party_inventory: PartyInventory                            = ServiceProvider.get_provider().resolve(PartyInventory)
+        self.interactable_factory_registry: InteractableFactoryRegistry = ServiceProvider.get_provider().resolve(InteractableFactoryRegistry)
 
     def add(self, item: WorldItem):
         assert not self.opened, "Cannot add to an already opened ItemContainer."
@@ -58,4 +60,8 @@ class ItemContainer(Interactable):
         item = self.pop()
         self.party_inventory.add(item.item_type.inventory_offset, item.quantity)
         self.interactive_console.print_ascii(item.item_type.name + " !")
+
+        if not self.has_items():
+            self.interactable_factory_registry.unregister_interactable(self.global_location.coord)
+            print(f"[items] Unregistered empty item container at {self.global_location.coord}.")
     # Interactable implementation: end

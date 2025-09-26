@@ -24,18 +24,12 @@ class WorldLootRegistry(InteractableFactory):
         key = global_location
         con = self.item_containers
 
-        #
-        # TODO: Use global_location to look up the actual tile_id, we're gonna need a map registry
-        #
-        tile_id = 1 
-
         if not key in con.keys():
-            con[key] = ItemContainer(global_location=global_location, original_tile_id=tile_id)
+            con[key] = ItemContainer(global_location=global_location)
         con[key].add(world_item)
 
     def get_loot_container(self, global_location: GlobalLocation) -> ItemContainer | None:
         return self.item_containers.get(global_location, None)
-    
 
     # InteractableFactory implementation: start
     def load_level(self, factory_registry: 'InteractableFactoryRegistry', u5map: U5Map, level_index: int):

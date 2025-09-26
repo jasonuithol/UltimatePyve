@@ -33,6 +33,9 @@ class InteractableFactoryRegistry:
     def register_interactable(self, coord: Coord, interactable: Interactable):
         self.interactables[coord] = interactable
 
+    def unregister_interactable(self, coord: Coord):
+        del self.interactables[coord]
+
     def load_level(self, location_index: int, level_index: int):
         self._clear_interactables()
         self.location_index = location_index
