@@ -1,15 +1,25 @@
 # file: display/view_port.py
 import pygame
-from typing import Optional
+from typing import Iterator, Optional
 
 from dark_libraries import Coord, Size, Rect, Vector2
 
 import animation.sprite as sprite
 from animation import SpriteRegistry
+from dark_libraries.custom_decorators import auto_init, immutable
+from game.terrain.terrain import Terrain
+from game.terrain.terrain_registry import TerrainRegistry
 from maps import U5Map
 from game.interactable import InteractableFactoryRegistry
 
 from tileset import TILE_ID_GRASS, EgaPalette, Tile, TileSet
+
+@immutable
+@auto_init
+class QueriedTile:
+    tile: Tile
+    terrain: Terrain
+    sprite: sprite.Sprite | None
 
 class ViewPort:
 
@@ -18,8 +28,11 @@ class ViewPort:
     palette: EgaPalette
     interactable_factory_registry: InteractableFactoryRegistry
     sprite_registry: SpriteRegistry
+    terrain_registry: TerrainRegistry
 
-    world_rect = Rect(Coord(0,0), Size(21,15))
+    # NOTE: Initial Coord will be overwritten during init. We need the Rect's size for size based calcs before init is done.
+    view_rect = Rect(Coord(0,0), Size(21,15))
+
     tile_size_pixels: int = 16
     display_scale: int = 2
 
@@ -29,8 +42,19 @@ class ViewPort:
         # output surface
         self._scaled_surface: pygame.Surface = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
 
+        self.black_tile = Tile(0)
+        self.black_tile.load_from_bytes(bytes(128))
+
+        self.terrain_registry._after_inject()
+
+        self.queried_tile_grass = QueriedTile(
+            tile    = self.tileset.tiles[TILE_ID_GRASS],
+            terrain = self.terrain_registry.get_terrain(TILE_ID_GRASS),
+            sprite  = None
+        )
+
     def view_size_in_pixels(self) -> Size:
-         return self.world_rect.size.scale(self.tile_size_pixels)
+         return self.view_rect.size.scale(self.tile_size_pixels)
     
     def view_size_in_pixels_scaled(self) -> Size:
          return self.view_size_in_pixels().scale(self.display_scale)
@@ -39,9 +63,9 @@ class ViewPort:
          self.display_scale = s
 
     def _get_view_centre(self) -> Coord:
-        width, height = self.world_rect.size.to_tuple()
+        width, height = self.view_rect.size.to_tuple()
         offset = Coord(width // 2, height // 2)
-        view_centre = self.world_rect.minimum_corner.add(offset)
+        view_centre = self.view_rect.minimum_corner.add(offset)
 
         return view_centre
 
@@ -49,14 +73,14 @@ class ViewPort:
 
         if self._get_view_centre() != world_coord:
 
-            width, height = self.world_rect.size.to_tuple()
+            width, height = self.view_rect.size.to_tuple()
             offset = Coord(width // 2, height // 2)
             new_corner = world_coord.subtract(offset)
 
-            self.world_rect = Rect(new_corner, Size(width, height))
+            self.view_rect = Rect(new_corner, Size(width, height))
 
     def to_view_port_coord(self, world_coord: Coord) -> Coord:
-        return world_coord.subtract(self.world_rect.minimum_corner)
+        return world_coord.subtract(self.view_rect.minimum_corner)
 
     def get_input_surface(self) -> pygame.Surface:
         return self._unscaled_surface
@@ -71,15 +95,16 @@ class ViewPort:
 
         return self._scaled_surface
 
-    def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
 
-        for world_coord in self.world_rect:
+    def query_tileid_grid(self, u5map: U5Map, level_ix: int = 0) -> Iterator[tuple[Coord, QueriedTile]]:
+
+        result: dict[Coord, int] = {} 
+        for world_coord in self.view_rect:
 
             # Don't try to pull a tile from outside the source map.
             # If out of bounds, use grass tile.
             if not u5map.is_in_bounds(world_coord):
-                tile = self.tileset.tiles[TILE_ID_GRASS]
-                self.draw_tile(world_coord, tile)
+                yield world_coord, self.queried_tile_grass
                 continue
 
             # Allow interactables to change what state an object is e.g. allow doors to open/close/unlock
@@ -87,7 +112,7 @@ class ViewPort:
             interactable = self.interactable_factory_registry.get_interactable(world_coord)
             if interactable:
                 # Allow get_current_tile_id to return None to signify that the container/interactable is hidden/invisible.
-                tid: int = interactable.get_current_tile_id()
+                tile_id: int = interactable.get_current_tile_id()
                 '''
                 sprite = interactable.create_sprite()
                 self.draw_sprite(world_coord, sprite)
@@ -95,25 +120,29 @@ class ViewPort:
                 '''
             else:
                 # There is no interactable, but we'll pretend it's just an invisible one.
-                tid: int = None
+                tile_id: int = None
 
-            if tid is None:
-                tid = u5map.get_tile_id(level_ix, world_coord)
-
-            # if the tile_id is animated, pull a frame tile from the sprite and draw that instead.
-            sprite = self.sprite_registry.get_sprite(tid)
-            if sprite:
-                self.draw_sprite(world_coord, sprite)
-                continue
+            if tile_id is None:
+                tile_id = u5map.get_tile_id(level_ix, world_coord)
 
             # Don't try to render a non-existant tile id.
-            if 0 <= tid < len(self.tileset.tiles):
-                tile: Tile = self.tileset.tiles[tid]
+            assert 0 <= tile_id < len(self.tileset.tiles), f"tile id {tile_id!r} out of range."
 
-                self.draw_tile(world_coord, tile)
+            yield world_coord, QueriedTile(
+                tile = self.tileset.tiles[tile_id],
+                terrain = self.terrain_registry.get_terrain(tile_id),
+                # if the tile_id is animated, pull a frame tile from the sprite and draw that instead.
+                sprite = self.sprite_registry.get_sprite(tile_id)
+            )
 
+        return result
+            
+    def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
+        for world_coord, queried_tile in self.query_tileid_grid(u5map, level_ix):
+            if queried_tile.sprite:
+                self.draw_sprite(world_coord, queried_tile.sprite)
             else:
-                print(f"Warning: tile id {tid!r} out of range, skipping render.")
+                self.draw_tile(world_coord, queried_tile.tile)
 
     def draw_tile(self, world_coord: Coord, tile: Tile):
         screen_coord = self.to_view_port_coord(world_coord).scale(self.tile_size_pixels)
@@ -122,14 +151,14 @@ class ViewPort:
             screen_coord
         )
 
-    def draw_sprite(self, world_coord: Coord, sprite: sprite.Sprite) -> None:
+    def draw_sprite(self, world_coord: Coord, a_sprite: sprite.Sprite) -> None:
 
         """
         Draw a sprite to the Viewport
         """
         # Get the current animation frame tile.
         ticks = pygame.time.get_ticks()
-        frame_tile = sprite.get_current_frame_tile(ticks)
+        frame_tile = a_sprite.get_current_frame_tile(ticks)
 
         self.draw_tile(world_coord, frame_tile)
 
@@ -182,7 +211,7 @@ if __name__ == "__main__":
     view_port.sprite_registry = StubSpriteRegistry()
     view_port.palette = _ega_palette
 
-    view_port.world_rect = Rect(Coord(40,40), Size(5,5))
+    view_port.view_rect = Rect(Coord(40,40), Size(5,5))
     screen = pygame.display.set_mode(view_port.view_size_in_pixels_scaled().to_tuple())
     
     view_port._after_inject()

@@ -97,6 +97,38 @@ class TerrainFactory:
         # Grapple Hook
         terrains[12].grapple = True
 
+        # Light emitters
+        for i in [176, 177, 178, 179, 188, 189, 190, 191]:
+            terrains[i].emits_light = True
+
+        # Light blockers
+        for i in [
+            10,     # deep forest
+            13,     # mountain peak
+            74,     # wall with arrow slot  [WINDOWED]
+            75,     # wall with grate       [WINDOWED]
+            78,     # wall with secret door
+            79,     # wall
+            90,     # pantry
+            151,    # door, magic
+            152,    # door, magic, windowed [WINDOWED]
+            184,    # door
+            185,    # door (locked)
+            186,    # door with window      [WINDOWED]
+            187,    # door locked, window   [WINDOWED]
+            248    # wall with billboard
+        ]:
+            terrains[i].blocks_light = True
+
+        # Windowed (blocks light unless avatar standing right next to tile)
+        for i in [
+            74,     # wall with arrow slot  [WINDOWED]
+            75,     # wall with grate       [WINDOWED]
+            152,    # door, magic, windowed [WINDOWED]
+            186,    # door with window      [WINDOWED]
+            187     # door locked, window   [WINDOWED]
+        ]:
+            terrains[i].windowed = True
 
         return terrains
 

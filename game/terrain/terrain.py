@@ -13,8 +13,13 @@ class Terrain:
     move_up: bool = False
     move_down: bool = False
     stairs: bool = False
+
     climb: bool = False
     grapple: bool = False
+
+    emits_light: bool = False
+    blocks_light: bool = False
+    windowed: bool = False
 
 '''
 moveable_tiles = [
