@@ -4,12 +4,16 @@ from dataclasses import dataclass
 @dataclass
 class Terrain:
     walk: bool = False
-    climb: bool = False
     horse: bool = False
     carpet: bool = False
     skiff: bool = False
     ship: bool = False
     sail: bool = False
+
+    move_up: bool = False
+    move_down: bool = False
+    climb: bool = False
+    grapple: bool = False
 
 '''
 moveable_tiles = [

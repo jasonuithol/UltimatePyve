@@ -112,13 +112,16 @@ class PlayerState:
 
     def _move_to_inner_map(self, u5map: U5Map):
         self.inner_map = u5map
-        self.inner_map_level = u5map.location_metadata.default_level
         self.inner_coord = Coord(
             (u5map.size_in_tiles.w - 1) // 2,
             (u5map.size_in_tiles.h - 2)
         )
-        self._on_changing_map(u5map.location_metadata.location_index, u5map.location_metadata.default_level)
+        self._move_to_inner_map_level(u5map.location_metadata.default_level)
         self.interactive_console.print_ascii(f"Entered {u5map.location_metadata.name.capitalize()}")
+
+    def _move_to_inner_map_level(self, level_index: int):
+        self.inner_map_level = level_index
+        self._on_changing_map(self.inner_map.location_metadata.location_index, level_index)
 
     def _return_to_outer_map(self):
         self.interactive_console.print_ascii(f"Exited {self.inner_map.location_metadata.name.capitalize()}")
@@ -168,9 +171,17 @@ class PlayerState:
 
             if not self._can_traverse(target).traversal_allowed:
                 return
-            
+                
             # Move            
             self.inner_coord = target
+
+            # Check for map level changes.
+            tile_id = self.inner_map.get_tile_id(self.inner_map_level, self.inner_coord)
+            terrain = self.terrain_registry.get_terrain(tile_id)
+            if terrain.move_up == True:
+                self._move_to_inner_map_level(self.inner_map_level + 1)
+            if terrain.move_down == True:
+                self._move_to_inner_map_level(self.inner_map_level - 1)
 
         if value.x == 1:
             # east

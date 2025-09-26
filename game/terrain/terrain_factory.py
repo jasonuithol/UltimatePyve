@@ -63,14 +63,6 @@ class TerrainFactory:
             for i in range(start, finish + 1):
                 terrains[i].carpet = True
 
-        # climbable - only when on foot
-        for i in [
-            76,    # rock pile
-            202,    # fence east-west
-            203     # fence north-south
-        ]:
-            terrains[i].climb = True
-
         # skiff traversable
         for start, finish in [
             (  1,  3), # water (includes ocean)
@@ -85,6 +77,22 @@ class TerrainFactory:
         for i in [1,  2]:
             terrains[i].ship = True
             terrains[i].sail = True
+
+        # Ladders
+        terrains[200].move_up = True
+        terrains[201].move_down = True
+
+        # climbable - only when on foot
+        for i in [
+            76,     # rock pile
+            202,    # fence east-west
+            203     # fence north-south
+        ]:
+            terrains[i].climb = True
+
+        # Grapple Hook
+        terrains[12].grapple = True
+
 
         return terrains
 
