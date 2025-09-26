@@ -46,11 +46,11 @@ class ItemContainer(Interactable):
     def move_into(self) -> MoveIntoResult:
         if not self.opened:
             self.open()
-            return MoveIntoResult(traversal_allowed = False)
+            return MoveIntoResult(traversal_allowed = False, alternative_action_taken = True)
         if self.has_items():
             self.get()
-            return MoveIntoResult(traversal_allowed = False)
-        return MoveIntoResult(traversal_allowed = True)
+            return MoveIntoResult(traversal_allowed = False, alternative_action_taken = True)
+        raise ValueError("Empty container's should already have been unregistered upon emptying.")
 
     def open(self):
         assert not self.opened, "Cannot open an already opened ItemContainer."

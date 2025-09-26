@@ -87,7 +87,10 @@ class PlayerState:
             #       If you walk into an open loot container, take the top item.
             #       If you walk into an empty loot container, raise an error.
             #
-            return interactable.move_into()
+            interactable_moveinto_result = interactable.move_into()
+            if interactable_moveinto_result.traversal_allowed == False and interactable_moveinto_result.alternative_action_taken == False:
+                self._blocked()
+            return interactable_moveinto_result
 
         # It's just regular terrain.
         can_traverse_base_terrain = self.terrain_registry.can_traverse(transport_mode, target_tile_id)
@@ -96,7 +99,8 @@ class PlayerState:
             self._blocked()
 
         return MoveIntoResult(
-            traversal_allowed = can_traverse_base_terrain
+            traversal_allowed = can_traverse_base_terrain,
+            alternative_action_taken = False
         )
 
     #
@@ -144,7 +148,6 @@ class PlayerState:
             # Check traversability before transitions.
             # A ship cannot enter a town, for example, so we must forbid it here.
             if not self._can_traverse(target).traversal_allowed:
-                self._blocked()
                 return
 
             # Move            
@@ -214,11 +217,6 @@ class PlayerState:
             self.outer_map_level = 0   # britannia
     
     def rotate_transport(self):
-        old_proposed_mode = self.transport_mode
         self.transport_mode = (self.transport_mode + 1) % len(self.transport_mode_registry._transport_modes)
-        # forbid turning into a ship on land, for example.
-        _, _, target = self.get_current_position()
-        if not self._can_traverse(target):
-            self.transport_mode = old_proposed_mode
         
 

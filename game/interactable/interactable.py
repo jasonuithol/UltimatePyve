@@ -59,6 +59,7 @@ class Action:
 @auto_init
 class MoveIntoResult:
     traversal_allowed: bool
+    alternative_action_taken: bool
 
 class Interactable(Protocol):
     coord: Coord
@@ -91,7 +92,7 @@ class Interactable(Protocol):
     #
 
     def move_into(self) -> MoveIntoResult:
-        return MoveIntoResult(False)
+        return MoveIntoResult(False, False)
 
     def open(self):
         return

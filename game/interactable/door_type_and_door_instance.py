@@ -167,10 +167,13 @@ class DoorInstance(Interactable):
 
     def move_into(self) -> MoveIntoResult:
         if self.is_open:
-            return MoveIntoResult(traversal_allowed = True)
+            return MoveIntoResult(traversal_allowed = True, alternative_action_taken = False)
         else:
             self.open()
-            return MoveIntoResult(traversal_allowed = False)
+            if self.is_open:
+                return MoveIntoResult(traversal_allowed = False, alternative_action_taken = True)
+            else:
+                return MoveIntoResult(traversal_allowed = False, alternative_action_taken = False)
 
     def open(self):
         if self.is_open:
