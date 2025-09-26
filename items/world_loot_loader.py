@@ -1,5 +1,6 @@
 from dark_libraries.dark_math import Coord
 from maps.data import DataOVL
+from maps.u5map_registry import U5MapRegistry
 from .world_item import WorldItem
 from .global_location import GlobalLocation
 from .equipable_items import ItemType, ItemTypeRegistry
@@ -12,6 +13,7 @@ class WorldLootLoader:
     dataOvl: DataOVL
     item_type_registry: ItemTypeRegistry
     world_loot_registry: WorldLootRegistry
+    u5_map_registry: U5MapRegistry
 
     def register_loot_containers(self):
 
@@ -60,7 +62,7 @@ class WorldLootLoader:
             global_location = GlobalLocation(location_index = location_ix, level_index = level_index, coord = world_coord)
             
             self.world_loot_registry.register_loot(world_item=world_item, global_location=global_location)
-            print(f"[items] Loaded world loot {world_item.item_type.name} x {world_item.quantity} at {global_location}")
+            print(f"[items] Loaded world loot {world_item.item_type.name} x {world_item.quantity} at {self.u5_map_registry.get_map(global_location.location_index).location_metadata.name}:{global_location}")
 
 #
 # MAIN
@@ -68,13 +70,14 @@ class WorldLootLoader:
 if __name__ == "__main__":
 
     from .equipable_items import EquipableItemTypeFactory
+    from game.interactable.interactable_factory_registry import InteractableFactoryRegistry
 
     dataOvl = DataOVL.load()
 
     item_type_registry = ItemTypeRegistry()
     item_type_registry._after_inject()
-    item_type_factory = EquipableItemTypeFactory()
 
+    item_type_factory = EquipableItemTypeFactory()
     item_type_factory.item_type_registry = item_type_registry
     item_type_factory.dataOvl = dataOvl
     item_type_factory.build()
@@ -82,6 +85,7 @@ if __name__ == "__main__":
     print(f"Item Types Registered: {len(item_type_registry.item_types)}")
 
     registry = WorldLootRegistry()
+    registry.interactable_factory_registry = InteractableFactoryRegistry()
     registry._after_inject()
 
     loader = WorldLootLoader()
