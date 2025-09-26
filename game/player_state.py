@@ -45,6 +45,12 @@ class PlayerState:
         self.outer_map_level = level_index
         self.outer_coord = coord
 
+    def set_inner_position(self, u5Map: U5Map, level_index: int, coord: Coord):
+
+        self.inner_map = u5Map
+        self.inner_map_level = level_index
+        self.inner_coord = coord
+
     def set_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
         self.transport_mode = transport_mode
         self.last_east_west = last_east_west

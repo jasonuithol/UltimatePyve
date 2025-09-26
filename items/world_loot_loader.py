@@ -19,7 +19,7 @@ class WorldLootLoader:
 
         TILE_ID_OFFSET = 256 # technically - the tile that is a circle of white dots on a black background.
 
-        hidden_object_tiles = DataOVL.to_ints(self.dataOvl.hidden_object_tiles)
+        hidden_object_tiles     = DataOVL.to_ints(self.dataOvl.hidden_object_tiles)
         hidden_object_qualities = DataOVL.to_ints(self.dataOvl.hidden_object_qualities) # maybe "quantities" is a better name for it.
         hidden_object_locations = DataOVL.to_ints(self.dataOvl.hidden_object_locations)
 

@@ -43,7 +43,7 @@ class InteractableFactoryRegistry:
         for factory in self.interactable_factories:
             factory.load_level(self, u5map, level_index)
 
-        print(f"[game.interactable] Switched to map {u5map.location_metadata.name}, level {level_index}")
+        print(f"[game.interactable] Switched to map {u5map.location_metadata.name}(location_index={u5map.location_metadata.location_index}), level {level_index}")
 
     # TODO: Abstract out the need for tile_id
     # This means every map load will create ALL interactables for that level,

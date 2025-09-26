@@ -64,7 +64,13 @@ class Main:
         self.player_state.set_outer_position(
             u5Map = self.u5map_registry.get_map(0), # britannia/underworld
             level_index = 0,                        # britannia
-            coord = Coord(56, 72)                   # starting tile in world coords, just a bit SE of Iolo's Hut.
+            coord = Coord(45, 62)                   # starting tile in world coords, just a bit SE of Iolo's Hut.
+        )
+
+        self.player_state.set_inner_position(
+            u5Map = self.u5map_registry.get_map(13), # Iolo's hut
+            level_index = 0,                         
+            coord = Coord(24, 3)                     # just south of the potion barrel, in the stables.
         )
 
         self.player_state.set_transport_state(
@@ -73,7 +79,12 @@ class Main:
             last_nesw_dir = 1    # east
         )
 
-        player_sprite: Sprite = self.avatar_sprite_factory.create_player(transport_mode=0, direction=0)
+        current_transport_mode, current_direction = self.player_state.get_current_transport_info()
+
+        player_sprite: Sprite = self.avatar_sprite_factory.create_player(
+            transport_mode = current_transport_mode, 
+            direction      = current_direction
+        )
         self.display_engine.set_avatar_sprite(player_sprite)
 
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
@@ -83,7 +94,12 @@ class Main:
         self.consumable_item_type_loader.register_item_types()
         self.world_loot_loader.register_loot_containers()
         
-        self.interactable_factory_registry.load_level(0,0)
+        current_u5map, current_level_index, _ = self.player_state.get_current_position()
+        
+        self.interactable_factory_registry.load_level(
+            location_index = current_u5map.location_metadata.location_index, 
+            level_index    = current_level_index
+        )
 
         #
         # TODO: Need something way better than this
