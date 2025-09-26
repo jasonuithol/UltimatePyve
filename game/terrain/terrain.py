@@ -12,6 +12,7 @@ class Terrain:
 
     move_up: bool = False
     move_down: bool = False
+    stairs: bool = False
     climb: bool = False
     grapple: bool = False
 

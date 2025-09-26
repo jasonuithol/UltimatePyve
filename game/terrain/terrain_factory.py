@@ -82,6 +82,10 @@ class TerrainFactory:
         terrains[200].move_up = True
         terrains[201].move_down = True
 
+        # Stairs
+        for i in [196, 197, 198, 199]:
+            terrains[i].stairs = True
+
         # climbable - only when on foot
         for i in [
             76,     # rock pile

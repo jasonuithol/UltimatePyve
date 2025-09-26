@@ -183,6 +183,13 @@ class PlayerState:
             if terrain.move_down == True:
                 self._move_to_inner_map_level(self.inner_map_level - 1)
 
+            # NOTE: This is a guess.
+            if terrain.stairs == True:
+                if self.inner_map_level == self.inner_map.location_metadata.default_level:
+                    self._move_to_inner_map_level(self.inner_map_level + 1)
+                else:
+                    self._move_to_inner_map_level(self.inner_map_level - 1)
+
         if value.x == 1:
             # east
             self.last_east_west = 0
