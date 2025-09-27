@@ -57,6 +57,7 @@ class PlayerState:
         self.transport_mode = transport_mode
         self.last_east_west = last_east_west
         self.last_nesw_dir = last_nesw_dir
+        self._on_changing_transport_mode()
 
     def is_in_outer_map(self) -> bool:
         return self.inner_map is None
@@ -117,6 +118,14 @@ class PlayerState:
             pygame.mixer.music.play(-1)
         self.interactable_factory_registry.load_level(location_index, level_index)
 
+    def _on_changing_transport_mode(self):
+        sound_track = self.transport_mode_registry.get_transport_mode_soundtrack(self.transport_mode)        
+        if sound_track:
+            print(f"[player_state] Playing transport soundtrack {sound_track}")
+            pygame.mixer.music.stop()
+            pygame.mixer.music.load(sound_track)
+            pygame.mixer.music.play(-1)
+            
     def _move_to_inner_map(self, u5map: U5Map):
         self.inner_map = u5map
         self.inner_coord = Coord(
@@ -243,5 +252,6 @@ class PlayerState:
     
     def rotate_transport(self):
         self.transport_mode = (self.transport_mode + 1) % len(self.transport_mode_registry._transport_modes)
+        self._on_changing_transport_mode()
         
 

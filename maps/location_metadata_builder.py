@@ -163,10 +163,12 @@ class LocationMetadataBuilder:
             if mod_contents.is_dir:
                 music_dir = mod_contents.joinpath("music")
                 if music_dir.exists():
-                    for music_file in music_dir.iterdir():
-                        location_index = int(music_file.stem)
-                        yield location_index, str(music_file.absolute())
-                        print(f"[mods.{mod_contents.stem}] Loaded location soundtrack override for location_index={location_index} from {music_file.name}")
+                    locations_dir = music_dir.joinpath("locations")
+                    if locations_dir.exists():
+                        for locations_soundtrack in locations_dir.iterdir():
+                            location_index = int(locations_soundtrack.stem)
+                            yield location_index, str(locations_soundtrack.absolute())
+                            print(f"[mods.{mod_contents.stem}] Loaded location soundtrack override for location_index={location_index} from {locations_soundtrack.name}")
                         
     def build_overworld_metadata(self):
         meta = LocationMetadata(
