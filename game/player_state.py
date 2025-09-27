@@ -1,6 +1,8 @@
 # file: game/player_state.py
 from typing import Tuple
 
+import pygame
+
 from dark_libraries.dark_math import Coord, Vector2
 
 from display.interactive_console import InteractiveConsole
@@ -108,6 +110,11 @@ class PlayerState:
     #
 
     def _on_changing_map(self, location_index: int, level_index: int) -> None:
+        pygame.mixer.music.stop()
+        u5map, _, _ = self.get_current_position()
+        if u5map.location_metadata.sound_track:
+            pygame.mixer.music.load(u5map.location_metadata.sound_track)
+            pygame.mixer.music.play(-1)
         self.interactable_factory_registry.load_level(location_index, level_index)
 
     def _move_to_inner_map(self, u5map: U5Map):

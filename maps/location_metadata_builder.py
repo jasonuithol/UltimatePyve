@@ -1,5 +1,8 @@
 
-from typing import List
+from pathlib import Path
+from typing import Iterable, List
+
+import pygame
 
 from .data import DataOVL
 from .location_metadata import LocationMetadata
@@ -110,6 +113,11 @@ class LocationMetadataBuilder:
         location_names = self.build_location_names()
         default_level_lists = self.build_default_level_lists()
 
+        #
+        # Location Soundtracks loaded here.
+        #
+        modded_soundtracks = dict(self.load_modded_soundtracks())
+
         for name_index, files_index, num_levels in LocationMetadataBuilder.LOCATION_METADATA:
 
             # calculate group_index, map_index_offset
@@ -135,7 +143,8 @@ class LocationMetadataBuilder:
                 map_index_offset= map_index_offset,
                 num_levels      = num_levels,
                 default_level   = default_level,
-                trigger_index   = trigger_index
+                trigger_index   = trigger_index,
+                sound_track     = modded_soundtracks.get(trigger_index + 1, None)
             )
             metadata.append(meta)
 
@@ -143,8 +152,22 @@ class LocationMetadataBuilder:
 
         # NOT OPTIONAL: order of appearance serves as index by trigger_index.
         metadata.sort(key=lambda m: m.trigger_index)
+
         return metadata
-    
+
+    def load_modded_soundtracks(self) -> Iterable[tuple[int, str]]:
+        mods_dir = Path("mods")
+        if not mods_dir.exists():
+            return
+        for mod_contents in mods_dir.iterdir():
+            if mod_contents.is_dir:
+                music_dir = mod_contents.joinpath("music")
+                if music_dir.exists():
+                    for music_file in music_dir.iterdir():
+                        location_index = int(music_file.stem)
+                        yield location_index, str(music_file.absolute())
+                        print(f"[mods.{mod_contents.stem}] Loaded location soundtrack override for location_index={location_index} from {music_file.name}")
+                        
     def build_overworld_metadata(self):
         meta = LocationMetadata(
             location_index = 0,
@@ -156,7 +179,8 @@ class LocationMetadataBuilder:
             map_index_offset= None,
             num_levels      = 255,
             default_level   = 0,
-            trigger_index   = None
+            trigger_index   = None,
+            sound_track     = None
         )
         return meta
     

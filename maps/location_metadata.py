@@ -1,3 +1,4 @@
+import pygame
 from dark_libraries import immutable, auto_init
 
 @immutable
@@ -12,4 +13,4 @@ class LocationMetadata:
     num_levels: int             # how many levels the location contains
     default_level: int          # which level the player spawns in when entering the location.
     trigger_index: int          # the index the entry triggers for this location are at.
-    
+    sound_track: str            # an absolute path to the soundtrack

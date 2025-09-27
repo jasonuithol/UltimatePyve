@@ -57,6 +57,8 @@ class Main:
 
     def init(self):
 
+        pygame.mixer.init()
+
         self.animated_tile_factory.register_sprites()
         self.flame_sprite_factory.register_sprites()
         self.terrain_factory.register_terrains()
@@ -99,7 +101,7 @@ class Main:
         
         current_u5map, current_level_index, _ = self.player_state.get_current_position()
         
-        self.interactable_factory_registry.load_level(
+        self.player_state._on_changing_map(
             location_index = current_u5map.location_metadata.location_index, 
             level_index    = current_level_index
         )
