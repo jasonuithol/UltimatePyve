@@ -24,7 +24,9 @@ It uses the original game data files but runs them through a modern, Python‑ba
    git clone https://github.com/jasonuithol/UltimatePyve.git
    cd UltimatePyve
    ```
-
+   OR
+   Download this link https://github.com/jasonuithol/UltimatePyve/archive/refs/heads/master.zip
+   
 ## Monkeypatching
 
     Right now - you'll need to copy your Ultima V directory to a folder under UltimatePyve and name that copy of Ultima v directory "u5"
