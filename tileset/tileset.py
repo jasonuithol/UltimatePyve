@@ -190,6 +190,8 @@ def load_tiles16_raw(path: str=_TILES16_PATH) -> List[Tile]:
 
 def load_modded_tiles(tiles: list[Tile]):
     mods_dir = Path("mods")
+    if not mods_dir.exists():
+        return
     for mod_contents in mods_dir.iterdir():
         if mod_contents.is_dir:
             tiles_dir = mod_contents.joinpath("tiles")
