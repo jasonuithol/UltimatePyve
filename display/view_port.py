@@ -173,7 +173,7 @@ class ViewPort:
 
             yield world_coord, queried_tile
 
-            if world_coord == view_centre_coord or not queried_tile.terrain.blocks_light or (world_coord in windowed_coords and queried_tile.terrain.windowed):
+            if world_coord == view_centre_coord or queried_tile.terrain == None or not queried_tile.terrain.blocks_light or (world_coord in windowed_coords and queried_tile.terrain.windowed):
                 for neighbour_vector in NEIGHBOUR_VECTORS:
                     neighbour_coord = world_coord.add(neighbour_vector)
                     if self.view_rect.is_in_bounds(neighbour_coord) and not neighbour_coord in visited:

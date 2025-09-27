@@ -10,7 +10,7 @@ class TerrainRegistry:
         self._terrains[tile_id] = terrain
 
     def get_terrain(self, tile_id: int) -> Optional[Terrain]:
-        return self._terrains[tile_id]
+        return self._terrains.get(tile_id, None)
 
     def can_traverse(self, transport_mode: str, tile_id: int) -> bool:
         terrain = self._terrains.get(tile_id, None)
