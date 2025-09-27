@@ -107,6 +107,7 @@ class TerrainFactory:
             13,     # mountain peak
             74,     # wall with arrow slot  [WINDOWED]
             75,     # wall with grate       [WINDOWED]
+            77,     # rough rock wall
             78,     # wall with secret door
             79,     # wall
             90,     # pantry

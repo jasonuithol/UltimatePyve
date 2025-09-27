@@ -14,6 +14,20 @@ from game.interactable import InteractableFactoryRegistry
 
 from tileset import TILE_ID_GRASS, EgaPalette, Tile, TileSet
 
+WINDOWED_VECTORS = [
+    Vector2( 0,  1), # bottom
+    Vector2( 0, -1), # top
+    Vector2( 1,  0), # right
+    Vector2(-1,  0), # left
+]
+
+NEIGHBOUR_VECTORS = WINDOWED_VECTORS + [
+    Vector2( 1,  1), # bottom-right
+    Vector2( 1, -1), # top-right
+    Vector2(-1,  1), # bottom-left
+    Vector2(-1, -1)  # bottom-right
+]
+
 @immutable
 @auto_init
 class QueriedTile:
@@ -42,14 +56,20 @@ class ViewPort:
         # output surface
         self._scaled_surface: pygame.Surface = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
 
+        self.black_mapped_rgb = self._unscaled_surface.map_rgb((0,0,0))
         self.black_tile = Tile(0)
         self.black_tile.load_from_bytes(bytes(128))
 
-        self.terrain_registry._after_inject()
-
+    def init(self):
         self.queried_tile_grass = QueriedTile(
             tile    = self.tileset.tiles[TILE_ID_GRASS],
             terrain = self.terrain_registry.get_terrain(TILE_ID_GRASS),
+            sprite  = None
+        )
+
+        self.queried_tile_black = QueriedTile(
+            tile    = self.black_tile,
+            terrain = None,
             sprite  = None
         )
 
@@ -96,7 +116,7 @@ class ViewPort:
         return self._scaled_surface
 
 
-    def query_tileid_grid(self, u5map: U5Map, level_ix: int = 0) -> Iterator[tuple[Coord, QueriedTile]]:
+    def query_tile_grid(self, u5map: U5Map, level_ix: int = 0) -> Iterator[tuple[Coord, QueriedTile]]:
 
         result: dict[Coord, int] = {} 
         for world_coord in self.view_rect:
@@ -136,9 +156,38 @@ class ViewPort:
             )
 
         return result
-            
+
+    def calculate_fov_visibility(self, queried_tile_grid: Iterator[tuple[Coord, QueriedTile]]) -> Iterator[tuple[Coord, QueriedTile]]:
+
+        view_centre_coord = self._get_view_centre()
+        windowed_coords = [view_centre_coord.add(windowed_vector) for windowed_vector in WINDOWED_VECTORS]
+
+        queried_tile_grid_dict = dict(queried_tile_grid)
+
+        queued: list[Coord] = [view_centre_coord]
+        visited: list[Coord] = queued + []
+
+        while len(queued):
+            world_coord = queued.pop()
+            queried_tile = queried_tile_grid_dict[world_coord]
+
+            yield world_coord, queried_tile
+
+            if world_coord == view_centre_coord or not queried_tile.terrain.blocks_light or (world_coord in windowed_coords and queried_tile.terrain.windowed):
+                for neighbour_vector in NEIGHBOUR_VECTORS:
+                    neighbour_coord = world_coord.add(neighbour_vector)
+                    if self.view_rect.is_in_bounds(neighbour_coord) and not neighbour_coord in visited:
+                        queued.append(neighbour_coord)
+                        visited.append(neighbour_coord)
+
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
-        for world_coord, queried_tile in self.query_tileid_grid(u5map, level_ix):
+
+        self.get_input_surface().fill(self.black_mapped_rgb)
+
+        queried_tile_grid = self.query_tile_grid(u5map, level_ix)
+        visible_grid = self.calculate_fov_visibility(queried_tile_grid)
+
+        for world_coord, queried_tile in visible_grid:
             if queried_tile.sprite:
                 self.draw_sprite(world_coord, queried_tile.sprite)
             else:

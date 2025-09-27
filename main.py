@@ -9,6 +9,7 @@ from animation import AnimatedTileFactory, FlameSpriteFactory, AvatarSpriteFacto
 from display import DisplayEngine
 
 from display.interactive_console import InteractiveConsole
+from display.view_port import ViewPort
 from game import PlayerState #, SavedGame, SavedGameLoader
 from game.interactable import InteractableFactoryRegistry, DoorTypeFactory
 from game.terrain import TerrainFactory
@@ -37,6 +38,7 @@ class Main:
     player_state: PlayerState
     party_inventory: PartyInventory
     display_engine: DisplayEngine
+    view_port: ViewPort
     interactable_factory_registry: InteractableFactoryRegistry
     u5map_registry: U5MapRegistry
     interactive_console: InteractiveConsole
@@ -86,6 +88,7 @@ class Main:
             direction      = current_direction
         )
         self.display_engine.set_avatar_sprite(player_sprite)
+        self.view_port.init()
 
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
         #       one day maybe even the avatar's transports could be these ?
