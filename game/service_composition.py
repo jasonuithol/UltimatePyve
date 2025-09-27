@@ -2,7 +2,9 @@
 from dark_libraries.service_provider import ServiceProvider
 
 from game import *
-from game.modding import Modding
+from game.soundtracks import SoundTrackPlayer
+from .modding import Modding
+from .world_clock import WorldClock
 from .interactable import *
 from .terrain import *
 
@@ -16,5 +18,8 @@ def compose(provider: ServiceProvider):
     provider.register(SavedGame)
     provider.register(SavedGameLoader)
     provider.register(Modding)
+    provider.register(WorldClock)
+    provider.register(SoundTrackPlayer)
+    
 
     

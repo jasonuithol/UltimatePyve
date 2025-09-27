@@ -6,6 +6,7 @@ import pygame
 from dark_libraries.dark_math import Coord, Vector2
 
 from display.interactive_console import InteractiveConsole
+from game.soundtracks import SoundTrackPlayer
 from items.item_type import InventoryOffset
 from maps import U5Map, U5MapRegistry
 from items import PartyInventory, InventoryOffset
@@ -26,6 +27,7 @@ class PlayerState:
     transport_mode_registry: TransportModeRegistry
     party_inventory: PartyInventory
     interactive_console: InteractiveConsole
+    sound_track_player: SoundTrackPlayer
 
     # either "britannia" or "underworld"
     outer_map: U5Map = None
@@ -78,6 +80,7 @@ class PlayerState:
 
         return self.transport_mode, direction
 
+    # TODO: Choose a better name for this method
     def _can_traverse(self, target: Coord) -> MoveIntoResult:
         transport_mode = self.transport_mode_registry.get_transport_mode(self.transport_mode)
         current_map, current_level, _ = self.get_current_position()
@@ -85,11 +88,6 @@ class PlayerState:
         interactable: Interactable = self.interactable_factory_registry.get_interactable(target)      
 
         if interactable:
-            #
-            # TODO: If you walk into a closed loot container, open it.
-            #       If you walk into an open loot container, take the top item.
-            #       If you walk into an empty loot container, raise an error.
-            #
             interactable_moveinto_result = interactable.move_into()
             if interactable_moveinto_result.traversal_allowed == False and interactable_moveinto_result.alternative_action_taken == False:
                 self._blocked()
@@ -106,27 +104,22 @@ class PlayerState:
             alternative_action_taken = False
         )
 
-    #
-    # Internal State transitions
-    #
+    # -------------------------- #
+    # Internal State transitions #
+    # -------------------------- #
 
     def _on_changing_map(self, location_index: int, level_index: int) -> None:
-        pygame.mixer.music.stop()
+        # load soundtrack for map
         soundtrack_path = self.u5map_registry.get_map_soundtrack(location_index)
-        if soundtrack_path:
-            pygame.mixer.music.load(soundtrack_path)
-            pygame.mixer.music.play(-1)
+        self.sound_track_player.play(soundtrack_path)
 
         # Load interactables for the level
         self.interactable_factory_registry.load_level(location_index, level_index)
 
     def _on_changing_transport_mode(self):
+        # load soundtrack for transport mode e.g. horse, or boat
         sound_track = self.transport_mode_registry.get_transport_mode_soundtrack(self.transport_mode)        
-        if sound_track:
-            print(f"[player_state] Playing transport soundtrack {sound_track}")
-            pygame.mixer.music.stop()
-            pygame.mixer.music.load(sound_track)
-            pygame.mixer.music.play(-1)
+        self.sound_track_player.play(sound_track)
             
     def _move_to_inner_map(self, u5map: U5Map):
         self.inner_map = u5map

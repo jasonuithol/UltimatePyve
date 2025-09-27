@@ -15,6 +15,7 @@ from game.interactable import InteractableFactoryRegistry, DoorTypeFactory
 from game.modding import Modding
 from game.terrain import TerrainFactory
 
+from game.world_clock import WorldClock
 from items import ConsumableItemTypeLoader, EquipableItemTypeFactory, PartyInventory, WorldLootLoader
 
 from items.item_type import InventoryOffset
@@ -57,6 +58,7 @@ class Main:
 #    saved_game_loader: SavedGameLoader
 
     modding: Modding
+    world_clock: WorldClock
 
     def init(self):
 
@@ -123,6 +125,11 @@ class Main:
         self.party_inventory.add(InventoryOffset.KEYS,     2)
         self.party_inventory.add(InventoryOffset.TORCHES,  4)
 
+        self.interactive_console.print_ascii([i for i in range(128)])
+        self.interactive_console.print_rune([i for i in range(128)])
+
+        # Sun and moon phases
+        self.interactive_console.print_rune([42,48,49,50,51,52,53,54,55])
 
     def update(self):
         new_map, new_level, new_coords = self.player_state.get_current_position()
@@ -187,16 +194,26 @@ class Main:
         running = True
         while running:
             for event in pygame.event.get():
+
+                # Should only process KEYDOWN events as being "actions" that pass time.
+                player_input_received = False
+
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
                     else:
+                        player_input_received = True
                         self.process_event(self.player_state, event)
 
                 # Allow "in=game" time to pass
-                self.interactable_factory_registry.pass_time()
+                if player_input_received:
+                    self.interactable_factory_registry.pass_time()
+                    self.world_clock.pass_time()
+
+                    # TODO: Remove
+                    self.interactive_console.print_rune(self.world_clock.get_celestial_panorama())
 
             #
             # all events processed.

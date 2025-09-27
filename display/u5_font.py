@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Generator, Iterator
 from dark_libraries.custom_decorators import auto_init, immutable
 from dark_libraries.dark_math import Size
 
