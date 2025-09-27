@@ -179,10 +179,27 @@ def load_tiles16_raw(path: str=_TILES16_PATH) -> List[Tile]:
             tile.load_from_bytes(data)
             tiles.append(tile)
 
+        #
+        # Tile Mods loaded here.
+        #
+        load_modded_tiles(tiles)
+
         _tileset16_cache[path] = tiles
     print(f"[tileset] Loaded {len(tiles)} tiles from {path}")
     return _tileset16_cache[path]
-    
+
+def load_modded_tiles(tiles: list[Tile]):
+    mods_dir = Path("mods")
+    for mod_contents in mods_dir.iterdir():
+        if mod_contents.is_dir:
+            tiles_dir = mod_contents.joinpath("tiles")
+            if tiles_dir.exists():
+                for tile_file in tiles_dir.iterdir():
+                    tile_id = int(tile_file.stem)
+                    tile_surface = pygame.image.load(tile_file.absolute())
+                    tiles[tile_id].surface = tile_surface
+                    print(f"[mods.{mod_contents.stem}] Loaded tile override for tile_id={tile_id} from {tile_file.name}")
+
 if __name__ == "__main__":
     import pygame
 
