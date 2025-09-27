@@ -103,7 +103,9 @@ class TerrainFactory:
 
         # Light blockers
         for i in [
+             9,     # light forest
             10,     # deep forest
+            12,     # mountain
             13,     # mountain peak
             74,     # wall with arrow slot  [WINDOWED]
             75,     # wall with grate       [WINDOWED]
