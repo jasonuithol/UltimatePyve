@@ -1,9 +1,3 @@
-
-from pathlib import Path
-from typing import Iterable, List
-
-import pygame
-
 from .data import DataOVL
 from .location_metadata import LocationMetadata
 
@@ -93,7 +87,7 @@ class LocationMetadataBuilder:
         ]        
         return location_names
 
-    def build_default_level_lists(self) -> List[bytes]:
+    def build_default_level_lists(self) -> list[bytes]:
         return  [
             self.dataOvl.map_index_towne,
             self.dataOvl.map_index_dwelling,
@@ -101,22 +95,17 @@ class LocationMetadataBuilder:
             self.dataOvl.map_index_keep
         ]
 
-    def build_metadata(self) -> List[LocationMetadata]:
+    def build_metadata(self) -> list[LocationMetadata]:
         #
         # Build sorted metadata list so metadata[trigger_index] works
         #
 
-        metadata: List[LocationMetadata] = []
+        metadata: list[LocationMetadata] = []
         current_file_index = None
         trigger_index = 0
 
         location_names = self.build_location_names()
         default_level_lists = self.build_default_level_lists()
-
-        #
-        # Location Soundtracks loaded here.
-        #
-        modded_soundtracks = dict(self.load_modded_soundtracks())
 
         for name_index, files_index, num_levels in LocationMetadataBuilder.LOCATION_METADATA:
 
@@ -144,7 +133,7 @@ class LocationMetadataBuilder:
                 num_levels      = num_levels,
                 default_level   = default_level,
                 trigger_index   = trigger_index,
-                sound_track     = modded_soundtracks.get(trigger_index + 1, None)
+                sound_track     = None
             )
             metadata.append(meta)
 
@@ -154,21 +143,6 @@ class LocationMetadataBuilder:
         metadata.sort(key=lambda m: m.trigger_index)
 
         return metadata
-
-    def load_modded_soundtracks(self) -> Iterable[tuple[int, str]]:
-        mods_dir = Path("mods")
-        if not mods_dir.exists():
-            return
-        for mod_contents in mods_dir.iterdir():
-            if mod_contents.is_dir:
-                music_dir = mod_contents.joinpath("music")
-                if music_dir.exists():
-                    locations_dir = music_dir.joinpath("locations")
-                    if locations_dir.exists():
-                        for locations_soundtrack in locations_dir.iterdir():
-                            location_index = int(locations_soundtrack.stem)
-                            yield location_index, str(locations_soundtrack.absolute())
-                            print(f"[mods.{mod_contents.stem}] Loaded location soundtrack override for location_index={location_index} from {locations_soundtrack.name}")
                         
     def build_overworld_metadata(self):
         meta = LocationMetadata(

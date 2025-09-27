@@ -12,6 +12,7 @@ from display.interactive_console import InteractiveConsole
 from display.view_port import ViewPort
 from game import PlayerState #, SavedGame, SavedGameLoader
 from game.interactable import InteractableFactoryRegistry, DoorTypeFactory
+from game.modding import Modding
 from game.terrain import TerrainFactory
 
 from items import ConsumableItemTypeLoader, EquipableItemTypeFactory, PartyInventory, WorldLootLoader
@@ -54,6 +55,8 @@ class Main:
     equipable_item_type_factory: EquipableItemTypeFactory
     consumable_item_type_loader: ConsumableItemTypeLoader
 #    saved_game_loader: SavedGameLoader
+
+    modding: Modding
 
     def init(self):
 
@@ -99,6 +102,11 @@ class Main:
         self.consumable_item_type_loader.register_item_types()
         self.world_loot_loader.register_loot_containers()
         
+        #
+        # MODS ARE LOADED HERE
+        #
+        self.modding.load_mods()
+
         current_u5map, current_level_index, _ = self.player_state.get_current_position()
         
         self.player_state._on_changing_map(
@@ -114,6 +122,7 @@ class Main:
         self.party_inventory.add(InventoryOffset.FOOD,    63)
         self.party_inventory.add(InventoryOffset.KEYS,     2)
         self.party_inventory.add(InventoryOffset.TORCHES,  4)
+
 
     def update(self):
         new_map, new_level, new_coords = self.player_state.get_current_position()

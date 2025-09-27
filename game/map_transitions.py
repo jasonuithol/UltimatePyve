@@ -1,5 +1,11 @@
 # file: game/map_transitions.py
 
+# IMPORTANT NOTICE
+#
+# THIS MODULE IS SCHEDULED FOR DEMOLITION
+#
+# THAT IS ALL
+
 from typing import Optional, Dict
 from maps import DataOVL
 from dark_libraries import Coord

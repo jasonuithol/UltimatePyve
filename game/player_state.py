@@ -112,10 +112,12 @@ class PlayerState:
 
     def _on_changing_map(self, location_index: int, level_index: int) -> None:
         pygame.mixer.music.stop()
-        u5map, _, _ = self.get_current_position()
-        if u5map.location_metadata.sound_track:
-            pygame.mixer.music.load(u5map.location_metadata.sound_track)
+        soundtrack_path = self.u5map_registry.get_map_soundtrack(location_index)
+        if soundtrack_path:
+            pygame.mixer.music.load(soundtrack_path)
             pygame.mixer.music.play(-1)
+
+        # Load interactables for the level
         self.interactable_factory_registry.load_level(location_index, level_index)
 
     def _on_changing_transport_mode(self):
