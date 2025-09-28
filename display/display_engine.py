@@ -5,6 +5,7 @@ from typing import Optional
 from dark_libraries.dark_math import Coord
 
 import animation.sprite as sprite
+from display.display_config import DisplayConfig
 from maps.u5map import U5Map
 
 from .interactive_console import InteractiveConsole
@@ -14,6 +15,7 @@ from .main_display import MainDisplay
 class DisplayEngine:
 
     # Injectable Properties
+    display_config: DisplayConfig
     main_display: MainDisplay
     view_port: ViewPort
     interactive_console: InteractiveConsole
@@ -23,7 +25,7 @@ class DisplayEngine:
         # Set up pygame
         pygame.init()
         pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
-        self.screen = pygame.display.set_mode(self.main_display.size_in_pixels().to_tuple())
+        self.screen = pygame.display.set_mode(self.main_display.scaled_size().to_tuple())
         self.clock = pygame.time.Clock()
         self.fps = 60
 
@@ -53,6 +55,16 @@ class DisplayEngine:
         pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}]")
 
         #
+        # Main Display
+        #
+        self.main_display.draw()
+
+        md_scaled_surface = self.main_display.get_output_surface()
+
+        # Blit to screen
+        self.screen.blit(md_scaled_surface, (0,0))
+
+        #
         # ViewPort
         #
 
@@ -72,13 +84,16 @@ class DisplayEngine:
         vp_scaled_surface = self.view_port.get_output_surface()
 
         # Blit to screen
-        self.screen.blit(vp_scaled_surface, (0, 0))
+        self.screen.blit(vp_scaled_surface, (MainDisplay.BORDER_THICCNESS * self.display_config.SCALE_FACTOR, MainDisplay.BORDER_THICCNESS * self.display_config.SCALE_FACTOR))
 
         #
         # InteractiveConsole
         #
         ic_scaled_surface = self.interactive_console.get_output_surface()
 
-        self.screen.blit(ic_scaled_surface, (vp_scaled_surface.get_width(), vp_scaled_surface.get_height() - ic_scaled_surface.get_height()))
+        self.screen.blit(ic_scaled_surface, (
+            vp_scaled_surface.get_width() + MainDisplay.BORDER_THICCNESS * self.display_config.SCALE_FACTOR * 2, 
+            vp_scaled_surface.get_height() - ic_scaled_surface.get_height()
+        ))
 
         pygame.display.flip()

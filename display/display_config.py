@@ -22,7 +22,7 @@ class DisplayConfig:
     # =============== Section 2: Change these to whatever you like ===================
     # ================================================================================
 
-    VIEW_PORT_SIZE = Size(21, 15) # In tiles       (16x16)
+    VIEW_PORT_SIZE = Size(17, 17) # In tiles       (16x16)
     CONSOLE_SIZE   = Size(32, 13) # In font glyphs (8x8)
 
     EGA_PALETTE = EgaPalette([

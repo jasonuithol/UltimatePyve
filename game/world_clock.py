@@ -90,16 +90,22 @@ class WorldClock:
         # There are 24 hours in a day, with 1 celestial turn per hour.
         # Ergo this panorama is 24 characters wide.
 
+        tram = NEW_MOON + TRAMMEL.get_moon_phase(self)
+        felu = NEW_MOON + FELUCCA.get_moon_phase(self)
+
         # this represents midnight.
         panorama = deque([
-            0,0,0,0,0,0,0,SUN,
-            0,0,0,0,0,0,0,NEW_MOON + TRAMMEL.get_moon_phase(self),
-            0,0,0,0,0,0,0,NEW_MOON + FELUCCA.get_moon_phase(self)
+            SUN,0,0,    0,0,0,
+
+            0,0,tram,   0,0,0,      # /---  these middle bits are 
+            0,0,felu,   0,0,0,      # \---  the visible bits at midnight
+
+            0,0,0,      0,0,0,
         ])
 
         # rotate left the number of hours since midnight to get panorama at current hour.
         panorama.rotate(self.get_time().hour * -1)
-        return list(panorama)
+        return list(panorama)[6:18]
 
 
     '''

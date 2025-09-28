@@ -11,9 +11,10 @@ from animation.sprite                import Sprite
 
 from display.display_engine      import DisplayEngine
 from display.interactive_console import InteractiveConsole
-from display.tileset import TileLoader
+from display.tileset             import TileLoader
 from display.u5_font             import U5FontLoader
 from display.view_port           import ViewPort
+from display.main_display        import MainDisplay
 
 from game.player_state import PlayerState
 from game.interactable import InteractableFactoryRegistry, DoorTypeFactory
@@ -51,6 +52,7 @@ class Main:
     party_inventory: PartyInventory
     display_engine: DisplayEngine
     view_port: ViewPort
+    main_display: MainDisplay
     interactable_factory_registry: InteractableFactoryRegistry
     u5map_registry: U5MapRegistry
     interactive_console: InteractiveConsole
@@ -81,6 +83,7 @@ class Main:
         self.flame_sprite_factory.register_sprites()
         self.terrain_factory.register_terrains()
         self.u5map_loader.register_maps()
+        self.u5_font_loader.register_fonts()
 #        self.saved_game_loader.load_existing()
 
         self.player_state.set_outer_position(
@@ -109,6 +112,7 @@ class Main:
         )
         self.display_engine.set_avatar_sprite(player_sprite)
         self.view_port.init()
+        self.main_display.init()
         self.display_engine.init()
 
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
@@ -117,7 +121,6 @@ class Main:
         self.equipable_item_type_factory.build()
         self.consumable_item_type_loader.register_item_types()
         self.world_loot_loader.register_loot_containers()
-        self.u5_font_loader.register_fonts()
 
         #
         # MODS ARE LOADED HERE
@@ -141,10 +144,10 @@ class Main:
         self.party_inventory.add(InventoryOffset.TORCHES,  4)
 
         self.interactive_console.print_ascii([i for i in range(128)])
-        self.interactive_console.print_rune([i for i in range(128)])
+        self.interactive_console.print_rune( [i for i in range(128)])
 
         # Sun and moon phases
-        self.interactive_console.print_rune([42,48,49,50,51,52,53,54,55])
+#        self.interactive_console.print_rune([42,48,49,50,51,52,53,54,55])
 
     def update(self):
         new_map, new_level, new_coords = self.player_state.get_current_position()
@@ -228,7 +231,7 @@ class Main:
                     self.world_clock.pass_time()
 
                     # TODO: Remove
-                    self.interactive_console.print_rune(self.world_clock.get_celestial_panorama())
+#                    self.interactive_console.print_rune(self.world_clock.get_celestial_panorama())
 
             #
             # all events processed.

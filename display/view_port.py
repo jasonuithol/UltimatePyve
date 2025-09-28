@@ -196,6 +196,7 @@ class ViewPort(ScalableComponent):
         self.draw_tile(world_coord, frame_tile)
 
 
+
 #
 # MAIN tests
 #
