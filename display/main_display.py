@@ -1,18 +1,18 @@
 # file: display/main_display.py
 
-from dark_libraries import Size, Vector2
-from .interactive_console import InteractiveConsole
-from .view_port import ViewPort
+from dark_libraries.dark_math import Size
+
+from .display_config import DisplayConfig
 
 class MainDisplay:
 
-    view_port: ViewPort
-    interactive_console: InteractiveConsole
+    # Injectable
+    display_config: DisplayConfig
 
     def size_in_pixels(self) -> Size:
         
-        vp_w, vp_h = self.view_port.view_size_in_pixels_scaled().to_tuple()
-        ic_w, ic_h = self.interactive_console.view_size_in_pixels_scaled().to_tuple()
+        vp_w, vp_h = self.display_config.VIEW_PORT_SIZE.scale(self.display_config.TILE_SIZE).scale(self.display_config.SCALE_FACTOR).to_tuple()
+        ic_w, ic_h = self.display_config.CONSOLE_SIZE.scale(self.display_config.FONT_SIZE).scale(self.display_config.SCALE_FACTOR).to_tuple()
 
         vp_x, vp_y = 0,0
         ic_x, ix_y = vp_w, vp_h - ic_h
@@ -21,3 +21,5 @@ class MainDisplay:
             vp_w + ic_w,
             max(vp_h, ic_h)
         )
+    
+    

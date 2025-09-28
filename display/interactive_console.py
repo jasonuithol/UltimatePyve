@@ -1,77 +1,49 @@
 import pygame
 
-from dark_libraries.custom_decorators import auto_init
 from dark_libraries.dark_math import Coord, Size
-from display.u5_font import U5Font
+from display.display_config import DisplayConfig
+from display.scalable_component import ScalableComponent
+from display.u5_font import U5Font, U5FontRegistry, U5Glyph
 
 CHAR_SIZE_PIXELS = Size(8,8)
 CONSOLE_SIZE_IN_CHARS = Size(32, 13)
 
-@auto_init
-class InteractiveConsole:
+class InteractiveConsole(ScalableComponent):
 
-    ascii_font: U5Font
-    rune_font: U5Font
+    # Injectable
+    display_config: DisplayConfig
+    u5_font_registry: U5FontRegistry
 
-    _unscaled_size: Size = Size(CHAR_SIZE_PIXELS.w * CONSOLE_SIZE_IN_CHARS.w, CHAR_SIZE_PIXELS.h * CONSOLE_SIZE_IN_CHARS.h)
-    _display_scale: int = 2
+    def __init__(self):
+        pass
 
     def _after_inject(self):
-        self._scaled_surface: pygame.Surface = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
-        self._unscaled_surface: pygame.Surface = pygame.Surface(self.view_size_in_pixels_unscaled().to_tuple())
+        super().__init__(
+            unscaled_size_in_pixels = self.display_config.CONSOLE_SIZE.scale(self.display_config.FONT_SIZE),
+            scale_factor            = self.display_config.SCALE_FACTOR
+        )
 
+        # TODO: Get these from ega-palette
         self._font_color = self._scaled_surface.map_rgb((255,255,255))
         self._prompt_color = self._scaled_surface.map_rgb((0,255,0))
-        self._back_color = self._scaled_surface.map_rgb((0,0,0))
 
-        self._scaled_surface.fill(self._back_color)
-        self._scroll_fill_rect = (
-            0, 
-            CHAR_SIZE_PIXELS.h * (CONSOLE_SIZE_IN_CHARS.h - 1),
-            self._unscaled_size.w,
-            CHAR_SIZE_PIXELS.h
-        )
-
-    def view_size_in_pixels_unscaled(self) -> Size:
-        return self._unscaled_size
-
-    def view_size_in_pixels_scaled(self) -> Size:
-        return self._unscaled_size.scale(self._display_scale)
-
-    def get_input_surface(self) -> pygame.Surface:
-        return self._unscaled_surface
-
-    def get_output_surface(self) -> pygame.Surface:
-
-        pygame.transform.scale(
-            surface      = self._unscaled_surface,
-            size         = self.view_size_in_pixels_scaled().to_tuple(),
-            dest_surface = self._scaled_surface
-        )
-
-        return self._scaled_surface
-    
     def _scroll(self, lines: int = 1):
-        surf = self.get_input_surface()
-        surf.scroll(0, CHAR_SIZE_PIXELS.h * lines * -1)
-        surf.fill(self._back_color, self._scroll_fill_rect)
+        self.scroll_dy(CHAR_SIZE_PIXELS.h * lines * -1)
 
-    def draw_glyph(self, char_coord: Coord, glyph: bytearray, target: pygame.PixelArray):
-        origin_x, origin_y = char_coord.x * CHAR_SIZE_PIXELS.w, char_coord.y * CHAR_SIZE_PIXELS.h
-
-        for y in range(CHAR_SIZE_PIXELS.h):
-            for x in range(CHAR_SIZE_PIXELS.w):
-                bit_index = x + (y * CHAR_SIZE_PIXELS.h)
-                byte_index = bit_index // 8
-                bit_offset = bit_index % 8
-                bit_value = glyph[byte_index] & (1 << (8 - bit_offset))
-                target[x + origin_x, y + origin_y] = self._font_color if bit_value else self._back_color
+    def draw_glyph(self, char_coord: Coord, glyph_data: bytearray, target: pygame.PixelArray):
+        glyph = U5Glyph(
+            data                        = glyph_data,
+            glyph_size                  = CHAR_SIZE_PIXELS,
+            foreground_color_mapped_rgb = self._font_color,
+            background_color_mapped_rgb = self._back_color
+        )
+        glyph.draw_to_pixel_array(char_coord, target)
 
     def print_ascii(self, msg: str|list[int]):
-        self.print(msg, self.ascii_font)
+        self.print(msg, self.u5_font_registry.get_font("IBM.CH"))
 
     def print_rune(self, msg: str|list[int]):
-        self.print(msg, self.rune_font)
+        self.print(msg, self.u5_font_registry.get_font("RUNES.CH"))
 
     def print(self, msg: str|list[int], font: U5Font):
         if isinstance(msg, str):

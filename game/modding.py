@@ -5,7 +5,7 @@ import pygame
 
 from game.transport_mode_registry import TransportModeRegistry
 from maps.u5map_registry import U5MapRegistry
-from tileset.tileset import TileSet
+from display.tileset import TileRegistry
 
 MODS_DIR = Path("mods")
 
@@ -36,7 +36,7 @@ def load_mod_files(section_path: str, loader: Callable) -> Iterable[tuple[int,An
 class Modding:
 
     # Injectable
-    tile_set: TileSet
+    tile_set: TileRegistry
     u5_map_registry: U5MapRegistry
     transport_mode_registry: TransportModeRegistry
 

@@ -3,7 +3,8 @@ import pygame
 import random
 from typing import Optional, Iterator
 
-from tileset import Tile
+from display.display_config import DisplayConfig
+from display.tileset import Tile, TileLoader, TileRegistry
 
 from .sprite import Sprite
 from .sprite_registry import SpriteRegistry
@@ -27,7 +28,9 @@ FLAME_OVERLAY_INDEX = NORMAL_TILE_INDEX + 16
 class FlameSpriteFactory:
 
     # Injectable
+    display_config: DisplayConfig
     sprite_registry: SpriteRegistry
+    tile_registry: TileRegistry
 
     def _after_inject(self):
 
@@ -50,17 +53,14 @@ class FlameSpriteFactory:
     def _build_frames(self, original_tile_id: int) -> Iterator[Tile]:
         assert self._has_flame_animation(original_tile_id), f"Tile id={original_tile_id} is not flame-animatable."
 
-        from tileset.tileset import load_tileset
-        tileset = load_tileset()
-
-        original_tile: Tile = tileset.tiles[original_tile_id]
-        overlay_tile: Tile = tileset.tiles[self._get_flame_overlay_index(original_tile_id)]
+        original_tile: Tile = self.tile_registry.get_tile(original_tile_id)
+        overlay_tile: Tile = self.tile_registry.get_tile(self._get_flame_overlay_index(original_tile_id))
 
         cycle_length = 23       # arbitrary prime number
 
         # Apply overlay mask
         for _ in range(cycle_length):
-            composed_surface = original_tile.to_surface().copy()
+            composed_surface = original_tile.get_surface().copy()
             for y, row in enumerate(overlay_tile.pixels):
                 for x, mask_val in enumerate(row):
                     composed_value = original_tile.pixels[y][x]
@@ -76,7 +76,7 @@ class FlameSpriteFactory:
                             # leave original alone
                             pass
 
-                    composed_surface.set_at((x, y), tileset.palette[composed_value])
+                    composed_surface.set_at((x, y), self.display_config.EGA_PALETTE[composed_value])
 
             composed_tile = Tile(None)
             composed_tile.set_surface(composed_surface)
@@ -102,17 +102,25 @@ class FlameSpriteFactory:
 #
 if __name__ == "__main__":
 
+    display_config = DisplayConfig()
+    tile_registry = TileRegistry()
+    tile_registry._after_inject()
+
+    tile_factory = TileLoader()
+    tile_factory.display_config = display_config
+    tile_factory.registry = tile_registry
+    tile_factory.load_tiles()
+
     registry = SpriteRegistry()
     registry._after_inject()
 
     factory = FlameSpriteFactory()
+    factory.display_config = display_config
     factory.sprite_registry = registry
+    factory.tile_registry = tile_registry
     factory._after_inject()
     
     factory.register_sprites()
-
-    from tileset.tileset import load_tileset
-    tileset = load_tileset()
 
     keys = list(registry._animated_tiles.keys())
 
@@ -132,7 +140,7 @@ if __name__ == "__main__":
     SCALE = 20
     FPS = 60
 
-    screen = pygame.display.set_mode((tileset.tile_size * SCALE, tileset.tile_size * SCALE))
+    screen = pygame.display.set_mode(display_config.TILE_SIZE.scale(SCALE).to_tuple())
     clock = pygame.time.Clock()
 
     running = True
@@ -168,7 +176,7 @@ if __name__ == "__main__":
         current_sprite.set_frame_time(frame_time, 0.0)
         current_frame = current_sprite.get_current_frame_tile(pygame.time.get_ticks())
 
-        scaled = pygame.transform.scale(current_frame.surface, (tileset.tile_size * SCALE, tileset.tile_size * SCALE))
+        scaled = pygame.transform.scale(current_frame.surface, display_config.TILE_SIZE.scale(SCALE).to_tuple())
         screen.blit(scaled, (0, 0))
         pygame.display.flip()
 

@@ -1,5 +1,7 @@
 # file: game/u5map.py
-from dark_libraries import auto_init, immutable, Coord, Size
+from dark_libraries.custom_decorators import auto_init, immutable
+from dark_libraries.dark_math import Coord, Size
+
 from .location_metadata import LocationMetadata
 
 @immutable
@@ -41,7 +43,7 @@ class U5Map:
 
     def render_to_disk(self, level_index: int):
         import pygame
-        from tileset.tileset import Tile, TileSet, load_tileset
+        from display.tileset import Tile, TileSet, load_tileset
         pygame.init()
         tile_set: TileSet = load_tileset()
         surf = pygame.Surface(self.size_in_tiles.scale(tile_set.tile_size).to_tuple())

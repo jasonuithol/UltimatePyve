@@ -3,7 +3,7 @@ from enum import Enum
 from dark_libraries.custom_decorators import auto_init, immutable
 from .item_type import InventoryOffset, ItemType
 from .item_type_registry import ItemTypeRegistry
-from maps import DataOVL
+from maps.data import DataOVL
 
 class Slot(Enum):
     HEAD = 0

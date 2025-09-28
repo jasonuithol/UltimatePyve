@@ -1,11 +1,11 @@
 from .sprite import Sprite
 from .sprite_registry import SpriteRegistry
-from tileset import TileSet
+from display.tileset import TileRegistry
 
 class AnimatedTileFactory:
 
     # Injectable
-    tileset: TileSet
+    tileset: TileRegistry
     sprite_registry: SpriteRegistry
 
     # (start tile, num frames)

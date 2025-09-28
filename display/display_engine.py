@@ -2,14 +2,14 @@
 import pygame
 
 from typing import Optional
-from dark_libraries import Coord
+from dark_libraries.dark_math import Coord
 
 import animation.sprite as sprite
-from display.interactive_console import InteractiveConsole
-from maps import U5Map
+from maps.u5map import U5Map
 
-from .main_display import MainDisplay
+from .interactive_console import InteractiveConsole
 from .view_port import ViewPort
+from .main_display import MainDisplay
 
 class DisplayEngine:
 
@@ -18,7 +18,7 @@ class DisplayEngine:
     view_port: ViewPort
     interactive_console: InteractiveConsole
 
-    def _after_inject(self):
+    def init(self):
 
         # Set up pygame
         pygame.init()

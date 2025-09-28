@@ -1,8 +1,7 @@
 # file: maps/location.py
 
-from copy import copy
 from pathlib import Path
-from dark_libraries import Size
+from dark_libraries.dark_math import Size
 
 from .location_metadata_builder import LocationMetadataBuilder
 from .u5map import U5Map

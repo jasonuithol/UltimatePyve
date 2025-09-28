@@ -1,15 +1,16 @@
 # file: game/player_state.py
 from typing import Tuple
 
-import pygame
-
 from dark_libraries.dark_math import Coord, Vector2
 
 from display.interactive_console import InteractiveConsole
 from game.soundtracks import SoundTrackPlayer
+
 from items.item_type import InventoryOffset
-from maps import U5Map, U5MapRegistry
-from items import PartyInventory, InventoryOffset
+from items.party_inventory import PartyInventory, InventoryOffset
+
+from maps.u5map import U5Map
+from maps.u5map_registry import U5MapRegistry
 
 from .interactable.interactable import Interactable, MoveIntoResult
 #from .saved_game import SavedGame

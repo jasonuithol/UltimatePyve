@@ -1,16 +1,15 @@
 # file: maps/tileset.py
-import pygame, base64, struct
+import pygame, struct
 from pathlib import Path
 
-from typing import List, Optional, Tuple
-from dark_libraries import auto_init, Coord
+from dark_libraries.custom_decorators import auto_init
+from dark_libraries.dark_math import Coord, Size
 
-_TILES16_PATH = r".\u5\TILES.16"
-_tileset16_cache = {}
+from .display_config import DisplayConfig, EgaPalette
 
-TILE_SIZE = 16
 TILE_ID_GRASS = 5
 
+'''
 class EgaPalette(List[Tuple[int,int,int]]):
     pass
 
@@ -36,7 +35,7 @@ _ega_palette = EgaPalette([
     (255, 255, 85),    # 1110: Yellow
     (255, 255, 255),   # 1111: White
 ])
-
+'''
 
 # --- LZW decompression ---
 def lzw_decompress(data: bytes) -> bytes:
@@ -86,118 +85,119 @@ def lzw_decompress(data: bytes) -> bytes:
         prev = code
     return bytes(result)
 
-TileData = List[List[int]]
+TileData = list[list[int]]
 
 @auto_init
 class Tile:
     tile_id: int
-    pixels: Optional[TileData] = None
-    surface: Optional[pygame.Surface] = None
+    pixels: TileData | None = None
+    surface: pygame.Surface | None = None
 
-    def load_from_bytes(self, data:bytes):
+    def _get_size(self):
+        return Size(len(self.pixels[0]), len(self.pixels))
 
-        self.pixels: TileData = []
-        ROW_BYTES = TILE_SIZE // 2
+    def _draw_onto_pixel_array(self, surface_pixels:pygame.PixelArray, palette: EgaPalette, target_pixel_offset: Coord = Coord(0,0)):
 
-        base_offset = self.tile_id * ROW_BYTES * TILE_SIZE
-        for y in range(TILE_SIZE):
-            row = data[base_offset + y * ROW_BYTES : base_offset + (y + 1) * ROW_BYTES]
-            pixel_row = []
-            for x in range(TILE_SIZE):
-                shift = 4 if (x % 2) == 0 else 0
-                val = (row[x // 2] >> shift) & 0x0F
-                pixel_row.append(val)
-            self.pixels.append(pixel_row)
+        for pixel_coord in self._get_size():
 
-    # a pygame specific method
-    def draw_onto_pixel_array(self, surface_pixels:pygame.PixelArray, pixel_offset: Coord = Coord(0,0)) -> None:
-        for py in range(TILE_SIZE):
-            for px in range(TILE_SIZE):
-                # Get the pixel color from the tile
-                u5_color = self.pixels[py][px]
+            # Get the pixel color from the tile
+            u5_color = self.pixels[pixel_coord.y][pixel_coord.x]
+            rgb_color = palette[u5_color]
+            
+            # Set the pixel color on the rendered surface
+            surface_pixels[pixel_coord.add(target_pixel_offset).to_tuple()] = surface_pixels.surface.map_rgb(rgb_color)
                 
-                #
-                # TODO: This should be part of the contructor.  This then means no need to pass ega_palette to ViewPort
-                #       and also allows animation of the same tile under different palettes (e.g spells, burning, taking damage, poisoned)
-                # 
-                # TODO: Also keep in mind that some effects might be global e.g. lightning, darkness or coord based e.g. spells
-                #       and that palette would need to be passed in dynamically during an event and would be scoped differently.
-                rgb_color = _ega_palette[u5_color]
-                
-                # Set the pixel color on the rendered surface
-                surface_pixels[(pixel_offset.x + px, pixel_offset.y + py)] = surface_pixels.surface.map_rgb(rgb_color)
-
-    def to_surface(self):
-        if self.surface is None:
-            self.surface = pygame.Surface((TILE_SIZE, TILE_SIZE))
-            surface_pixels = pygame.PixelArray(self.surface)
-            self.draw_onto_pixel_array(surface_pixels)
-            del surface_pixels
-        return self.surface 
+    def create_surface(self, palette: EgaPalette):
+        self.surface = pygame.Surface(self._get_size().to_tuple())
+        surface_pixels = pygame.PixelArray(self.surface)
+        self._draw_onto_pixel_array(surface_pixels, palette)
+        del surface_pixels
 
     def set_surface(self, surface):
         self.surface = surface
 
+    def get_surface(self):
+        return self.surface
+
     def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord = Coord(0,0)):
-        source_surface = self.to_surface()
-        target_rectangle = source_surface.get_rect()
+        target_rectangle = self.surface.get_rect()
         target_rectangle.topleft = pixel_offset.to_tuple()
-        target_surface.blit(source_surface, target_rectangle)
 
-@auto_init
-class TileSet:
-    tiles: List[Tile]
-    palette: EgaPalette
-    tile_size: int
+        target_surface.blit(self.surface, target_rectangle)
 
-_tileset: TileSet = None
-def load_tileset() -> TileSet:
-    global _tileset
-    if _tileset is None:
-        _tileset = TileSet(
-            tiles = load_tiles16_raw(),
-            palette = _ega_palette,
-            tile_size = TILE_SIZE
-        )
-    return _tileset
+class TileRegistry:
+    def _after_inject(self):
+        self.tiles: dict[int,Tile] = {}
 
-def load_tiles16_raw(path: str=_TILES16_PATH) -> List[Tile]:
-    """
-    Load TILES.16 and return a list of tiles, each tile being a 2D list
-    of palette indices (0–15). No Pygame surfaces are created.
-    """
-    global _tileset16_cache
-    if path not in _tileset16_cache:
-        raw = Path(path).read_bytes()
+    def register_tile(self, tile_id: int, tile: Tile):
+        self.tiles[tile_id] = tile
+
+    def get_tile(self, tile_id: int) -> Tile:
+        return self.tiles[tile_id]
+
+class TileLoader:
+
+    TOTAL_TILES = 512
+
+    display_config: DisplayConfig
+    registry: TileRegistry
+ 
+    def tile_from_bytes(self, tile_id: int, data:bytes) -> Tile:
+
+        TILE_SIZE = self.display_config.TILE_SIZE
+
+        pixels: TileData = []
+        ROW_BYTES = TILE_SIZE.w // 2
+
+        base_offset = tile_id * ROW_BYTES * TILE_SIZE.h
+        for y in range(TILE_SIZE.h):
+            row = data[base_offset + y * ROW_BYTES : base_offset + (y + 1) * ROW_BYTES]
+            pixel_row = []
+            for x in range(TILE_SIZE.w):
+                shift = 4 if (x % 2) == 0 else 0
+                val = (row[x // 2] >> shift) & 0x0F
+                pixel_row.append(val)
+            pixels.append(pixel_row)
+
+        tile = Tile(tile_id, pixels)
+        tile.create_surface(self.display_config.EGA_PALETTE)
+        return tile
+
+    def load_tiles(self):
+        path = Path("u5/TILES.16")
+        raw = path.read_bytes()
         (uncomp_len,) = struct.unpack("<I", raw[:4])
         data = lzw_decompress(raw[4:])
         assert len(data) == uncomp_len, f"Expected {uncomp_len} bytes after decompressing, but got {len(data)} bytes."
 
-        tiles = []
         for tile_id in range(512):
-            tile = Tile(tile_id)
-            tile.load_from_bytes(data)
-            tiles.append(tile)
+            tile = self.tile_from_bytes(tile_id, data)
+            self.registry.register_tile(tile_id, tile)
 
-        _tileset16_cache[path] = tiles
-    print(f"[tileset] Loaded {len(tiles)} tiles from {path}")
-    return _tileset16_cache[path]
-
+        print(f"[tileset] Loaded {len(self.registry.tiles)} tiles from {path}")
+    
 if __name__ == "__main__":
     import pygame
 
     pygame.init()
     pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
-    tileset_raw: List[Tile] = load_tiles16_raw()
 
-    TILE_SCALE = 3
+    tile_loader = TileLoader()
+    tile_loader.display_config = DisplayConfig()
+    tile_loader.registry = TileRegistry()
+    tile_loader.registry._after_inject()
+    tile_loader.load_tiles()
+
+    # Override scale factor
+    tile_loader.display_config.SCALE_FACTOR = 3
+
     GRID_COLS = 40
-    TOTAL_TILES = 512
-    GRID_ROWS = (TOTAL_TILES // GRID_COLS) + 1
+    GRID_ROWS = (TileLoader.TOTAL_TILES // GRID_COLS) + 1
     MARGIN = 10  # padding around grid
 
-    win_w = GRID_COLS * TILE_SIZE * TILE_SCALE + MARGIN * 2
-    win_h = GRID_ROWS * TILE_SIZE * TILE_SCALE + MARGIN * 2 + 30
+    win_w = GRID_COLS * tile_loader.display_config.TILE_SIZE.w * tile_loader.display_config.SCALE_FACTOR + MARGIN * 2
+    win_h = GRID_ROWS * tile_loader.display_config.TILE_SIZE.h * tile_loader.display_config.SCALE_FACTOR + MARGIN * 2 + 30
+
     screen = pygame.display.set_mode((win_w, win_h))
     pygame.display.set_caption("U5 Sprite Viewer")
     pygame.scrap.init()
@@ -229,6 +229,7 @@ if __name__ == "__main__":
                     active_row = (active_row + 1) % GRID_ROWS
                 elif event.key == pygame.K_UP:
                     active_row = (active_row - 1) % GRID_ROWS
+            '''
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if button_rect.collidepoint(event.pos):
                     active_index = start_index + active_row * GRID_COLS + active_col
@@ -240,31 +241,32 @@ if __name__ == "__main__":
 
                     pygame.scrap.put(pygame.SCRAP_TEXT, b64.encode("utf-8"))
                     print(f"Copied Tile {active_index} to clipboard (base64)")
-
+            '''
 
         screen.fill((30, 30, 30))
+        scaled_size = tile_loader.display_config.TILE_SIZE.scale(tile_loader.display_config.SCALE_FACTOR)
 
         # Draw tiles in grid
         for row in range(GRID_ROWS):
             for col in range(GRID_COLS):
-                idx = start_index + row * GRID_COLS + col
-                if idx >= len(tileset_raw):
+                tile_id = start_index + row * GRID_COLS + col
+                if tile_id >= len(tile_loader.registry.tiles):
                     continue
-                tile = tileset_raw[idx]
-                surf_tile = tile.to_surface()
+                tile = tile_loader.registry.get_tile(tile_id)
+                surf_tile = tile.get_surface()
                 sprite_img = pygame.transform.scale(
                     surf_tile,
-                    (TILE_SIZE * TILE_SCALE, TILE_SIZE * TILE_SCALE)
+                    scaled_size.to_tuple()
                 )
-                x = MARGIN + col * TILE_SIZE * TILE_SCALE
-                y = MARGIN + row * TILE_SIZE * TILE_SCALE
+                x = MARGIN + col * scaled_size.w
+                y = MARGIN + row * scaled_size.h
                 screen.blit(sprite_img, (x, y))
 
         # Cursor rectangle
-        cursor_x = MARGIN + active_col * TILE_SIZE * TILE_SCALE
-        cursor_y = MARGIN + active_row * TILE_SIZE * TILE_SCALE
+        cursor_x = MARGIN + active_col * scaled_size.w
+        cursor_y = MARGIN + active_row * scaled_size.h
         cursor_rect = pygame.Rect(
-            cursor_x, cursor_y, TILE_SIZE * TILE_SCALE, TILE_SIZE * TILE_SCALE
+            cursor_x, cursor_y, scaled_size.w, scaled_size.h
         )
         pygame.draw.rect(screen, (255, 0, 0), cursor_rect, width=3)
 
@@ -273,7 +275,7 @@ if __name__ == "__main__":
         text_surf = font.render(f"Tile {active_index}", True, (255, 255, 255))
         screen.blit(
             text_surf,
-            (MARGIN, GRID_ROWS * TILE_SIZE * TILE_SCALE + MARGIN + 5)
+            (MARGIN, GRID_ROWS * scaled_size.h + MARGIN + 5)
         )
 
         # Draw copy button

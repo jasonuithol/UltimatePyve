@@ -1,9 +1,8 @@
 # file: animation/sprite.py
-from typing import List, Optional
-from tileset import Tile
+from display.tileset import Tile
 
 class Sprite:
-    def __init__(self, frames: Optional[List[Tile]] = None, frame_time: float = 0.5, frame_time_offset: float = 0.0):
+    def __init__(self, frames: list[Tile] | None = None, frame_time: float = 0.5, frame_time_offset: float = 0.0):
         """
         frames: list of raw tile pixel arrays (palette indices), not Surfaces
         """

@@ -1,11 +1,13 @@
 # file: maps/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
-from maps.u5map_loader import U5MapLoader
 
+from .u5map_loader import U5MapLoader
+from .data import DataOVL
+from .u5map_loader import U5MapLoader
+from .location_metadata_builder import LocationMetadataBuilder
+from .u5map_registry import U5MapRegistry
 from .overworld import load_britannia
 from .underworld import load_underworld
-
-from maps import DataOVL, U5MapLoader, LocationMetadataBuilder, U5MapRegistry
 
 def compose(provider: ServiceProvider):
     provider.register_instance(DataOVL.load())

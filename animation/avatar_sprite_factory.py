@@ -1,10 +1,10 @@
 from .sprite import Sprite
-from tileset import TileSet
+from display.tileset import TileRegistry
 
 class AvatarSpriteFactory:
 
     # Injectable
-    tileset: TileSet
+    tileset: TileRegistry
 
     # --- Factory function for the Avatar sprites ---
     def create_player(self, transport_mode: int, direction: int) -> Sprite:
@@ -13,10 +13,10 @@ class AvatarSpriteFactory:
         return func(direction)
 
     def _create_player_any(self, player_first_tile:int, player_frame_count:int) -> Sprite:
-        frames = self.tileset.tiles[player_first_tile:player_first_tile + player_frame_count]
+        frames = [self.tileset.get_tile(tile_id) for tile_id in range(player_first_tile, player_first_tile + player_frame_count)]
         return Sprite(frames)
 
-    def create_player_walk(self,  _whatever: int) -> Sprite:
+    def create_player_walk(self,  _: int) -> Sprite:
         return self._create_player_any(332, 4)
 
     def create_player_horse(self, direction: int) -> Sprite:

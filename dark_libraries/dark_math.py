@@ -9,14 +9,18 @@ class Vector2:
     x: int
     y: int
 
-    def scale(self, s: int) -> Self:
-         return self.__class__(self.x * s, self.y * s)
-    
+    def scale(self, s: int | Self) -> Self:
+        if isinstance(s, int):
+            return self.__class__(self.x * s, self.y * s)
+        else:
+            # hope for the best for now.....
+            return self.__class__(self.x * s.x, self.y * s.y)
+
     def add(self, other: Self) -> Self:
-            return self.__class__(self.x + other.x, self.y + other.y)
+        return self.__class__(self.x + other.x, self.y + other.y)
 
     def subtract(self, other: Self) -> Self:
-            return self.__class__(self.x - other.x, self.y - other.y)
+        return self.__class__(self.x - other.x, self.y - other.y)
 
     def to_tuple(self) -> tuple[int,int]:
         return (self.x, self.y)
@@ -87,6 +91,11 @@ class Rect(Size, Coord):
         for offset in self.size:
             yield self.minimum_corner.add(offset)
 
+    def get_size(self) -> Size:
+        return self.size
+    
+    def get_minimum_corner(self) -> Coord:
+        return self.minimum_corner
 #
 # MAIN: Tests
 #

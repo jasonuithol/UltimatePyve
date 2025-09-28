@@ -1,5 +1,4 @@
-import pygame
-from dark_libraries import immutable, auto_init
+from dark_libraries.custom_decorators import immutable, auto_init
 
 @immutable
 @auto_init

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from dark_libraries import Size
+from dark_libraries.dark_math import Size
 
 from .u5map import U5Map
 

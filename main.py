@@ -4,22 +4,32 @@ import pygame
 from dark_libraries.service_provider import ServiceProvider
 from dark_libraries.dark_math import Coord, Vector2
 
-from animation import AnimatedTileFactory, FlameSpriteFactory, AvatarSpriteFactory, Sprite
+from animation.animated_tile_factory import AnimatedTileFactory
+from animation.flame_sprite_factory  import FlameSpriteFactory
+from animation.avatar_sprite_factory import AvatarSpriteFactory
+from animation.sprite                import Sprite
 
-from display import DisplayEngine
-
+from display.display_engine      import DisplayEngine
 from display.interactive_console import InteractiveConsole
-from display.view_port import ViewPort
-from game import PlayerState #, SavedGame, SavedGameLoader
+from display.tileset import TileLoader
+from display.u5_font             import U5FontLoader
+from display.view_port           import ViewPort
+
+from game.player_state import PlayerState
 from game.interactable import InteractableFactoryRegistry, DoorTypeFactory
-from game.modding import Modding
-from game.terrain import TerrainFactory
+from game.modding      import Modding
+from game.terrain      import TerrainFactory
 
 from game.world_clock import WorldClock
-from items import ConsumableItemTypeLoader, EquipableItemTypeFactory, PartyInventory, WorldLootLoader
 
-from items.item_type import InventoryOffset
-from maps import U5MapLoader, U5MapRegistry
+from items.consumable_items     import ConsumableItemTypeLoader
+from items.equipable_items      import EquipableItemTypeFactory
+from items.party_inventory      import PartyInventory
+from items.world_loot_loader    import WorldLootLoader
+from items.item_type            import InventoryOffset
+
+from maps.u5map_loader import U5MapLoader
+from maps.u5map_registry import U5MapRegistry
 
 import service_composition
 
@@ -46,6 +56,7 @@ class Main:
     interactive_console: InteractiveConsole
 #    saved_game: SavedGame
 
+    tile_loader: TileLoader
     avatar_sprite_factory: AvatarSpriteFactory
     animated_tile_factory: AnimatedTileFactory
     flame_sprite_factory: FlameSpriteFactory
@@ -55,6 +66,7 @@ class Main:
     world_loot_loader: WorldLootLoader
     equipable_item_type_factory: EquipableItemTypeFactory
     consumable_item_type_loader: ConsumableItemTypeLoader
+    u5_font_loader: U5FontLoader
 #    saved_game_loader: SavedGameLoader
 
     modding: Modding
@@ -64,6 +76,7 @@ class Main:
 
         pygame.mixer.init()
 
+        self.tile_loader.load_tiles()
         self.animated_tile_factory.register_sprites()
         self.flame_sprite_factory.register_sprites()
         self.terrain_factory.register_terrains()
@@ -96,6 +109,7 @@ class Main:
         )
         self.display_engine.set_avatar_sprite(player_sprite)
         self.view_port.init()
+        self.display_engine.init()
 
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
         #       one day maybe even the avatar's transports could be these ?
@@ -103,7 +117,8 @@ class Main:
         self.equipable_item_type_factory.build()
         self.consumable_item_type_loader.register_item_types()
         self.world_loot_loader.register_loot_containers()
-        
+        self.u5_font_loader.register_fonts()
+
         #
         # MODS ARE LOADED HERE
         #

@@ -6,11 +6,10 @@
 #
 # THAT IS ALL
 
-from typing import Optional, Dict
-from maps import DataOVL
-from dark_libraries import Coord
+from dark_libraries.dark_math import Coord
+from maps.data import DataOVL
 
-Triggers = Dict[Coord, int]  # (x, y, location_index)
+Triggers = dict[Coord, int]  # (x, y, location_index)
 
 _triggers: Triggers = None
 
@@ -31,7 +30,7 @@ def load_entry_triggers() -> Triggers:
             _triggers[Coord(x,y)] = trigger_index
     return _triggers
 
-def get_entry_trigger(coord: Coord) -> Optional[int]:
+def get_entry_trigger(coord: Coord) -> int | None:
     return load_entry_triggers().get(coord, None)
 
 if __name__ == "__main__":

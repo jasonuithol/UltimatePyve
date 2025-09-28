@@ -1,13 +1,17 @@
 import random
 
-from dark_libraries import immutable, Coord
-
+from dark_libraries.custom_decorators import immutable
+from dark_libraries.dark_math import Coord
 from dark_libraries.service_provider import ServiceProvider
+
 from display.interactive_console import InteractiveConsole
+
 from game.interactable.interactable_factory_registry import InteractableFactoryRegistry
 from game.magic import S_MAGIC_UNLOCK
+
 from items.item_type import InventoryOffset
 from items.party_inventory import PartyInventory
+
 from maps.u5map import U5Map
 
 from .interactable import Interactable, MoveIntoResult

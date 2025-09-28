@@ -1,12 +1,14 @@
 # file: game/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
 
-from game import *
-from game.soundtracks import SoundTrackPlayer
+from .player_state import PlayerState
+from .saved_game import SavedGame, SavedGameLoader
+from .soundtracks import SoundTrackPlayer
+from .transport_mode_registry import TransportModeRegistry
 from .modding import Modding
 from .world_clock import WorldClock
-from .interactable import *
-from .terrain import *
+from .interactable import DoorTypeFactory, InteractableFactoryRegistry
+from .terrain import TerrainRegistry, TerrainFactory
 
 def compose(provider: ServiceProvider):
     provider.register(DoorTypeFactory)

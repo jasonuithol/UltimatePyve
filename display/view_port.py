@@ -1,18 +1,22 @@
 # file: display/view_port.py
 import pygame
-from typing import Iterator, Optional
+from typing import Iterator
 
-from dark_libraries import Coord, Size, Rect, Vector2
+from dark_libraries.custom_decorators import auto_init, immutable
+from dark_libraries.dark_math import Coord, Size, Rect, Vector2
 
 import animation.sprite as sprite
-from animation import SpriteRegistry
-from dark_libraries.custom_decorators import auto_init, immutable
+from animation.sprite_registry import SpriteRegistry
+
 from game.terrain.terrain import Terrain
 from game.terrain.terrain_registry import TerrainRegistry
-from maps import U5Map
 from game.interactable import InteractableFactoryRegistry
 
-from tileset import TILE_ID_GRASS, EgaPalette, Tile, TileSet
+from maps.u5map import U5Map
+
+from .tileset import TILE_ID_GRASS, Tile, TileRegistry
+from .display_config import DisplayConfig
+from .scalable_component import ScalableComponent
 
 WINDOWED_VECTORS = [
     Vector2( 0,  1), # bottom
@@ -35,32 +39,35 @@ class QueriedTile:
     terrain: Terrain
     sprite: sprite.Sprite | None
 
-class ViewPort:
+class ViewPort(ScalableComponent):
 
     # Injectable Properties
-    tileset: TileSet
-    palette: EgaPalette
+    display_config: DisplayConfig
+    tileset: TileRegistry
+ #   palette: EgaPalette
     interactable_factory_registry: InteractableFactoryRegistry
     sprite_registry: SpriteRegistry
     terrain_registry: TerrainRegistry
 
-    # NOTE: Initial Coord will be overwritten during init. We need the Rect's size for size based calcs before init is done.
-    view_rect = Rect(Coord(0,0), Size(21,15))
+#    tile_size_pixels: int = 16
 
-    tile_size_pixels: int = 16
-    display_scale: int = 2
+    def __init__(self):
+        pass
 
     def _after_inject(self):
-        # input surface
-        self._unscaled_surface: pygame.Surface = pygame.Surface(self.view_size_in_pixels().to_tuple())
-        # output surface
-        self._scaled_surface: pygame.Surface = pygame.Surface(self.view_size_in_pixels_scaled().to_tuple())
-
-        self.black_mapped_rgb = self._unscaled_surface.map_rgb((0,0,0))
-        self.black_tile = Tile(0)
-        self.black_tile.load_from_bytes(bytes(128))
+        super().__init__(
+            unscaled_size_in_pixels = self.display_config.VIEW_PORT_SIZE.scale(self.display_config.TILE_SIZE),
+            scale_factor            = self.display_config.SCALE_FACTOR
+        )
+        self.view_rect = Rect(Coord(0,0), self.display_config.VIEW_PORT_SIZE)
 
     def init(self):
+        self.black_tile = Tile(
+            tile_id = 0,
+            pixels = [[0 for _ in range(16)] for _ in range(16)]
+        )
+        self.black_tile.create_surface(self.display_config.EGA_PALETTE)
+
         self.queried_tile_grass = QueriedTile(
             tile    = self.tileset.tiles[TILE_ID_GRASS],
             terrain = self.terrain_registry.get_terrain(TILE_ID_GRASS),
@@ -72,15 +79,6 @@ class ViewPort:
             terrain = None,
             sprite  = None
         )
-
-    def view_size_in_pixels(self) -> Size:
-         return self.view_rect.size.scale(self.tile_size_pixels)
-    
-    def view_size_in_pixels_scaled(self) -> Size:
-         return self.view_size_in_pixels().scale(self.display_scale)
-
-    def set_display_scale(self, s: int) -> None:
-         self.display_scale = s
 
     def _get_view_centre(self) -> Coord:
         width, height = self.view_rect.size.to_tuple()
@@ -101,20 +99,6 @@ class ViewPort:
 
     def to_view_port_coord(self, world_coord: Coord) -> Coord:
         return world_coord.subtract(self.view_rect.minimum_corner)
-
-    def get_input_surface(self) -> pygame.Surface:
-        return self._unscaled_surface
-
-    def get_output_surface(self) -> pygame.Surface:
-
-        pygame.transform.scale(
-            surface      = self._unscaled_surface,
-            size         = self.view_size_in_pixels_scaled().to_tuple(),
-            dest_surface = self._scaled_surface
-        )
-
-        return self._scaled_surface
-
 
     def query_tile_grid(self, u5map: U5Map, level_ix: int = 0) -> Iterator[tuple[Coord, QueriedTile]]:
 
@@ -182,7 +166,7 @@ class ViewPort:
 
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
 
-        self.get_input_surface().fill(self.black_mapped_rgb)
+        self._clear()
 
         queried_tile_grid = self.query_tile_grid(u5map, level_ix)
         visible_grid = self.calculate_fov_visibility(queried_tile_grid)
@@ -194,7 +178,7 @@ class ViewPort:
                 self.draw_tile(world_coord, queried_tile.tile)
 
     def draw_tile(self, world_coord: Coord, tile: Tile):
-        screen_coord = self.to_view_port_coord(world_coord).scale(self.tile_size_pixels)
+        screen_coord = self.to_view_port_coord(world_coord).scale(self.display_config.TILE_SIZE)
         tile.blit_to_surface(
             self.get_input_surface(), 
             screen_coord
@@ -211,37 +195,13 @@ class ViewPort:
 
         self.draw_tile(world_coord, frame_tile)
 
-    '''
-    def flood_fill_visibility(start_x, start_y, is_blocked, mark_visible):
-        #            start_x, start_y: starting tile coordinates (player position)
-        #            is_blocked(x, y) -> bool: True if tile blocks vision
-        #            mark_visible(x, y): called for each visible tile
-        visited = set()
-        q = deque()
-        q.append((start_x, start_y))
-        visited.add((start_x, start_y))
-
-        while q:
-            x, y = q.popleft()
-            mark_visible(x, y)
-
-            # 4-way expansion
-            for dx, dy in ((0, -1), (1, 0), (0, 1), (-1, 0)):
-                nx, ny = x + dx, y + dy
-                if (nx, ny) in visited:
-                    continue
-                if is_blocked(nx, ny):
-                    continue
-                visited.add((nx, ny))
-                q.append((nx, ny))
-    '''
 
 #
 # MAIN tests
 #
 if __name__ == "__main__":
 
-    from tileset.tileset import _ega_palette
+    from display.tileset import _ega_palette
     from maps.overworld import load_britannia
 
     class StubInteractableFactoryRegistry:
@@ -261,7 +221,7 @@ if __name__ == "__main__":
     view_port.palette = _ega_palette
 
     view_port.view_rect = Rect(Coord(40,40), Size(5,5))
-    screen = pygame.display.set_mode(view_port.view_size_in_pixels_scaled().to_tuple())
+    screen = pygame.display.set_mode(view_port.scaled_size().to_tuple())
     
     view_port._after_inject()
 
