@@ -87,7 +87,10 @@ class DisplayEngine:
         vp_scaled_surface = self.view_port.get_output_surface()
 
         # Blit to screen
-        self.screen.blit(vp_scaled_surface, (MainDisplay.BORDER_THICCNESS * self.display_config.SCALE_FACTOR, MainDisplay.BORDER_THICCNESS * self.display_config.SCALE_FACTOR))
+        self.screen.blit(vp_scaled_surface, (
+            self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR, 
+            self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR # yes width because we rotate the font blocks.
+        ))
 
         #
         # InteractiveConsole
@@ -95,7 +98,7 @@ class DisplayEngine:
         ic_scaled_surface = self.interactive_console.get_output_surface()
 
         self.screen.blit(ic_scaled_surface, (
-            vp_scaled_surface.get_width() + MainDisplay.BORDER_THICCNESS * self.display_config.SCALE_FACTOR * 2, 
+            vp_scaled_surface.get_width() + self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR * 2, 
             vp_scaled_surface.get_height() - ic_scaled_surface.get_height()
         ))
 

@@ -21,8 +21,6 @@ class BorderGlyphCodes(Enum):
 
 class MainDisplay(ScalableComponent):
 
-    BORDER_THICCNESS = 8
-
     # Injectable
     display_config: DisplayConfig
     world_clock: WorldClock
@@ -38,8 +36,11 @@ class MainDisplay(ScalableComponent):
 
         super().__init__(
             unscaled_size_in_pixels = Size(
-                vp_w + ic_w + (3 * MainDisplay.BORDER_THICCNESS),
-                max(vp_h, ic_h) + (2 * MainDisplay.BORDER_THICCNESS)
+                # width of ViewPort, InteractiveConsole, and 3 border lines.
+                vp_w + ic_w + (3 * self.display_config.FONT_SIZE.w),
+
+                # Whichever is the tallest out of ViewPort and InteractiveConsole, then add two border lines either end.
+                max(vp_h, ic_h) + (2 * self.display_config.FONT_SIZE.w) # yes width, because we rotate the font blocks.
             ),
             scale_factor = self.display_config.SCALE_FACTOR
         )
@@ -121,7 +122,6 @@ class MainDisplay(ScalableComponent):
 
         # Just a big old block of blue.
         self.junction_glyph = self.u5_glyph_registry.get_glyph("IBM.CH", BorderGlyphCodes.SPACE_IBM_FONT_ID.value).replace_color(self._color_black, self._color_dark_blue)
-
 
         #
         # CELESTIAL GLYPHS
