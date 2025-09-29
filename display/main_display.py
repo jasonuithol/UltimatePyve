@@ -4,7 +4,7 @@ from enum import Enum
 from dark_libraries.dark_math import Coord, Size
 from display.u5_font import U5FontRegistry, U5Glyph
 from display.view_port import ViewPort
-from game.world_clock import CelestialGlyphCodes, WorldClock
+from game.world_clock import CelestialGlyphCodes, WorldClock, CELESTIAL_PANORAMA_WIDTH
 
 from .display_config import DisplayConfig
 from .scalable_component import ScalableComponent
@@ -48,11 +48,13 @@ class MainDisplay(ScalableComponent):
         )
 
         self.viewport_width_in_glyphs = self.view_port.unscaled_size().w // self.display_config.FONT_SIZE.w
-        self.celestial_char_offset = ((self.viewport_width_in_glyphs - 12) // 2) + 1
+        self.celestial_char_offset = ((self.viewport_width_in_glyphs - CELESTIAL_PANORAMA_WIDTH) // 2)
 
-        self._color_black     = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 0])
-        self._color_dark_blue = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 1])
-        self._color_white     = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[15])
+        self._color_black      = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 0])
+        self._color_dark_blue  = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 1])
+        self._color_light_grey = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 7])
+        self._color_yellow     = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[14])
+        self._color_white      = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[15])
 
         # TODO: Get this from the EGA-PALETTE
 #        self._back_color = self._unscaled_surface.map_rgb((0,0,255))
@@ -143,7 +145,7 @@ class MainDisplay(ScalableComponent):
             U5Glyph(
                 data = self.rune_font.data[celestial_glyph_code.value],
                 glyph_size = self.display_config.FONT_SIZE,
-                foreground_color_mapped_rgb = self._color_white,
+                foreground_color_mapped_rgb = self._color_yellow if celestial_glyph_code == CelestialGlyphCodes.SUN else self._color_light_grey,
                 background_color_mapped_rgb = self._color_black
             )
             for celestial_glyph_code in CelestialGlyphCodes
@@ -213,12 +215,13 @@ class MainDisplay(ScalableComponent):
         self.junction_glyph.blit_to_surface(Coord(char_x_middle,             0), surf)
         self.junction_glyph.blit_to_surface(Coord(char_x_middle, char_y_bottom), surf)
 
-        # prompts
-        self.right_prompt.blit_to_surface(Coord(self.celestial_char_offset - 1,             0), surf)
-        self.right_prompt.blit_to_surface(Coord(self.celestial_char_offset - 1, char_y_bottom), surf)
+        # prompts - celestial
+        self.right_prompt.blit_to_surface(Coord(self.celestial_char_offset, 0), surf)
+        self.left_prompt.blit_to_surface(Coord(self.viewport_width_in_glyphs - self.celestial_char_offset + 1, 0), surf)
 
-        self.left_prompt.blit_to_surface(Coord(self.viewport_width_in_glyphs - self.celestial_char_offset + 2,             0), surf)
-        self.left_prompt.blit_to_surface(Coord(self.viewport_width_in_glyphs - self.celestial_char_offset + 2, char_y_bottom), surf)
+        # prompts - wind direction
+        self.right_prompt.blit_to_surface(Coord(self.celestial_char_offset + 1, char_y_bottom), surf)
+        self.left_prompt.blit_to_surface(Coord(self.viewport_width_in_glyphs - self.celestial_char_offset + 1, char_y_bottom), surf)
 
     def draw_celestial_panorama(self):
 
@@ -228,14 +231,14 @@ class MainDisplay(ScalableComponent):
 
         for cursor, glyph_code in enumerate(self.world_clock.get_celestial_panorama()):
             glyph = self.celestial_glyphs[glyph_code]
-            glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor, 0), surf)
+            glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor + 1, 0), surf)
 
     def draw_wind_direction(self):
 
         surf = self.get_input_surface()
         char_y_bottom = self.size_in_glyphs.h - 1
 
-        for cursor, glyph_data in enumerate(self.ibm_font.map_string("North Winds ")):
+        for cursor, glyph_data in enumerate(self.ibm_font.map_string("East  Winds")):
 
             #
             # TODO: We REALLY need to cache the font glyphs in basic black and white !
@@ -246,7 +249,7 @@ class MainDisplay(ScalableComponent):
                 foreground_color_mapped_rgb = self._color_white,
                 background_color_mapped_rgb = self._color_black
             )
-            glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor, char_y_bottom), surf)
+            glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor + 2, char_y_bottom), surf)
 
     def draw(self):
         self.draw_celestial_panorama()

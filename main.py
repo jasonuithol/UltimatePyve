@@ -100,7 +100,7 @@ class Main:
         self.player_state.set_inner_position(
             u5Map = self.u5map_registry.get_map(13), # Iolo's hut
             level_index = 0,                         
-            coord = Coord(24, 3)                     # just south of the potion barrel, in the stables.
+            coord = Coord(15, 15)                    # Inside the hut, OG starting position.
         )
 
         self.player_state.set_transport_state(

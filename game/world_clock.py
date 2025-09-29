@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from collections import deque
 from enum import Enum
 
+CELESTIAL_PANORAMA_WIDTH = 12
+
 #
 # rune font values for the celestial objects.
 #
@@ -98,17 +100,17 @@ class WorldClock:
 
         # this represents midnight.
         panorama = deque([
-            sun,0,0,    0,0,0,
+            0,0,0,    0,0,0,
 
             0,0,tram,   0,0,0,      # /---  these middle bits are 
             0,0,felu,   0,0,0,      # \---  the visible bits at midnight
 
-            0,0,0,      0,0,0,
+            0,0,0,      0,0,sun,
         ])
 
         # rotate left the number of hours since midnight to get panorama at current hour.
         panorama.rotate(self.get_time().hour * -1)
-        return list(panorama)[6:18]
+        return list(panorama)[12 - (CELESTIAL_PANORAMA_WIDTH // 2) : 12 + (CELESTIAL_PANORAMA_WIDTH // 2)]
 
 
     '''
