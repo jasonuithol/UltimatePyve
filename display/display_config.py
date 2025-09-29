@@ -29,6 +29,7 @@ class DisplayConfig:
     #
     # TODO: Right now we do NOT take advantage of the fact we can create 8-bit surfaces and then provide them a palette
     #       Currently, we call pygame.Surface.map_rgb(tuple[int,int,int]) each time we need to paint an actual pixel color.
+    #       We need a SurfaceFactory, which can produce surfaces guaranteed to be compatable with eachother, have, or not have, palettes, etc.
     #
     EGA_PALETTE = EgaPalette((
         (0, 0, 0),         # 0000: Black
