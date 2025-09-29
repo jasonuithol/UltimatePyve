@@ -65,6 +65,10 @@ class MainDisplay(ScalableComponent):
         self.rune_font = self.u5_font_registry.get_font("RUNES.CH")
         
         block_glyph_data = self.ibm_font.data[BorderGlyphCodes.BLOCK_GLYPH_IBM_FONT_ID.value]
+
+        #
+        # BORDER TOP, BOTTOM, LEFT, RIGHT GLYPHS
+        #
         self.right_block_glyph = U5Glyph(
             data = block_glyph_data,
             glyph_size = self.display_config.FONT_SIZE,
@@ -75,6 +79,24 @@ class MainDisplay(ScalableComponent):
         self.left_block_glyph   = self.top_block_glyph.rotate_90()
         self.bottom_block_glyph = self.left_block_glyph.rotate_90()
 
+        #
+        # BORDER HORIZONTAL, VERTICAL MIDDLE BORDER GLYPHS
+        #
+        self.horizontal_block = self.left_block_glyph.overlay_with(self.right_block_glyph, self._bordercolor_fore)
+        self.vertical_block = self.horizontal_block.rotate_90() #self.top_block_glyph.overlay_with(self.bottom_block_glyph, self._bordercolor_fore)
+
+        #
+        # BORDER CORNER GLYPHS
+        #
+
+        # Treat self._bordercolor_back as the transparency color
+        self.right_cnr_overlay_glyph = U5Glyph(
+            data = block_glyph_data,
+            glyph_size = self.display_config.FONT_SIZE,
+            foreground_color_mapped_rgb = self._bordercolor_back, # blue
+            background_color_mapped_rgb = self._bordercolor_fore  # white
+        ) #.rotate_90().rotate_90()
+
         self.top_left_cnr_glyph = U5Glyph(
             data = self.ibm_font.data[BorderGlyphCodes.TOP_LEFT_CNR_GLYPH_IBM_FONT_ID.value],
             glyph_size = self.display_config.FONT_SIZE,
@@ -82,26 +104,35 @@ class MainDisplay(ScalableComponent):
             background_color_mapped_rgb = self._celestial_color_back # black
         )
 
+        # TODO: overlay this with a blue border from left_block
         self.top_right_cnr_glyph = U5Glyph(
             data = self.ibm_font.data[BorderGlyphCodes.TOP_RIGHT_CNR_GLYPH_IBM_FONT_ID.value],
             glyph_size = self.display_config.FONT_SIZE,
             foreground_color_mapped_rgb = self._bordercolor_fore,
             background_color_mapped_rgb = self._celestial_color_back # black
-        )
+        ).overlay_with(self.right_cnr_overlay_glyph, self._bordercolor_back)
 
         self.bottom_left_cnr_glyph = U5Glyph(
             data = self.ibm_font.data[BorderGlyphCodes.BOTTOM_LEFT_CNR_GLYPH_IBM_FONT_ID.value],
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._bordercolor_fore,
+            foreground_color_mapped_rgb = self._bordercolor_fore,    # blue
             background_color_mapped_rgb = self._celestial_color_back # black
         )
 
+        self.junction_glyph = U5Glyph(
+            data = self.ibm_font.data[0],
+            glyph_size = self.display_config.FONT_SIZE,
+            foreground_color_mapped_rgb = self._celestial_color_back, # actually doesn't matter
+            background_color_mapped_rgb = self._bordercolor_fore      # blue
+        )
+
+        # TODO: overlay this with a blue border from left_block
         self.bottom_right_cnr_glyph = U5Glyph(
             data = self.ibm_font.data[BorderGlyphCodes.BOTTOM_RIGHT_CNR_GLYPH_IBM_FONT_ID.value],
             glyph_size = self.display_config.FONT_SIZE,
             foreground_color_mapped_rgb = self._bordercolor_fore,
             background_color_mapped_rgb = self._celestial_color_back # black
-        )
+        ).overlay_with(self.right_cnr_overlay_glyph, self._bordercolor_back)
 
         self.celestial_glyphs = {
             celestial_glyph_code.value:
@@ -121,7 +152,10 @@ class MainDisplay(ScalableComponent):
             background_color_mapped_rgb = self._celestial_color_back
         )
 
-    def draw(self):
+        # This only needs to be drawn once.
+        self.draw_borders()
+
+    def draw_borders(self):
         surf = self.get_input_surface()
 
         char_x_middle = self.viewport_width_in_glyphs + 1
@@ -132,21 +166,34 @@ class MainDisplay(ScalableComponent):
         # Blue borders
         for char_y in range(self.size_in_glyphs.h):
             self.left_block_glyph.blit_to_surface( Coord(            0, char_y), surf)
-            self.right_block_glyph.blit_to_surface(Coord(char_x_middle, char_y), surf)
+            self.horizontal_block.blit_to_surface( Coord(char_x_middle, char_y), surf)
             self.right_block_glyph.blit_to_surface(Coord(char_x_right , char_y), surf)
         for char_x in range(self.size_in_glyphs.x):
             self.top_block_glyph.blit_to_surface(   Coord(char_x,             0), surf)
             self.bottom_block_glyph.blit_to_surface(Coord(char_x, char_y_bottom), surf)
 
+        # corners
         self.top_left_cnr_glyph.blit_to_surface(Coord(0, 0), surf)
         self.top_right_cnr_glyph.blit_to_surface(Coord(char_x_right, 0), surf)
         self.bottom_left_cnr_glyph.blit_to_surface(Coord(0, char_y_bottom), surf)
         self.bottom_right_cnr_glyph.blit_to_surface(Coord(char_x_right, char_y_bottom), surf)
 
+        # junctions
+        self.junction_glyph.blit_to_surface(Coord(char_x_middle,             0), surf)
+        self.junction_glyph.blit_to_surface(Coord(char_x_middle, char_y_bottom), surf)
+
+    def draw_celestial_panorama(self):
+
+        surf = self.get_input_surface()
+
         # Sun and moons
         for cursor, glyph_code in enumerate(self.world_clock.get_celestial_panorama()):
             glyph = self.celestial_glyphs[glyph_code]
             glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor, 0), surf)
+
+    def draw(self):
+        self.draw_celestial_panorama()
+
 
 
 

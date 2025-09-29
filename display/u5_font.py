@@ -53,6 +53,25 @@ class U5Glyph:
         rotated._surface = pygame.transform.rotate(self._surface, 90)
         return rotated
 
+#    def set_transparent_color(self, mapped_rgb_color: int):
+#        self._surface.set_colorkey(mapped_rgb_color)
+
+    def copy(self) -> Self:
+        clone = object.__new__(self.__class__)
+        clone._surface = self._surface.copy()
+        return clone
+    
+    def overlay_with(self, overlay: Self, transparent_mapped_rgb: int) -> Self:
+        existing_color_key = overlay._surface.get_colorkey()
+        result = self.copy()
+        overlay._surface.set_colorkey(transparent_mapped_rgb)
+
+#        overlay._surface.blit(result._surface, (0,0))
+        result._surface.blit(overlay._surface, (0,0))
+        
+        overlay._surface.set_colorkey(existing_color_key)
+        return result
+
 class U5FontRegistry:
     def _after_inject(self):
         self.fonts: dict[str, U5Font] = {}

@@ -26,6 +26,10 @@ class DisplayConfig:
     VIEW_PORT_SIZE = Size(17, 17) # In tiles       (16x16)
     CONSOLE_SIZE   = Size(32, 13) # In font glyphs (8x8)
 
+    #
+    # TODO: Right now we do NOT take advantage of the fact we can create 8-bit surfaces and then provide them a palette
+    #       Currently, we call pygame.Surface.map_rgb(tuple[int,int,int]) each time we need to paint an actual pixel color.
+    #
     EGA_PALETTE = EgaPalette((
         (0, 0, 0),         # 0000: Black
         (0, 0, 170),       # 0001: Blue
