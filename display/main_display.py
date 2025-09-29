@@ -121,20 +121,6 @@ class MainDisplay(ScalableComponent):
             background_color_mapped_rgb = self._celestial_color_back
         )
 
-        '''
-        self.top_left_glyph = U5Glyph(
-            data = rune_font.,
-            glyph_size = self.display_config.,
-            foreground_color_mapped_rgb: int,
-            background_color_mapped_rgb: int
-        )
-        '''
-
-        '''
-        vp_x, vp_y = 0,0
-        ic_x, ix_y = vp_w, vp_h - ic_h
-        '''
-
     def draw(self):
         surf = self.get_input_surface()
 
