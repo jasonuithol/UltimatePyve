@@ -1,13 +1,20 @@
 # file: dark_libraries/dark_math.py
 
 from typing import Iterable, Self
-from .custom_decorators import immutable, auto_init
 
-@immutable
-@auto_init
-class Vector2:
-    x: int
-    y: int
+class Vector2(tuple):
+
+    # NOTE: This does NOT get inherited !
+    __slots__ = ()
+
+    def __new__(cls, x: int, y: int):
+        return super().__new__(cls, (x, y))
+    
+    @property
+    def x(self) -> int: return self[0]
+
+    @property
+    def y(self) -> int: return self[1]
 
     def scale(self, s: int | Self) -> Self:
         if isinstance(s, int):
@@ -22,41 +29,33 @@ class Vector2:
     def subtract(self, other: Self) -> Self:
         return self.__class__(self.x - other.x, self.y - other.y)
 
-    def to_tuple(self) -> tuple[int,int]:
-        return (self.x, self.y)
-
-    # support for being a Dict key, will also support "v1 == v2" logical expression
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        return self.x == other.x and self.y == other.y
-
-    # support for being a Dict key
-    def __hash__(self) -> int:
-        return hash((self.x, self.y))
-
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(x={self.x},y={self.y})"
 
+    def to_tuple(self) -> tuple[int, int]:
+        return (self[0], self[1])
+
 class Coord(Vector2):
-    pass
+
+    # NOTE: This does NOT get inherited !
+    __slots__ = ()
 
 class Size(Vector2):
+
+    # NOTE: This does NOT get inherited !
+    __slots__ = ()
+
+    def __new__(cls, w: int, h: int):
+        # WARNING: Bypasses Vector2.__new__
+        return tuple.__new__(cls, (w, h))
+
     @property
     def w(self) -> int:
-        return self.x
-
-    @w.setter
-    def w(self, value: int):
-        self.x = value
+        return self[0]
 
     @property
     def h(self) -> int:
-        return self.y
-
-    @h.setter
-    def h(self, value: int):
-        self.y = value
+        return self[1]
 
     def is_in_bounds(self, coord: Coord) -> bool:
         return 0 <= coord.x < self.w and 0 <= coord.y < self.h
@@ -72,30 +71,40 @@ class Size(Vector2):
             for x in range(self.w):
                 yield Coord(x, y)
 
-@immutable
-class Rect(Size, Coord):
+class Rect(tuple):
 
-    def __init__(self, minimum_corner: Coord, size: Size):
-        self.minimum_corner = minimum_corner
-        self.size = size
+    # NOTE: This does NOT get inherited !
+    __slots__ = ()
+
+    def __new__(cls, minimum_corner: Coord, size: Size):
+        return super().__new__(cls, (minimum_corner.x, minimum_corner.y, size.w, size.h))
+
+    @property
+    def x(self) -> int: return self[0]
+
+    @property
+    def y(self) -> int: return self[1]
+
+    @property
+    def w(self) -> int: return self[2]
+
+    @property
+    def h(self) -> int: return self[3]
+
+    @property
+    def size(self) -> Size: return Size(self.w, self.h)
+
+    @property
+    def minimum_corner(self) -> Coord: return Coord(self.x, self.y)
 
     def is_in_bounds(self, coord: Coord) -> bool:
-        shifted_coord = coord.subtract(self.minimum_corner)
-        return self.size.is_in_bounds(shifted_coord)
-    
-    def move(self, offset: Coord) -> Self:
-        return Rect(self.minimum_corner.add(offset), self.size())
+        return self.x <= coord.x < self.w + self.x and self.y <= coord.y < self.h + self.y
 
-    def __iter__(self) -> Iterable[tuple[int,int]]:
-        self.minimum_corner
-        for offset in self.size:
-            yield self.minimum_corner.add(offset)
+    def __iter__(self) -> Iterable[Coord]:
+        for y in range(self.y, self.y + self.h):
+            for x in range(self.x, self.x + self.w):
+                yield Coord(x, y)
 
-    def get_size(self) -> Size:
-        return self.size
-    
-    def get_minimum_corner(self) -> Coord:
-        return self.minimum_corner
 #
 # MAIN: Tests
 #
@@ -142,7 +151,7 @@ if __name__ == "__main__":
     for coord in r:
         assert r.is_in_bounds(coord), "Rect generated an out of bounds iteratant"
 
-    assert len(list(r)) == r.size.w * r.size.h, "Wrong number of iterated coords in Rect"
+    assert len(list(r)) == r.w * r.h, "Wrong number of iterated coords in Rect"
 
     try:
         immutable = False

@@ -1,6 +1,5 @@
 # file: display/main_display.py
 
-from pygame import PixelArray
 from dark_libraries.dark_math import Coord, Size
 from display.u5_font import U5FontRegistry, U5Glyph
 from display.view_port import ViewPort
@@ -25,6 +24,7 @@ class MainDisplay(ScalableComponent):
         pass 
 
     def _after_inject(self):
+        print(self.display_config.VIEW_PORT_SIZE.scale(self.display_config.TILE_SIZE).to_tuple())
         vp_w, vp_h = self.display_config.VIEW_PORT_SIZE.scale(self.display_config.TILE_SIZE).to_tuple()
         ic_w, ic_h = self.display_config.CONSOLE_SIZE.scale(self.display_config.FONT_SIZE).to_tuple()
 
@@ -83,25 +83,22 @@ class MainDisplay(ScalableComponent):
         '''
 
     def draw(self):
-        pa = PixelArray(self.get_input_surface())
+        surf = self.get_input_surface()
 
         # Blue borders
         for char_y in range(self.size_in_glyphs.h):
-            self.block_glyph.draw_to_pixel_array(Coord(0                                , char_y), pa)
-            self.block_glyph.draw_to_pixel_array(Coord(self.viewport_width_in_glyphs + 1, char_y), pa)
-            self.block_glyph.draw_to_pixel_array(Coord(self.size_in_glyphs.w - 1        , char_y), pa)
+            self.block_glyph.blit_to_surface(Coord(0                                , char_y), surf)
+            self.block_glyph.blit_to_surface(Coord(self.viewport_width_in_glyphs + 1, char_y), surf)
+            self.block_glyph.blit_to_surface(Coord(self.size_in_glyphs.w - 1        , char_y), surf)
         for char_x in range(self.size_in_glyphs.x):
-            self.block_glyph.draw_to_pixel_array(Coord(char_x, 0), pa)
-            self.block_glyph.draw_to_pixel_array(Coord(char_x, self.size_in_glyphs.h - 1), pa)
+            self.block_glyph.blit_to_surface(Coord(char_x, 0), surf)
+            self.block_glyph.blit_to_surface(Coord(char_x, self.size_in_glyphs.h - 1), surf)
 
         # Sun and moons
         for cursor, glyph_code in enumerate(self.world_clock.get_celestial_panorama()):
             glyph_data = self.rune_font.data[glyph_code]
             glyph = self._make_glyph(glyph_data, self._celestial_color)
-            glyph.draw_to_pixel_array(Coord(self.celestial_char_offset + cursor, 0), pa)
-
-
-        del pa
+            glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor, 0), surf)
 
 
 

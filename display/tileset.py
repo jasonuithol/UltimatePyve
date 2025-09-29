@@ -93,6 +93,7 @@ class Tile:
     pixels: TileData | None = None
     surface: pygame.Surface | None = None
 
+    # WARNING: Not the fastest ever.
     def _get_size(self):
         return Size(len(self.pixels[0]), len(self.pixels))
 
@@ -108,22 +109,21 @@ class Tile:
             surface_pixels[pixel_coord.add(target_pixel_offset).to_tuple()] = surface_pixels.surface.map_rgb(rgb_color)
                 
     def create_surface(self, palette: EgaPalette):
-        self.surface = pygame.Surface(self._get_size().to_tuple())
-        surface_pixels = pygame.PixelArray(self.surface)
+        assert self.surface is None, "Surface already created !"
+        surface = pygame.Surface(self._get_size().to_tuple())
+        surface_pixels = pygame.PixelArray(surface)
         self._draw_onto_pixel_array(surface_pixels, palette)
         del surface_pixels
+        self.set_surface(surface)
 
-    def set_surface(self, surface):
+    def set_surface(self, surface: pygame.Surface):
         self.surface = surface
 
-    def get_surface(self):
+    def get_surface(self) -> pygame.Surface:
         return self.surface
 
     def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord = Coord(0,0)):
-        target_rectangle = self.surface.get_rect()
-        target_rectangle.topleft = pixel_offset.to_tuple()
-
-        target_surface.blit(self.surface, target_rectangle)
+        target_surface.blit(self.surface, pixel_offset.to_tuple())
 
 class TileRegistry:
     def _after_inject(self):

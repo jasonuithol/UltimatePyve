@@ -26,23 +26,26 @@ class U5Font:
         return self.map_codes(codes)
 
 @immutable
-@auto_init
 class U5Glyph:
-    data: bytearray
-    glyph_size: Size
-    foreground_color_mapped_rgb: int
-    background_color_mapped_rgb: int
     
-    def draw_to_pixel_array(self, char_coord: Coord, target: pygame.PixelArray):
-        origin_x, origin_y = char_coord.x * self.glyph_size.w, char_coord.y * self.glyph_size.h
-
-        for y in range(self.glyph_size.h):
-            for x in range(self.glyph_size.w):
-                bit_index = x + (y * self.glyph_size.h)
+    def __init__(self, data: bytearray, glyph_size: Size, foreground_color_mapped_rgb: int, background_color_mapped_rgb: int):
+        self._surface = pygame.Surface(glyph_size.to_tuple())
+        target = pygame.PixelArray(self._surface)
+        for y in range(glyph_size.h):
+            for x in range(glyph_size.w):
+                bit_index = x + (y * glyph_size.h)
                 byte_index = bit_index // 8
                 bit_offset = bit_index % 8
-                bit_value = self.data[byte_index] & (1 << (8 - bit_offset))
-                target[x + origin_x, y + origin_y] = self.foreground_color_mapped_rgb if bit_value else self.background_color_mapped_rgb        
+                bit_value = data[byte_index] & (1 << (8 - bit_offset))
+                target[x, y] = foreground_color_mapped_rgb if bit_value else background_color_mapped_rgb        
+        del target
+
+    def blit_to_surface(self, char_coord: Coord, target: pygame.Surface):
+        origin_x, origin_y = char_coord.x * self._surface.get_width(), char_coord.y * self._surface.get_height()
+        target.blit(
+            source = self._surface,
+            dest   = (origin_x, origin_y)
+        )
 
 class U5FontRegistry:
     def _after_inject(self):

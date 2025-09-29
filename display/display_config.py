@@ -9,6 +9,7 @@ class DisplayConfig:
     # =============== Section 1: Don't change these unless you know what you're doing ===================
     # ===================================================================================================
 
+    TARGET_FPS = 144
     SCALE_FACTOR = 2
 
     # In theory these should come from their respective realms

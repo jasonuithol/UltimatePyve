@@ -140,8 +140,8 @@ class Main:
 
         self.party_inventory.add(InventoryOffset.GOLD,   150)
         self.party_inventory.add(InventoryOffset.FOOD,    63)
-        self.party_inventory.add(InventoryOffset.KEYS,     2)
-        self.party_inventory.add(InventoryOffset.TORCHES,  4)
+        self.party_inventory.add(InventoryOffset.KEYS,    20)
+        self.party_inventory.add(InventoryOffset.TORCHES, 40)
 
         self.interactive_console.print_ascii([i for i in range(128)])
         self.interactive_console.print_rune( [i for i in range(128)])

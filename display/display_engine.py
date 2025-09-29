@@ -27,7 +27,6 @@ class DisplayEngine:
         pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
         self.screen = pygame.display.set_mode(self.main_display.scaled_size().to_tuple())
         self.clock = pygame.time.Clock()
-        self.fps = 60
 
         # Init internal state
         self.avatar: sprite.Sprite = None
@@ -52,7 +51,7 @@ class DisplayEngine:
     def render(self, player_coord: Coord):
 
         # Update window title with current location/world of player.
-        pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}]")
+        pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}] fps={int(self.clock.get_fps())}")
 
         #
         # Main Display
@@ -97,3 +96,5 @@ class DisplayEngine:
         ))
 
         pygame.display.flip()
+
+        self.clock.tick(self.display_config.TARGET_FPS)
