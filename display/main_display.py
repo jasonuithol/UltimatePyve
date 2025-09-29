@@ -134,6 +134,10 @@ class MainDisplay(ScalableComponent):
             background_color_mapped_rgb = self._color_black
         ).overlay_with(self.right_cnr_overlay_glyph, self._color_black)
 
+        #
+        # CELESTIAL GLYPHS
+        #
+
         self.celestial_glyphs = {
             celestial_glyph_code.value:
             U5Glyph(
@@ -151,6 +155,33 @@ class MainDisplay(ScalableComponent):
             foreground_color_mapped_rgb = self._color_white,
             background_color_mapped_rgb = self._color_black
         )
+
+
+        #
+        # PROMPTS
+        #
+        # TODO: Still havent quite got this right
+        #
+
+        self.right_prompt_overlay = U5Glyph(
+            data = self.ibm_font.data[2],
+            glyph_size = self.display_config.FONT_SIZE,
+            foreground_color_mapped_rgb = self._color_dark_blue,
+            background_color_mapped_rgb = self._color_black
+        )
+        self.right_prompt_overlay._surface.scroll(dx = -1, dy = 0)
+
+        self.right_prompt = U5Glyph(
+            data = self.ibm_font.data[2],
+            glyph_size = self.display_config.FONT_SIZE,
+            foreground_color_mapped_rgb = self._color_white,
+            background_color_mapped_rgb = self._color_black
+        ).overlay_with(
+            overlay = self.right_prompt_overlay,
+            transparent_mapped_rgb = self._color_black
+        )
+
+        self.left_prompt = self.right_prompt.rotate_90().rotate_90()
 
         # This only needs to be drawn once.
         self.draw_borders()
@@ -182,17 +213,44 @@ class MainDisplay(ScalableComponent):
         self.junction_glyph.blit_to_surface(Coord(char_x_middle,             0), surf)
         self.junction_glyph.blit_to_surface(Coord(char_x_middle, char_y_bottom), surf)
 
+        # prompts
+        self.right_prompt.blit_to_surface(Coord(self.celestial_char_offset - 1,             0), surf)
+        self.right_prompt.blit_to_surface(Coord(self.celestial_char_offset - 1, char_y_bottom), surf)
+
+        self.left_prompt.blit_to_surface(Coord(self.viewport_width_in_glyphs - self.celestial_char_offset + 2,             0), surf)
+        self.left_prompt.blit_to_surface(Coord(self.viewport_width_in_glyphs - self.celestial_char_offset + 2, char_y_bottom), surf)
+
     def draw_celestial_panorama(self):
 
         surf = self.get_input_surface()
 
         # Sun and moons
+
         for cursor, glyph_code in enumerate(self.world_clock.get_celestial_panorama()):
             glyph = self.celestial_glyphs[glyph_code]
             glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor, 0), surf)
 
+    def draw_wind_direction(self):
+
+        surf = self.get_input_surface()
+        char_y_bottom = self.size_in_glyphs.h - 1
+
+        for cursor, glyph_data in enumerate(self.ibm_font.map_string("   North    ")):
+
+            #
+            # TODO: We REALLY need to cache the font glyphs in basic black and white !
+            #
+            glyph = U5Glyph(
+                data = glyph_data,
+                glyph_size = self.display_config.FONT_SIZE,
+                foreground_color_mapped_rgb = self._color_white,
+                background_color_mapped_rgb = self._color_black
+            )
+            glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor, char_y_bottom), surf)
+
     def draw(self):
         self.draw_celestial_panorama()
+        self.draw_wind_direction()
 
 
 
