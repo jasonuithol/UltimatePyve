@@ -27,7 +27,9 @@ class DisplayConfig:
     CONSOLE_SIZE   = Size(32, 13) # In font glyphs (8x8)
 
     #
-    # TODO: Right now we do NOT take advantage of the fact we can create 8-bit surfaces and then provide them a palette
+    # TODO: Right now we do NOT take advantage of the fact we can create 8-bit (or other) surfaces and then provide them a palette, or frankly
+    #       any other default configuration.
+    #
     #       Currently, we call pygame.Surface.map_rgb(tuple[int,int,int]) each time we need to paint an actual pixel color.
     #       We need a SurfaceFactory, which can produce surfaces guaranteed to be compatable with eachother, have, or not have, palettes, etc.
     #
