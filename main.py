@@ -13,7 +13,7 @@ from animation.sprite                import Sprite
 from display.display_engine      import DisplayEngine
 from display.interactive_console import InteractiveConsole
 from display.tileset             import TileLoader
-from display.u5_font             import U5FontLoader
+from display.u5_font             import U5FontLoader, U5GlyphLoader
 from display.view_port           import ViewPort
 from display.main_display        import MainDisplay
 
@@ -74,6 +74,7 @@ class Main:
     equipable_item_type_factory: EquipableItemTypeFactory
     consumable_item_type_loader: ConsumableItemTypeLoader
     u5_font_loader: U5FontLoader
+    u5_glyph_loader: U5GlyphLoader
 #    saved_game_loader: SavedGameLoader
 
     modding: Modding
@@ -89,6 +90,7 @@ class Main:
         self.terrain_factory.register_terrains()
         self.u5map_loader.register_maps()
         self.u5_font_loader.register_fonts()
+        self.u5_glyph_loader.register_glyphs()
 #        self.saved_game_loader.load_existing()
 
         self.player_state.set_outer_position(

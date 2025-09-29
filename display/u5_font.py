@@ -4,27 +4,13 @@ from typing import Self
 import pygame
 from dark_libraries.custom_decorators import auto_init, immutable
 from dark_libraries.dark_math import Coord, Size
+from display.display_config import DisplayConfig
 
 @immutable
 @auto_init
 class U5Font:
     data: list[bytearray]
     char_size: Size
-
-    def map_codes(self, msg: list[int]) -> list[bytearray]:
-        glyphs: list[bytearray] = []
-        for code in msg:
-            assert code < len(self.data), f"unmappable code={code} exceeds length of font {len(self.data)})"
-            glyphs.append(self.data[code])
-        return glyphs
-
-    def map_string(self, msg: str) -> list[bytearray]:
-        codes: list[int] = []
-        for char in msg:
-            ascii_code = ord(char)
-            assert ascii_code < len(self.data), f"unmappable character {char} (code={ascii_code} exceeds length of font {len(self.data)})"
-            codes.append(ascii_code)
-        return self.map_codes(codes)
 
 @immutable
 class U5Glyph:
@@ -65,12 +51,16 @@ class U5Glyph:
         existing_color_key = overlay._surface.get_colorkey()
         result = self.copy()
         overlay._surface.set_colorkey(transparent_mapped_rgb)
-
-#        overlay._surface.blit(result._surface, (0,0))
-        result._surface.blit(overlay._surface, (0,0))
-        
+        result._surface.blit(source = overlay._surface, dest = (0,0))
         overlay._surface.set_colorkey(existing_color_key)
         return result
+
+    def replace_color(self, old_mapped_rgb: int, new_mapped_rbg: int) -> Self:
+        new_glyph = self.copy()
+        pa = pygame.PixelArray(new_glyph._surface)
+        pa.replace(old_mapped_rgb, new_mapped_rbg)
+        del pa
+        return new_glyph
 
 class U5FontRegistry:
     def _after_inject(self):
@@ -81,6 +71,23 @@ class U5FontRegistry:
 
     def get_font(self, str):
         return self.fonts[str]
+
+class U5GlyphRegistry:
+
+    def _after_inject(self):
+        self.glyphs: dict[tuple[str, int], U5Glyph] = {}
+
+    def register_glyph(self, font_name: str, glyph_code: int, u5glyph: U5Glyph):
+        self.glyphs[(font_name, glyph_code)] = u5glyph
+
+    def get_glyph(self, font_name: str, glyph_code: int):
+        return self.glyphs[(font_name, glyph_code)]
+    
+    def map_string_to_glyphs(self, font_name: str, message: str):
+        return [self.get_glyph(font_name, ord(char)) for char in message]
+
+    def map_codes_to_glyphs(self, font_name: str, glyph_codes: list[int]):
+        return [self.get_glyph(font_name, glyph_code) for glyph_code in glyph_codes]
 
 class U5FontLoader:
 
@@ -95,7 +102,7 @@ class U5FontLoader:
         for index in range(len(ba) // char_length_in_bytes):
             data.append(ba[(index * 8):(index * 8) + char_length_in_bytes])
 
-        print(f"[fonts] Loaded {len(data)} font glyphs from {name}")
+        print(f"[fonts] Loaded {len(data)} font data blobs from {name}")
 
         return U5Font(data, char_size)
     
@@ -103,3 +110,25 @@ class U5FontLoader:
         for font_name in ["IBM.CH", "RUNES.CH"]:
             font = self.load(font_name, Size(8,8))
             self.registry.register_font(font_name, font)
+
+class U5GlyphLoader:
+
+    # Injectable
+    display_config: DisplayConfig
+    u5_font_registry: U5FontRegistry
+    u5_glyph_registry: U5GlyphRegistry
+
+    def register_glyphs(self):
+        surf = pygame.Surface((1,1))
+        white = surf.map_rgb(self.display_config.EGA_PALETTE[15])
+        black = surf.map_rgb(self.display_config.EGA_PALETTE[00])
+        for font_name, font in self.u5_font_registry.fonts.items():
+            for glyph_code, glyph_data in enumerate(font.data):
+                glyph = U5Glyph(
+                    data = glyph_data,
+                    glyph_size = self.display_config.FONT_SIZE,
+                    foreground_color_mapped_rgb = white,
+                    background_color_mapped_rgb = black
+                )
+                self.u5_glyph_registry.register_glyph(font_name, glyph_code, glyph)
+            print(f"[fonts] Registered {len(list(filter(lambda glyph_key: glyph_key[0] == font_name, self.u5_glyph_registry.glyphs.keys())))} u5glyphs from {font_name}")
