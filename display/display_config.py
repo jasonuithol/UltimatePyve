@@ -9,7 +9,6 @@ class DisplayConfig:
     # =============== Section 1: Don't change these unless you know what you're doing ===================
     # ===================================================================================================
 
-    TARGET_FPS = 144
     SCALE_FACTOR = 2
 
     # In theory these should come from their respective realms
@@ -23,8 +22,8 @@ class DisplayConfig:
     # =============== Section 2: Change these to whatever you like ===================
     # ================================================================================
 
-    VIEW_PORT_SIZE = Size(17, 17) # In tiles       (16x16)
-    CONSOLE_SIZE   = Size(32, 13) # In font glyphs (8x8)
+    VIEW_PORT_SIZE = Size(17, 17) # In tiles       (which are themselves 16x16 by default, unless changed in TILE_SIZE)
+    CONSOLE_SIZE   = Size(32, 13) # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
 
     #
     # TODO: Right now we do NOT take advantage of the fact we can create 8-bit (or other) surfaces and then provide them a palette, or frankly

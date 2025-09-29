@@ -3,9 +3,6 @@ from display.display_config import DisplayConfig
 from display.scalable_component import ScalableComponent
 from display.u5_font import U5Glyph, U5GlyphRegistry
 
-CHAR_SIZE_PIXELS = Size(8,8)
-CONSOLE_SIZE_IN_CHARS = Size(32, 13)
-
 class InteractiveConsole(ScalableComponent):
 
     # Injectable
@@ -22,7 +19,7 @@ class InteractiveConsole(ScalableComponent):
         )
 
     def _scroll(self, lines: int = 1):
-        self.scroll_dy(CHAR_SIZE_PIXELS.h * lines * -1)
+        self.scroll_dy(self.display_config.FONT_SIZE.h * lines * -1)
 
     def print_ascii(self, msg: str|list[int]):
         self.print(msg, "IBM.CH")
@@ -39,10 +36,10 @@ class InteractiveConsole(ScalableComponent):
         
         target = self.get_input_surface()
         for glyph in glyphs:
-            if cursor >= CONSOLE_SIZE_IN_CHARS.w:
+            if cursor >= self.display_config.CONSOLE_SIZE.w:
                 self._scroll()
                 cursor = 0
-            char_coord = Coord(cursor, CONSOLE_SIZE_IN_CHARS.h - 1)
+            char_coord = Coord(cursor, self.display_config.CONSOLE_SIZE.h - 1)
             glyph.blit_to_surface(char_coord, target)
             cursor += 1
 
