@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Self
 
 import pygame
 from dark_libraries.custom_decorators import auto_init, immutable
@@ -46,6 +47,11 @@ class U5Glyph:
             source = self._surface,
             dest   = (origin_x, origin_y)
         )
+
+    def rotate_90(self) -> Self:
+        rotated = object.__new__(self.__class__)
+        rotated._surface = pygame.transform.rotate(self._surface, 90)
+        return rotated
 
 class U5FontRegistry:
     def _after_inject(self):

@@ -59,6 +59,10 @@ class Main:
     interactive_console: InteractiveConsole
 #    saved_game: SavedGame
 
+    #
+    # TODO: After init, deregister all of these.  Collect all init into a standalone class that can then fall out of scope and then be GC'ed.
+    #       For once-off use classes, upgrade ServiceProvider to inject properties into a class without registering that particular class.
+    #
     tile_loader: TileLoader
     avatar_sprite_factory: AvatarSpriteFactory
     animated_tile_factory: AnimatedTileFactory
@@ -146,12 +150,6 @@ class Main:
 
         self.interactive_console.print_ascii([i for i in range(128)])
         self.interactive_console.print_rune( [i for i in range(128)])
-
-        # Sun and moon phases
-#        self.interactive_console.print_rune([42,48,49,50,51,52,53,54,55])
-
-        # finished initialising, tidy up.
-        gc.collect()
 
     def update(self):
         new_map, new_level, new_coords = self.player_state.get_current_position()
@@ -256,4 +254,6 @@ if __name__ == "__main__":
 
     main: Main = provider.resolve(Main)
     main.init()
+    # finished initialising, tidy up.
+    gc.collect()
     main.run()

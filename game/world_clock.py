@@ -1,20 +1,22 @@
 from datetime import datetime, timedelta
 from collections import deque
+from enum import Enum
 
 #
 # rune font values for the celestial objects.
 #
-SUN             = 42
+class CelestialGlyphCodes(Enum):
+    SUN             = 42
 
-NEW_MOON        = 48
-CRESCENT_WAXING = 49
-HALF_WAXING     = 50
-GIBBIOUS_WAXING = 51
+    NEW_MOON        = 48
+    CRESCENT_WAXING = 49
+    HALF_WAXING     = 50
+    GIBBIOUS_WAXING = 51
 
-FULL_MOON       = 52
-GIBBIOUS_WANING = 53
-HALF_WANING     = 54
-CRESCENT_WANING = 55
+    FULL_MOON       = 52
+    GIBBIOUS_WANING = 53
+    HALF_WANING     = 54
+    CRESCENT_WANING = 55
 
 # WORLD CREATION TIME
 #
@@ -90,12 +92,13 @@ class WorldClock:
         # There are 24 hours in a day, with 1 celestial turn per hour.
         # Ergo this panorama is 24 characters wide.
 
-        tram = NEW_MOON + TRAMMEL.get_moon_phase(self)
-        felu = NEW_MOON + FELUCCA.get_moon_phase(self)
+        sun  = CelestialGlyphCodes.SUN.value
+        tram = CelestialGlyphCodes.NEW_MOON.value + TRAMMEL.get_moon_phase(self)
+        felu = CelestialGlyphCodes.NEW_MOON.value + FELUCCA.get_moon_phase(self)
 
         # this represents midnight.
         panorama = deque([
-            SUN,0,0,    0,0,0,
+            sun,0,0,    0,0,0,
 
             0,0,tram,   0,0,0,      # /---  these middle bits are 
             0,0,felu,   0,0,0,      # \---  the visible bits at midnight
