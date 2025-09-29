@@ -235,7 +235,7 @@ class MainDisplay(ScalableComponent):
         surf = self.get_input_surface()
         char_y_bottom = self.size_in_glyphs.h - 1
 
-        for cursor, glyph_data in enumerate(self.ibm_font.map_string("   North    ")):
+        for cursor, glyph_data in enumerate(self.ibm_font.map_string("North Winds ")):
 
             #
             # TODO: We REALLY need to cache the font glyphs in basic black and white !
