@@ -9,34 +9,6 @@ from .display_config import DisplayConfig, EgaPalette
 
 TILE_ID_GRASS = 5
 
-'''
-class EgaPalette(List[Tuple[int,int,int]]):
-    pass
-
-# EGA palette (RGB tuples)
-_ega_palette = EgaPalette([
-    (0, 0, 0),         # 0000: Black
-    (0, 0, 170),       # 0001: Blue
-    (0, 170, 0),       # 0010: Green
-    (0, 170, 170),     # 0011: Cyan
-
-    (170, 0, 0),       # 0100: Red
-    (170, 0, 170),     # 0101: Magenta
-    (170, 85, 0),      # 0110: Brown (dark yellow)
-    (170, 170, 170),   # 0111: Light Gray
-
-    (85, 85, 85),      # 1000: Dark Gray
-    (85, 85, 255),     # 1001: Light Blue
-    (85, 255, 85),     # 1010: Light Green
-    (85, 255, 255),    # 1011: Light Cyan
-
-    (255, 85, 85),     # 1100: Light Red
-    (255, 85, 255),    # 1101: Light Magenta
-    (255, 255, 85),    # 1110: Yellow
-    (255, 255, 255),   # 1111: White
-])
-'''
-
 # --- LZW decompression ---
 def lzw_decompress(data: bytes) -> bytes:
     CLEAR, EOI = 256, 257

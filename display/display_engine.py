@@ -25,7 +25,11 @@ class DisplayEngine:
         # Set up pygame
         pygame.init()
         pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
-        self.screen = pygame.display.set_mode(self.main_display.scaled_size().to_tuple())
+        self.screen = pygame.display.set_mode(
+            size  = self.main_display.scaled_size().to_tuple(),
+            flags = pygame.SCALED | pygame.DOUBLEBUF, 
+            vsync = 1
+        )
         self.clock = pygame.time.Clock()
 
         # Init internal state
@@ -97,4 +101,5 @@ class DisplayEngine:
 
         pygame.display.flip()
 
-        self.clock.tick(self.display_config.TARGET_FPS)
+        # allow reporting of FPS
+        self.clock.tick()

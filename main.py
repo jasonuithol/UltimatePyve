@@ -1,4 +1,5 @@
 # file: main.py
+import gc
 import pygame
 
 from dark_libraries.service_provider import ServiceProvider
@@ -148,6 +149,9 @@ class Main:
 
         # Sun and moon phases
 #        self.interactive_console.print_rune([42,48,49,50,51,52,53,54,55])
+
+        # finished initialising, tidy up.
+        gc.collect()
 
     def update(self):
         new_map, new_level, new_coords = self.player_state.get_current_position()

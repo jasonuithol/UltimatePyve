@@ -1,6 +1,6 @@
 from dark_libraries.dark_math import Size
 
-class EgaPalette(list[tuple[int,int,int]]):
+class EgaPalette(tuple[tuple[int,int,int]]):
     pass
 
 class DisplayConfig:
@@ -26,7 +26,7 @@ class DisplayConfig:
     VIEW_PORT_SIZE = Size(17, 17) # In tiles       (16x16)
     CONSOLE_SIZE   = Size(32, 13) # In font glyphs (8x8)
 
-    EGA_PALETTE = EgaPalette([
+    EGA_PALETTE = EgaPalette((
         (0, 0, 0),         # 0000: Black
         (0, 0, 170),       # 0001: Blue
         (0, 170, 0),       # 0010: Green
@@ -46,4 +46,4 @@ class DisplayConfig:
         (255, 85, 255),    # 1101: Light Magenta
         (255, 255, 85),    # 1110: Yellow
         (255, 255, 255),   # 1111: White
-    ])
+    ))
