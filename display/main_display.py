@@ -50,10 +50,9 @@ class MainDisplay(ScalableComponent):
         self.viewport_width_in_glyphs = self.view_port.unscaled_size().w // self.display_config.FONT_SIZE.w
         self.celestial_char_offset = ((self.viewport_width_in_glyphs - 12) // 2) + 1
 
-        self._bordercolor_fore      = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 1]) # dark blue
-        self._bordercolor_back      = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[15]) # white
-        self._celestial_color_fore  = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[15]) # white
-        self._celestial_color_back  = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 0]) # black
+        self._color_black     = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 0])
+        self._color_dark_blue = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 1])
+        self._color_white     = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[15])
 
         # TODO: Get this from the EGA-PALETTE
 #        self._back_color = self._unscaled_surface.map_rgb((0,0,255))
@@ -72,8 +71,8 @@ class MainDisplay(ScalableComponent):
         self.right_block_glyph = U5Glyph(
             data = block_glyph_data,
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._bordercolor_fore,
-            background_color_mapped_rgb = self._bordercolor_back
+            foreground_color_mapped_rgb = self._color_dark_blue,
+            background_color_mapped_rgb = self._color_white
         )
         self.top_block_glyph    = self.right_block_glyph.rotate_90()
         self.left_block_glyph   = self.top_block_glyph.rotate_90()
@@ -82,65 +81,66 @@ class MainDisplay(ScalableComponent):
         #
         # BORDER HORIZONTAL, VERTICAL MIDDLE BORDER GLYPHS
         #
-        self.horizontal_block = self.left_block_glyph.overlay_with(self.right_block_glyph, self._bordercolor_fore)
-        self.vertical_block = self.horizontal_block.rotate_90() #self.top_block_glyph.overlay_with(self.bottom_block_glyph, self._bordercolor_fore)
+        self.horizontal_block = self.left_block_glyph.overlay_with(
+            overlay                = self.right_block_glyph, 
+            transparent_mapped_rgb = self._color_dark_blue
+        )
+        self.vertical_block = self.horizontal_block.rotate_90()
 
         #
         # BORDER CORNER GLYPHS
         #
 
-        # Treat self._bordercolor_back as the transparency color
+        # Treat self._color_black as the transparency color
         self.right_cnr_overlay_glyph = U5Glyph(
             data = block_glyph_data,
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._bordercolor_back, # blue
-            background_color_mapped_rgb = self._bordercolor_fore  # white
-        ) #.rotate_90().rotate_90()
+            foreground_color_mapped_rgb = self._color_black,
+            background_color_mapped_rgb = self._color_dark_blue
+        )
 
         self.top_left_cnr_glyph = U5Glyph(
             data = self.ibm_font.data[BorderGlyphCodes.TOP_LEFT_CNR_GLYPH_IBM_FONT_ID.value],
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._bordercolor_fore,
-            background_color_mapped_rgb = self._celestial_color_back # black
+            foreground_color_mapped_rgb = self._color_dark_blue,
+            background_color_mapped_rgb = self._color_black
         )
 
-        # TODO: overlay this with a blue border from left_block
         self.top_right_cnr_glyph = U5Glyph(
             data = self.ibm_font.data[BorderGlyphCodes.TOP_RIGHT_CNR_GLYPH_IBM_FONT_ID.value],
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._bordercolor_fore,
-            background_color_mapped_rgb = self._celestial_color_back # black
-        ).overlay_with(self.right_cnr_overlay_glyph, self._bordercolor_back)
+            foreground_color_mapped_rgb = self._color_dark_blue,
+            background_color_mapped_rgb = self._color_black
+        ).overlay_with(self.right_cnr_overlay_glyph, self._color_black)
 
         self.bottom_left_cnr_glyph = U5Glyph(
             data = self.ibm_font.data[BorderGlyphCodes.BOTTOM_LEFT_CNR_GLYPH_IBM_FONT_ID.value],
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._bordercolor_fore,    # blue
-            background_color_mapped_rgb = self._celestial_color_back # black
+            foreground_color_mapped_rgb = self._color_dark_blue,
+            background_color_mapped_rgb = self._color_black
         )
 
         self.junction_glyph = U5Glyph(
             data = self.ibm_font.data[0],
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._celestial_color_back, # actually doesn't matter
-            background_color_mapped_rgb = self._bordercolor_fore      # blue
+            foreground_color_mapped_rgb = self._color_dark_blue, # actually doesn't matter
+            background_color_mapped_rgb = self._color_dark_blue
         )
 
-        # TODO: overlay this with a blue border from left_block
         self.bottom_right_cnr_glyph = U5Glyph(
             data = self.ibm_font.data[BorderGlyphCodes.BOTTOM_RIGHT_CNR_GLYPH_IBM_FONT_ID.value],
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._bordercolor_fore,
-            background_color_mapped_rgb = self._celestial_color_back # black
-        ).overlay_with(self.right_cnr_overlay_glyph, self._bordercolor_back)
+            foreground_color_mapped_rgb = self._color_dark_blue,
+            background_color_mapped_rgb = self._color_black
+        ).overlay_with(self.right_cnr_overlay_glyph, self._color_black)
 
         self.celestial_glyphs = {
             celestial_glyph_code.value:
             U5Glyph(
                 data = self.rune_font.data[celestial_glyph_code.value],
                 glyph_size = self.display_config.FONT_SIZE,
-                foreground_color_mapped_rgb = self._celestial_color_fore,
-                background_color_mapped_rgb = self._celestial_color_back
+                foreground_color_mapped_rgb = self._color_white,
+                background_color_mapped_rgb = self._color_black
             )
             for celestial_glyph_code in CelestialGlyphCodes
         }
@@ -148,8 +148,8 @@ class MainDisplay(ScalableComponent):
         self.celestial_glyphs[0] = U5Glyph(
             data = self.rune_font.data[0],
             glyph_size = self.display_config.FONT_SIZE,
-            foreground_color_mapped_rgb = self._celestial_color_fore,
-            background_color_mapped_rgb = self._celestial_color_back
+            foreground_color_mapped_rgb = self._color_white,
+            background_color_mapped_rgb = self._color_black
         )
 
         # This only needs to be drawn once.
