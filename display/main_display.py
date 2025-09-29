@@ -2,9 +2,9 @@
 
 from enum import Enum
 from dark_libraries.dark_math import Coord, Size
-from display.u5_font import U5Glyph, U5GlyphRegistry
+from display.u5_font import U5GlyphRegistry
 from display.view_port import ViewPort
-from game.world_clock import CelestialGlyphCodes, WorldClock, CELESTIAL_PANORAMA_WIDTH
+from game.world_clock import CelestialGlyphCodes, WorldClock
 
 from .display_config import DisplayConfig
 from .scalable_component import ScalableComponent
@@ -50,7 +50,9 @@ class MainDisplay(ScalableComponent):
         )
 
         self.viewport_width_in_glyphs = self.view_port.unscaled_size().w // self.display_config.FONT_SIZE.w
-        self.celestial_char_offset = ((self.viewport_width_in_glyphs - CELESTIAL_PANORAMA_WIDTH) // 2)
+
+        # 6 being half the width of the panorama output of 12 chars.
+        self.celestial_char_offset = (self.viewport_width_in_glyphs // 2) - 6
 
         self._color_black      = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 0])
         self._color_dark_blue  = self._unscaled_surface.map_rgb(self.display_config.EGA_PALETTE[ 1])
