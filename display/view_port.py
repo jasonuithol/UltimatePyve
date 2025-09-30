@@ -8,10 +8,12 @@ from dark_libraries.dark_math import Coord, Size, Rect, Vector2
 import animation.sprite as sprite
 from animation.sprite_registry import SpriteRegistry
 
+from display.lighting import LightMapRegistry
 from game.terrain.terrain import Terrain
 from game.terrain.terrain_registry import TerrainRegistry
 from game.interactable import InteractableFactoryRegistry
 
+from game.world_clock import WorldClock
 from maps.u5map import U5Map
 
 from .tileset import TILE_ID_GRASS, Tile, TileRegistry
@@ -48,6 +50,8 @@ class ViewPort(ScalableComponent):
     interactable_factory_registry: InteractableFactoryRegistry
     sprite_registry: SpriteRegistry
     terrain_registry: TerrainRegistry
+    light_map_registry: LightMapRegistry
+    world_clock: WorldClock
 
 #    tile_size_pixels: int = 16
 
@@ -164,14 +168,27 @@ class ViewPort(ScalableComponent):
                         queued.append(neighbour_coord)
                         visited.append(neighbour_coord)
 
+    def calculate_lighting(self, queried_tile_grid: Iterator[tuple[Coord, QueriedTile]]) -> Iterator[tuple[Coord, QueriedTile]]:
+        current_radius = self.world_clock.get_current_light_radius()
+        viewable_radius = max(1, min(current_radius, self.light_map_registry.get_maximum_radius()))
+        light_map = self.light_map_registry.get_light_map(viewable_radius)
+
+        coord_offset = self.view_rect.minimum_corner.scale(-1)
+
+        for world_coord, queried_tile in queried_tile_grid:
+            light_map_coord = world_coord.add(coord_offset)
+            if light_map[light_map_coord] > 0:
+                yield world_coord, queried_tile
+
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
 
         self._clear()
 
         queried_tile_grid = self.query_tile_grid(u5map, level_ix)
         visible_grid = self.calculate_fov_visibility(queried_tile_grid)
+        lit_grid = self.calculate_lighting(visible_grid)
 
-        for world_coord, queried_tile in visible_grid:
+        for world_coord, queried_tile in lit_grid:
             if queried_tile.sprite:
                 self.draw_sprite(world_coord, queried_tile.sprite)
             else:

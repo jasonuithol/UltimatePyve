@@ -1,4 +1,5 @@
 # file: main.py
+from datetime import datetime
 import gc
 import pygame
 
@@ -12,6 +13,7 @@ from animation.sprite                import Sprite
 
 from display.display_engine      import DisplayEngine
 from display.interactive_console import InteractiveConsole
+from display.lighting import LightMapBuilder
 from display.tileset             import TileLoader
 from display.u5_font             import U5FontLoader, U5GlyphLoader
 from display.view_port           import ViewPort
@@ -75,6 +77,7 @@ class Main:
     consumable_item_type_loader: ConsumableItemTypeLoader
     u5_font_loader: U5FontLoader
     u5_glyph_loader: U5GlyphLoader
+    light_map_builder: LightMapBuilder
 #    saved_game_loader: SavedGameLoader
 
     modding: Modding
@@ -91,6 +94,7 @@ class Main:
         self.u5map_loader.register_maps()
         self.u5_font_loader.register_fonts()
         self.u5_glyph_loader.register_glyphs()
+        self.light_map_builder.build_light_maps()
 #        self.saved_game_loader.load_existing()
 
         self.player_state.set_outer_position(
@@ -110,6 +114,11 @@ class Main:
             last_east_west = 0,  # east
             last_nesw_dir = 1    # east
         )
+
+        #
+        # TODO: Remove
+        #
+        self.world_clock.set_world_time(datetime(year=139, month=4, day=5, hour=16, minute=35))
 
         current_transport_mode, current_direction = self.player_state.get_current_transport_info()
 

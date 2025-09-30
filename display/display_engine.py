@@ -6,6 +6,7 @@ from dark_libraries.dark_math import Coord
 
 import animation.sprite as sprite
 from display.display_config import DisplayConfig
+from game.world_clock import WorldClock
 from maps.u5map import U5Map
 
 from .interactive_console import InteractiveConsole
@@ -19,6 +20,8 @@ class DisplayEngine:
     main_display: MainDisplay
     view_port: ViewPort
     interactive_console: InteractiveConsole
+
+    world_clock: WorldClock
 
     def init(self):
 
@@ -55,7 +58,7 @@ class DisplayEngine:
     def render(self, player_coord: Coord):
 
         # Update window title with current location/world of player.
-        pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}] fps={int(self.clock.get_fps())}")
+        pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}] fps={int(self.clock.get_fps())}, light-radius={self.world_clock.get_current_light_radius()}")
 
         #
         # Main Display

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from collections import deque
 from enum import Enum
 
@@ -72,7 +72,7 @@ FELUCCA = Moon(
 WORLD_START_TIME = datetime(year=139, month=4, day=5, hour=8, minute=35)
 
 class WorldClock:
-    
+
     def _after_inject(self):
         self.turns_passed = 0
         self.world_time = WORLD_START_TIME
@@ -80,6 +80,9 @@ class WorldClock:
     def pass_time(self):
         self.turns_passed +=1 
         self.world_time += timedelta(minutes=1)
+
+    def set_world_time(self, dt: datetime):
+        self.world_time = dt
 
     def get_time(self):
         return self.world_time
@@ -112,7 +115,6 @@ class WorldClock:
         # Show only the "middle" 12 hours i.e. the side of the celestial sphere we are facing at the current hour.
         return list(panorama)[6:18]
 
-
     '''
     self.interactive_console.print_rune([42,48,49,50,51,52,53,54,55])
 
@@ -121,9 +123,12 @@ class WorldClock:
     1st moonrise 3:00pm
     sunset 6pm
     first dark 7:00pm   (4 corners)
+                        another way to say that, a radius of light 6 squares NEWS and 5 squars diag
     2nd   dark 7:10pm   (3 squares each cnr)
+                        another way to say that, a radius of light 5 squares NEWS and 4 squars diag
     3rd   dark 7:20pm   (one whole border, then 3 squares each cnr inside that)
-    4th   dark 7:30pm   (just a radius of light 3 squares in 8-way direction)
+                        another way to say that, a radius of light 3 squares NEWS and 3 squars diag
+    4th   dark 7:30pm   (just a radius of light 3 squares NEWS, 2 squares diag)
     5th   dark 7:40pm   (2 squares NEWS, 1 squr diag)
     6th   dark 7:50pm   (total dark = 1 sqaure)
     2nd moonrise 9:00pm
@@ -133,4 +138,14 @@ class WorldClock:
     etcv
     sunrise 6:00am
     
+    it is implied that maximum darkness is at 1am, which means that Britannia uses daylight saving or something.
     '''
+    def _increments_from_1am(self):
+
+        minutes_since_midnight = self.world_time.hour * 60 + self.world_time.minute
+        sawtooth = (72 - abs(72 - (minutes_since_midnight // 10))) - 36
+        return sawtooth
+
+    # There's no guarantee that there's a lightmap for every returned radius
+    def get_current_light_radius(self) -> int:
+        return self._increments_from_1am()
