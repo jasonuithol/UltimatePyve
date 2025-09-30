@@ -69,24 +69,29 @@ FELUCCA = Moon(
     phase_offset_hours  = 110
 )
 
-WORLD_START_TIME = datetime(year=139, month=4, day=5, hour=8, minute=35)
+WORLD_START_TIME = datetime(year=139, month=4, day=4, hour=8, minute=35)
 
 class WorldClock:
 
     def _after_inject(self):
         self.turns_passed = 0
-        self.world_time = WORLD_START_TIME
+        self.set_world_time(WORLD_START_TIME)
 
     def pass_time(self):
         self.turns_passed +=1 
         self.world_time += timedelta(minutes=1)
+        self.daylight_savings_time += timedelta(minutes=1)
 
     def set_world_time(self, dt: datetime):
         self.world_time = dt
+        self.daylight_savings_time = dt + timedelta(hours = 1)
 
-    def get_time(self):
+    def get_natural_time(self):
         return self.world_time
     
+    def get_daylight_savings_time(self):
+        return self.daylight_savings_time
+
     def get_turns_passed(self):
         return self.turns_passed
 
@@ -110,7 +115,7 @@ class WorldClock:
         ])
 
         # rotate left the number of hours since midnight to get panorama at current hour.
-        panorama.rotate(self.get_time().hour * -1)
+        panorama.rotate(self.world_time.hour * -1)
 
         # Show only the "middle" 12 hours i.e. the side of the celestial sphere we are facing at the current hour.
         return list(panorama)[6:18]
