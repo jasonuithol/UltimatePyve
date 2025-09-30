@@ -13,7 +13,7 @@ from animation.sprite                import Sprite
 
 from display.display_engine      import DisplayEngine
 from display.interactive_console import InteractiveConsole
-from display.lighting import LightMapBuilder
+from display.lighting            import LevelLightMapBaker, LightMapBuilder
 from display.tileset             import TileLoader
 from display.u5_font             import U5FontLoader, U5GlyphLoader
 from display.view_port           import ViewPort
@@ -78,6 +78,7 @@ class Main:
     u5_font_loader: U5FontLoader
     u5_glyph_loader: U5GlyphLoader
     light_map_builder: LightMapBuilder
+    level_light_map_baker: LevelLightMapBaker
 #    saved_game_loader: SavedGameLoader
 
     modding: Modding
@@ -95,6 +96,7 @@ class Main:
         self.u5_font_loader.register_fonts()
         self.u5_glyph_loader.register_glyphs()
         self.light_map_builder.build_light_maps()
+        self.level_light_map_baker.bake_level_light_maps()
 #        self.saved_game_loader.load_existing()
 
         self.player_state.set_outer_position(

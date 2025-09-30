@@ -84,6 +84,7 @@ class ViewPort(ScalableComponent):
             sprite  = None
         )
 
+    # returns WORLD COORDS
     def _get_view_centre(self) -> Coord:
         width, height = self.view_rect.size.to_tuple()
         offset = Coord(width // 2, height // 2)
@@ -168,16 +169,19 @@ class ViewPort(ScalableComponent):
                         queued.append(neighbour_coord)
                         visited.append(neighbour_coord)
 
-    def calculate_lighting(self, queried_tile_grid: Iterator[tuple[Coord, QueriedTile]]) -> Iterator[tuple[Coord, QueriedTile]]:
+    def calculate_lighting(self, queried_tile_grid: Iterator[tuple[Coord, QueriedTile]], location_index: int, level_index: int) -> Iterator[tuple[Coord, QueriedTile]]:
+
         current_radius = self.world_clock.get_current_light_radius()
         viewable_radius = max(1, min(current_radius, self.light_map_registry.get_maximum_radius()))
-        light_map = self.light_map_registry.get_light_map(viewable_radius)
 
-        coord_offset = self.view_rect.minimum_corner.scale(-1)
+        player_light_map = self.light_map_registry.get_light_map(viewable_radius)
+        level_light_map_copy = self.light_map_registry.get_baked_light_map(location_index, level_index).copy()
+
+        player_coord = self._get_view_centre()
+        player_light_map.bake_level_light_map(level_light_map_copy, player_coord)
 
         for world_coord, queried_tile in queried_tile_grid:
-            light_map_coord = world_coord.add(coord_offset)
-            if light_map[light_map_coord] > 0:
+            if world_coord in level_light_map_copy:
                 yield world_coord, queried_tile
 
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
@@ -186,7 +190,7 @@ class ViewPort(ScalableComponent):
 
         queried_tile_grid = self.query_tile_grid(u5map, level_ix)
         visible_grid = self.calculate_fov_visibility(queried_tile_grid)
-        lit_grid = self.calculate_lighting(visible_grid)
+        lit_grid = self.calculate_lighting(visible_grid, u5map.location_metadata.location_index, level_ix)
 
         for world_coord, queried_tile in lit_grid:
             if queried_tile.sprite:
