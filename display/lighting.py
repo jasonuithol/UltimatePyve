@@ -53,19 +53,6 @@ class LightMap:
                 intersected.coords[coord] = 1
         return intersected
 
-    def bake_level_light_map(self, level_light_map: Self, light_emitter_level_coord: Coord, visible_world_coords: set[Coord] | None):
-
-        assert len(self) > 0, "Cannot bake with an empty light map."
-        assert len(self) > 0, "Cannot bake an empty level map."
-        assert visible_world_coords is None or len(visible_world_coords) > 0, "Empty visible world coords is impossible."
-
-        for light_coord in self:
-            level_light_map_coord = light_emitter_level_coord.add(light_coord)
-            if visible_world_coords is None or level_light_map_coord in visible_world_coords:
-                # view_port_coord starts at 0,0 relative to the view_port.
-                # light_emitter_coord is relative to the level map coords.
-                level_light_map.light(level_light_map_coord)
-
 class LightMapRegistry:
     def _after_inject(self):
         self.maximum_radius = 0

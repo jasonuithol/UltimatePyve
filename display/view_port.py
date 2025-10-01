@@ -1,24 +1,23 @@
 # file: display/view_port.py
 import pygame
 
-from copy import copy
 from dark_libraries.dark_math import Coord, Size, Rect
 
-import animation.sprite as sprite
+from animation.sprite import Sprite
 from animation.sprite_registry import SpriteRegistry
 
-from display.field_of_view import FieldOfViewCalculator
-from display.lighting import LightMapRegistry
-from display.queried_tiles import QueriedTile, QueriedTileGenerator, QueriedTileResult
 from game.terrain.terrain_registry import TerrainRegistry
 from game.interactable import InteractableFactoryRegistry
-
 from game.world_clock import WorldClock
+
 from maps.u5map import U5Map
 
 from .tileset import Tile, TileRegistry
 from .display_config import DisplayConfig
 from .scalable_component import ScalableComponent
+from .field_of_view import FieldOfViewCalculator
+from .lighting import LightMapRegistry
+from .queried_tiles import QueriedTileGenerator, QueriedTileResult
 
 class ViewPort(ScalableComponent):
 
@@ -103,7 +102,7 @@ class ViewPort(ScalableComponent):
             screen_coord
         )
 
-    def draw_sprite(self, world_coord: Coord, a_sprite: sprite.Sprite) -> None:
+    def draw_sprite(self, world_coord: Coord, a_sprite: Sprite) -> None:
         # Get the current animation frame tile.
         ticks = pygame.time.get_ticks()
         frame_tile = a_sprite.get_current_frame_tile(ticks)
