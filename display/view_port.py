@@ -67,15 +67,17 @@ class ViewPort(ScalableComponent):
         current_radius = self.world_clock.get_current_light_radius()
         viewable_radius = max(1, min(current_radius, self.light_map_registry.get_maximum_radius()))
 
-        player_light_map = self.light_map_registry.get_light_map(viewable_radius)
-        level_light_map_copy = self.light_map_registry.get_baked_light_map(location_index, level_index).copy()
-        player_coord = self._get_view_centre()
+        baked_player_light_map = self.light_map_registry.get_light_map(viewable_radius).translate(self._get_view_centre()).intersect(queried_tile_grid.keys())
+        baked_level_light_maps = self.light_map_registry.get_baked_light_maps(location_index, level_index)
 
-        player_light_map.bake_level_light_map(level_light_map_copy, player_coord, None)
+        lit_world_coords: set[Coord] = set(baked_player_light_map.coords.keys())
+        for light_emitter_coord, level_light_map in baked_level_light_maps.items():
+            if light_emitter_coord in queried_tile_grid.keys():
+                lit_world_coords.update(level_light_map.coords.keys())
 
         result = QueriedTileResult()
         for world_coord, queried_tile in queried_tile_grid.items():
-            if world_coord in level_light_map_copy:
+            if world_coord in lit_world_coords:
                 result[world_coord] = queried_tile
         return result
 

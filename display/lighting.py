@@ -40,6 +40,19 @@ class LightMap:
         # will silently ignore duplicate coords, which is perfect.
         self.coords[coord] = 1
 
+    def translate(self, centre_offset: Coord):
+        translated = LightMap()
+        for coord in self.coords.keys():
+            translated.coords[centre_offset.add(coord)] = 1
+        return translated
+
+    def intersect(self, coords: set[Coord]):
+        intersected = LightMap()
+        for coord in self.coords.keys():
+            if coord in coords:
+                intersected.coords[coord] = 1
+        return intersected
+
     def bake_level_light_map(self, level_light_map: Self, light_emitter_level_coord: Coord, visible_world_coords: set[Coord] | None):
 
         assert len(self) > 0, "Cannot bake with an empty light map."
@@ -57,15 +70,18 @@ class LightMapRegistry:
     def _after_inject(self):
         self.maximum_radius = 0
         self.light_maps: dict[int, LightMap] = {}
-        self.baked_light_maps: dict[tuple[int, int], LightMap] = {}
+        self.baked_light_maps: dict[tuple[int, int], dict[Coord, LightMap]] = {}
     
     def register_light_map(self, radius: int, light_map: LightMap):
         assert len(light_map) > 0, "Probably DON'T want to register an empty light map ?"
         self.light_maps[radius] = light_map
         self.maximum_radius = max(self.maximum_radius, radius)
 
-    def register_baked_light_map(self, location_index: int, level: int, baked_light_map: LightMap):
-        self.baked_light_maps[location_index, level] = baked_light_map
+    def register_baked_light_map(self, location_index: int, level: int, world_coord: Coord, baked_light_map: LightMap):
+        key = location_index, level
+        if not key in self.baked_light_maps.keys():
+            self.baked_light_maps[key] = {}
+        self.baked_light_maps[key][world_coord] = baked_light_map    
 
     def get_light_map(self, radius: int) -> LightMap:
         return self.light_maps[radius]
@@ -73,7 +89,7 @@ class LightMapRegistry:
     def get_maximum_radius(self):
         return self.maximum_radius
 
-    def get_baked_light_map(self, location_index: int, level: int) -> LightMap:
+    def get_baked_light_maps(self, location_index: int, level: int) -> dict[Coord, LightMap]:
         return self.baked_light_maps[location_index, level]
 
 class LightMapBuilder:
@@ -130,37 +146,40 @@ class LevelLightMapBaker:
     fov_calculator:         FieldOfViewCalculator
     queried_tile_generator: QueriedTileGenerator
 
-    def _bake_level(self, u5_map: U5Map, level_index: int) -> int:
+    def _get_fov_visible_coords(self, u5_map: U5Map, level_index: int, light_emitter_coord: Coord) -> set[Coord]:
+        # Calculate which tiles are visible from the light emitter's field of view.
+        view_rect = Rect(
+            light_emitter_coord.add(Coord(-1 * __class__.FIXED_LIGHT_RADIUS, -1 * __class__.FIXED_LIGHT_RADIUS)), 
+            size = (
+                2 * __class__.FIXED_LIGHT_RADIUS + 1,
+                2 * __class__.FIXED_LIGHT_RADIUS + 1
+            )
+        )
+        queried_tiles = self.queried_tile_generator.query_tile_grid(u5_map, level_index, view_rect, skip_interactables = True)
+        visible_tiles = self.fov_calculator.calculate_fov_visibility(queried_tiles, light_emitter_coord, view_rect)
+        visible_world_coords = {coord for coord in visible_tiles.keys()}
+        return visible_world_coords
 
-        level_light_map = LightMap()
-        num_lights = 0
+    def _bake_light_map(self, u5_map: U5Map, level_index: int, light_emitter_coord: Coord):
 
-        for light_emitter_coord in u5_map.get_coord_iteration():
-            tile_id = u5_map.get_tile_id(level_index, light_emitter_coord)
-            terrain = self.terrain_registry.get_terrain(tile_id)
-            if terrain.emits_light:
-
-                # Calculate which tiles are visible from the light emitter's field of view.
-                view_rect = Rect(
-                    light_emitter_coord.add(Coord(-1 * __class__.FIXED_LIGHT_RADIUS, -1 * __class__.FIXED_LIGHT_RADIUS)), 
-                    size = (
-                        2 * __class__.FIXED_LIGHT_RADIUS + 1,
-                        2 * __class__.FIXED_LIGHT_RADIUS + 1
-                    )
-                )
-                queried_tiles = self.queried_tile_generator.query_tile_grid(u5_map, level_index, view_rect, skip_interactables = True)
-                visible_tiles = self.fov_calculator.calculate_fov_visibility(queried_tiles, light_emitter_coord, view_rect)
-                visible_world_coords = {coord for coord in visible_tiles.keys()}
-
-                self.default_light_map.bake_level_light_map(level_light_map, light_emitter_coord, visible_world_coords)
-                num_lights += 1
+        visible_world_coords = self._get_fov_visible_coords(u5_map, level_index, light_emitter_coord)
+        baked_light_map = self.default_light_map.translate(light_emitter_coord).intersect(visible_world_coords)
 
         self.light_map_registry.register_baked_light_map(
             u5_map.location_metadata.location_index, 
             level_index, 
-            level_light_map
+            light_emitter_coord,
+            baked_light_map
         )
 
+    def _bake_level(self, u5_map: U5Map, level_index: int) -> int:
+        num_lights = 0
+        for light_emitter_coord in u5_map.get_coord_iteration():
+            tile_id = u5_map.get_tile_id(level_index, light_emitter_coord)
+            terrain = self.terrain_registry.get_terrain(tile_id)
+            if terrain.emits_light:
+                self._bake_light_map(u5_map, level_index, light_emitter_coord)
+                num_lights += 1
         return num_lights
     
     # all baked level light maps are built in coords relative to the level map
