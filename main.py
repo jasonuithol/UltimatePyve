@@ -14,6 +14,7 @@ from animation.sprite                import Sprite
 from display.display_engine      import DisplayEngine
 from display.interactive_console import InteractiveConsole
 from display.lighting            import LevelLightMapBaker, LightMapBuilder
+from display.queried_tiles import QueriedTileGenerator
 from display.tileset             import TileLoader
 from display.u5_font             import U5FontLoader, U5GlyphLoader
 from display.view_port           import ViewPort
@@ -59,6 +60,7 @@ class Main:
     interactable_factory_registry: InteractableFactoryRegistry
     u5map_registry: U5MapRegistry
     interactive_console: InteractiveConsole
+    queried_tile_generator: QueriedTileGenerator
 #    saved_game: SavedGame
 
     #
@@ -95,8 +97,7 @@ class Main:
         self.u5map_loader.register_maps()
         self.u5_font_loader.register_fonts()
         self.u5_glyph_loader.register_glyphs()
-        self.light_map_builder.build_light_maps()
-        self.level_light_map_baker.bake_level_light_maps()
+
 #        self.saved_game_loader.load_existing()
 
         self.player_state.set_outer_position(
@@ -120,7 +121,7 @@ class Main:
         #
         # TODO: Remove
         #
-        self.world_clock.set_world_time(datetime(year=139, month=4, day=5, hour=16, minute=35))
+        self.world_clock.set_world_time(datetime(year=139, month=4, day=5, hour=23, minute=35))
 
         current_transport_mode, current_direction = self.player_state.get_current_transport_info()
 
@@ -129,7 +130,6 @@ class Main:
             direction      = current_direction
         )
         self.display_engine.set_avatar_sprite(player_sprite)
-        self.view_port.init()
         self.main_display.init()
         self.display_engine.init()
 
@@ -139,6 +139,10 @@ class Main:
         self.equipable_item_type_factory.build()
         self.consumable_item_type_loader.register_item_types()
         self.world_loot_loader.register_loot_containers()
+
+        self.light_map_builder.build_light_maps()
+        self.queried_tile_generator.init()
+        self.level_light_map_baker.bake_level_light_maps()
 
         #
         # MODS ARE LOADED HERE
@@ -244,9 +248,6 @@ class Main:
                 if player_input_received:
                     self.interactable_factory_registry.pass_time()
                     self.world_clock.pass_time()
-
-                    # TODO: Remove
-#                    self.interactive_console.print_rune(self.world_clock.get_celestial_panorama())
 
             #
             # all events processed.

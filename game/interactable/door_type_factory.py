@@ -6,26 +6,29 @@ from dark_libraries.dark_math import Coord
 from .door_type_and_door_instance import DoorInstance, DoorType
 from .interactable_factory_registry import InteractableFactoryRegistry
 
+DOOR_TYPES = [
+    DoorType.D_MAGIC_NORMAL,
+    DoorType.D_MAGIC_WINDOWED,
+
+    DoorType.D_UNLOCKED_NORMAL,
+    DoorType.D_UNLOCKED_WINDOWED,
+
+    DoorType.D_LOCKED_NORMAL,
+    DoorType.D_LOCKED_WINDOWED,
+]
+
 class DoorTypeFactory:
 
     # injectable
     interactable_factory_registry: InteractableFactoryRegistry
 
     def register_interactable_factories(self):
-            for original_tile_id in [
-                DoorType.D_MAGIC_NORMAL,
-                DoorType.D_MAGIC_WINDOWED,
-
-                DoorType.D_UNLOCKED_NORMAL,
-                DoorType.D_UNLOCKED_WINDOWED,
-
-                DoorType.D_LOCKED_NORMAL,
-                DoorType.D_LOCKED_WINDOWED,
-            ]:
+            for original_tile_id in DOOR_TYPES:
                 door_type = DoorType(original_tile_id)
                 self.interactable_factory_registry.register_interactable_factory(
                      factory = door_type
                 )
+            print(f"[doors] Registered {len(DOOR_TYPES)} door types as InteractableFactory's.")
 
 #
 # main

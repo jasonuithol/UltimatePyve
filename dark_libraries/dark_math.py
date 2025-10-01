@@ -76,8 +76,8 @@ class Rect(tuple):
     # NOTE: This does NOT get inherited !
     __slots__ = ()
 
-    def __new__(cls, minimum_corner: Coord, size: Size):
-        return super().__new__(cls, (minimum_corner.x, minimum_corner.y, size.w, size.h))
+    def __new__(cls, minimum_corner: tuple[int,int], size: tuple[int,int]):
+        return super().__new__(cls, (minimum_corner[0], minimum_corner[1], size[0], size[1]))
 
     @property
     def x(self) -> int: return self[0]

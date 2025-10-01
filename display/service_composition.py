@@ -1,5 +1,7 @@
 # file: display/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
+from display.field_of_view import FieldOfViewCalculator
+from display.queried_tiles import QueriedTileGenerator
 
 from .lighting import LevelLightMapBaker, LightMapBuilder, LightMapRegistry
 from .tileset import TileLoader, TileRegistry
@@ -21,6 +23,8 @@ def compose(provider: ServiceProvider):
     provider.register(LightMapRegistry)
     provider.register(LightMapBuilder)
     provider.register(LevelLightMapBaker)
+    provider.register(FieldOfViewCalculator)
+    provider.register(QueriedTileGenerator)
 
     provider.register(TileRegistry)
     provider.register(TileLoader)

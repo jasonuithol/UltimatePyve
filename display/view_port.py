@@ -1,59 +1,37 @@
 # file: display/view_port.py
 import pygame
-from typing import Iterator
 
-from dark_libraries.custom_decorators import auto_init, immutable
-from dark_libraries.dark_math import Coord, Size, Rect, Vector2
+from copy import copy
+from dark_libraries.dark_math import Coord, Size, Rect
 
 import animation.sprite as sprite
 from animation.sprite_registry import SpriteRegistry
 
+from display.field_of_view import FieldOfViewCalculator
 from display.lighting import LightMapRegistry
-from game.terrain.terrain import Terrain
+from display.queried_tiles import QueriedTile, QueriedTileGenerator, QueriedTileResult
 from game.terrain.terrain_registry import TerrainRegistry
 from game.interactable import InteractableFactoryRegistry
 
 from game.world_clock import WorldClock
 from maps.u5map import U5Map
 
-from .tileset import TILE_ID_GRASS, Tile, TileRegistry
+from .tileset import Tile, TileRegistry
 from .display_config import DisplayConfig
 from .scalable_component import ScalableComponent
-
-WINDOWED_VECTORS = [
-    Vector2( 0,  1), # bottom
-    Vector2( 0, -1), # top
-    Vector2( 1,  0), # right
-    Vector2(-1,  0), # left
-]
-
-NEIGHBOUR_VECTORS = WINDOWED_VECTORS + [
-    Vector2( 1,  1), # bottom-right
-    Vector2( 1, -1), # top-right
-    Vector2(-1,  1), # bottom-left
-    Vector2(-1, -1)  # bottom-right
-]
-
-@immutable
-@auto_init
-class QueriedTile:
-    tile: Tile
-    terrain: Terrain
-    sprite: sprite.Sprite | None
 
 class ViewPort(ScalableComponent):
 
     # Injectable Properties
     display_config: DisplayConfig
     tileset: TileRegistry
- #   palette: EgaPalette
     interactable_factory_registry: InteractableFactoryRegistry
     sprite_registry: SpriteRegistry
     terrain_registry: TerrainRegistry
     light_map_registry: LightMapRegistry
     world_clock: WorldClock
-
-#    tile_size_pixels: int = 16
+    queried_tile_generator: QueriedTileGenerator
+    fov_calculator: FieldOfViewCalculator
 
     def __init__(self):
         pass
@@ -65,25 +43,6 @@ class ViewPort(ScalableComponent):
         )
         self.view_rect = Rect(Coord(0,0), self.display_config.VIEW_PORT_SIZE)
 
-    def init(self):
-        self.black_tile = Tile(
-            tile_id = 0,
-            pixels = [[0 for _ in range(16)] for _ in range(16)]
-        )
-        self.black_tile.create_surface(self.display_config.EGA_PALETTE)
-
-        self.queried_tile_grass = QueriedTile(
-            tile    = self.tileset.tiles[TILE_ID_GRASS],
-            terrain = self.terrain_registry.get_terrain(TILE_ID_GRASS),
-            sprite  = None
-        )
-
-        self.queried_tile_black = QueriedTile(
-            tile    = self.black_tile,
-            terrain = None,
-            sprite  = None
-        )
-
     # returns WORLD COORDS
     def _get_view_centre(self) -> Coord:
         width, height = self.view_rect.size.to_tuple()
@@ -93,9 +52,7 @@ class ViewPort(ScalableComponent):
         return view_centre
 
     def centre_view_on(self, world_coord: Coord) -> None:
-
         if self._get_view_centre() != world_coord:
-
             width, height = self.view_rect.size.to_tuple()
             offset = Coord(width // 2, height // 2)
             new_corner = world_coord.subtract(offset)
@@ -105,94 +62,32 @@ class ViewPort(ScalableComponent):
     def to_view_port_coord(self, world_coord: Coord) -> Coord:
         return world_coord.subtract(self.view_rect.minimum_corner)
 
-    def query_tile_grid(self, u5map: U5Map, level_ix: int = 0) -> Iterator[tuple[Coord, QueriedTile]]:
-
-        result: dict[Coord, int] = {} 
-        for world_coord in self.view_rect:
-
-            # Don't try to pull a tile from outside the source map.
-            # If out of bounds, use grass tile.
-            if not u5map.is_in_bounds(world_coord):
-                yield world_coord, self.queried_tile_grass
-                continue
-
-            # Allow interactables to change what state an object is e.g. allow doors to open/close/unlock
-            # or chests to have loot stacks on them (i.e. be open)
-            interactable = self.interactable_factory_registry.get_interactable(world_coord)
-            if interactable:
-                # Allow get_current_tile_id to return None to signify that the container/interactable is hidden/invisible.
-                tile_id: int = interactable.get_current_tile_id()
-                '''
-                sprite = interactable.create_sprite()
-                self.draw_sprite(world_coord, sprite)
-                continue
-                '''
-            else:
-                # There is no interactable, but we'll pretend it's just an invisible one.
-                tile_id: int = None
-
-            if tile_id is None:
-                tile_id = u5map.get_tile_id(level_ix, world_coord)
-
-            # Don't try to render a non-existant tile id.
-            assert 0 <= tile_id < len(self.tileset.tiles), f"tile id {tile_id!r} out of range."
-
-            yield world_coord, QueriedTile(
-                tile = self.tileset.tiles[tile_id],
-                terrain = self.terrain_registry.get_terrain(tile_id),
-                # if the tile_id is animated, pull a frame tile from the sprite and draw that instead.
-                sprite = self.sprite_registry.get_sprite(tile_id)
-            )
-
-        return result
-
-    def calculate_fov_visibility(self, queried_tile_grid: Iterator[tuple[Coord, QueriedTile]]) -> Iterator[tuple[Coord, QueriedTile]]:
-
-        view_centre_coord = self._get_view_centre()
-        windowed_coords = [view_centre_coord.add(windowed_vector) for windowed_vector in WINDOWED_VECTORS]
-
-        queried_tile_grid_dict = dict(queried_tile_grid)
-
-        queued: list[Coord] = [view_centre_coord]
-        visited: list[Coord] = queued + []
-
-        while len(queued):
-            world_coord = queued.pop()
-            queried_tile = queried_tile_grid_dict[world_coord]
-
-            yield world_coord, queried_tile
-
-            if world_coord == view_centre_coord or queried_tile.terrain == None or not queried_tile.terrain.blocks_light or (world_coord in windowed_coords and queried_tile.terrain.windowed):
-                for neighbour_vector in NEIGHBOUR_VECTORS:
-                    neighbour_coord = world_coord.add(neighbour_vector)
-                    if self.view_rect.is_in_bounds(neighbour_coord) and not neighbour_coord in visited:
-                        queued.append(neighbour_coord)
-                        visited.append(neighbour_coord)
-
-    def calculate_lighting(self, queried_tile_grid: Iterator[tuple[Coord, QueriedTile]], location_index: int, level_index: int) -> Iterator[tuple[Coord, QueriedTile]]:
+    def calculate_lighting(self, queried_tile_grid: QueriedTileResult, location_index: int, level_index: int) -> QueriedTileResult:
 
         current_radius = self.world_clock.get_current_light_radius()
         viewable_radius = max(1, min(current_radius, self.light_map_registry.get_maximum_radius()))
 
         player_light_map = self.light_map_registry.get_light_map(viewable_radius)
         level_light_map_copy = self.light_map_registry.get_baked_light_map(location_index, level_index).copy()
-
         player_coord = self._get_view_centre()
-        player_light_map.bake_level_light_map(level_light_map_copy, player_coord)
 
-        for world_coord, queried_tile in queried_tile_grid:
+        player_light_map.bake_level_light_map(level_light_map_copy, player_coord, None)
+
+        result = QueriedTileResult()
+        for world_coord, queried_tile in queried_tile_grid.items():
             if world_coord in level_light_map_copy:
-                yield world_coord, queried_tile
+                result[world_coord] = queried_tile
+        return result
 
     def draw_map(self, u5map: U5Map, level_ix: int = 0) -> None:
 
         self._clear()
 
-        queried_tile_grid = self.query_tile_grid(u5map, level_ix)
-        visible_grid = self.calculate_fov_visibility(queried_tile_grid)
+        queried_tile_grid = self.queried_tile_generator.query_tile_grid(u5map, level_ix, self.view_rect)
+        visible_grid = self.fov_calculator.calculate_fov_visibility(queried_tile_grid, self._get_view_centre(), self.view_rect)
         lit_grid = self.calculate_lighting(visible_grid, u5map.location_metadata.location_index, level_ix)
 
-        for world_coord, queried_tile in lit_grid:
+        for world_coord, queried_tile in lit_grid.items():
             if queried_tile.sprite:
                 self.draw_sprite(world_coord, queried_tile.sprite)
             else:
@@ -206,24 +101,17 @@ class ViewPort(ScalableComponent):
         )
 
     def draw_sprite(self, world_coord: Coord, a_sprite: sprite.Sprite) -> None:
-
-        """
-        Draw a sprite to the Viewport
-        """
         # Get the current animation frame tile.
         ticks = pygame.time.get_ticks()
         frame_tile = a_sprite.get_current_frame_tile(ticks)
 
         self.draw_tile(world_coord, frame_tile)
 
-
-
 #
 # MAIN tests
 #
 if __name__ == "__main__":
 
-    from display.tileset import _ega_palette
     from maps.overworld import load_britannia
 
     class StubInteractableFactoryRegistry:
@@ -240,7 +128,6 @@ if __name__ == "__main__":
     view_port = ViewPort()
     view_port.interactable_factory_registry = StubInteractableFactoryRegistry()
     view_port.sprite_registry = StubSpriteRegistry()
-    view_port.palette = _ega_palette
 
     view_port.view_rect = Rect(Coord(40,40), Size(5,5))
     screen = pygame.display.set_mode(view_port.scaled_size().to_tuple())

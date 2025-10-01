@@ -37,7 +37,7 @@ class WorldLootRegistry(InteractableFactory):
             if global_location.location_index == u5map.location_metadata.location_index and global_location.level_index == level_index:
                 item_container = self.item_containers[global_location]
                 factory_registry.register_interactable(global_location.coord, item_container)
-                print(f"[items] Registered interactable loot container at {global_location.coord}.")
+                print(f"[loot] Registered interactable loot container at {global_location.coord}.")
     # InteractableFactory implementation: end
 
 
