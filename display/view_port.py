@@ -6,6 +6,7 @@ from dark_libraries.dark_math import Coord, Size, Rect
 from animation.sprite import Sprite
 from animation.sprite_registry import SpriteRegistry
 
+from game.player_state import PlayerState
 from game.terrain.terrain_registry import TerrainRegistry
 from game.interactable import InteractableFactoryRegistry
 from game.world_clock import WorldClock
@@ -31,6 +32,7 @@ class ViewPort(ScalableComponent):
     world_clock: WorldClock
     queried_tile_generator: QueriedTileGenerator
     fov_calculator: FieldOfViewCalculator
+    player_state: PlayerState
 
     def __init__(self):
         pass
@@ -62,8 +64,13 @@ class ViewPort(ScalableComponent):
         return world_coord.subtract(self.view_rect.minimum_corner)
 
     def calculate_lighting(self, queried_tile_grid: QueriedTileResult, location_index: int, level_index: int) -> QueriedTileResult:
-
+        
         current_radius = self.world_clock.get_current_light_radius()
+
+        # in case the player has lit a torch or something
+        if not self.player_state.light_radius is None:
+            current_radius = max(current_radius, self.player_state.light_radius)
+            
         viewable_radius = max(1, min(current_radius, self.light_map_registry.get_maximum_radius()))
 
         baked_player_light_map = self.light_map_registry.get_light_map(viewable_radius).translate(self._get_view_centre()).intersect(queried_tile_grid.keys())

@@ -1,4 +1,5 @@
 # file: game/player_state.py
+from datetime import timedelta
 from typing import Tuple
 
 from dark_libraries.dark_math import Coord, Vector2
@@ -6,6 +7,7 @@ from dark_libraries.dark_math import Coord, Vector2
 from display.interactive_console import InteractiveConsole
 from game.soundtracks import SoundTrackPlayer
 
+from game.world_clock import WorldClock
 from items.item_type import InventoryOffset
 from items.party_inventory import PartyInventory, InventoryOffset
 
@@ -29,6 +31,7 @@ class PlayerState:
     party_inventory: PartyInventory
     interactive_console: InteractiveConsole
     sound_track_player: SoundTrackPlayer
+    world_clock: WorldClock
 
     # either "britannia" or "underworld"
     outer_map: U5Map = None
@@ -43,6 +46,10 @@ class PlayerState:
     transport_mode: int = None
     last_east_west: int = None
     last_nesw_dir: int = None
+
+    # torch, light spell
+    light_radius: int = None
+    light_expiry: int = None
 
     def set_outer_position(self, u5Map: U5Map, level_index: int, coord: Coord):
 
@@ -235,6 +242,21 @@ class PlayerState:
         interactable: Interactable = self.interactable_factory_registry.get_interactable(target)      
         if interactable:
             interactable.jimmy()
+
+    def ignite_torch(self):
+        if self.party_inventory.get_quantity(InventoryOffset.TORCHES) == 0:
+            self.interactive_console.print_ascii("No torches !")
+            return
+        self.interactive_console.print_ascii("Ignite torch !")
+        self.party_inventory.add(InventoryOffset.TORCHES, -1)
+        self.light_radius = 3
+        self.light_expiry = self.world_clock.get_natural_time() + timedelta(hours = 4)
+
+    def pass_time(self):
+        if not self.light_expiry is None:
+            if self.world_clock.get_natural_time() > self.light_expiry:
+                self.light_radius = None
+                self.light_expiry = None
 
     #
     # Testing only

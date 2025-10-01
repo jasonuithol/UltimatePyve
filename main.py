@@ -224,6 +224,11 @@ class Main:
             if direction:
                 player_state.jimmy(direction)
                 return
+            
+        if event.key == pygame.K_i:
+            player_state.ignite_torch()
+            return
+
         # Nothing changed
     
     def run(self):
@@ -248,6 +253,7 @@ class Main:
                 if player_input_received:
                     self.interactable_factory_registry.pass_time()
                     self.world_clock.pass_time()
+                    self.player_state.pass_time()
 
             #
             # all events processed.
