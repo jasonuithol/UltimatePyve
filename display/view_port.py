@@ -71,9 +71,10 @@ class ViewPort(ScalableComponent):
         baked_level_light_maps = self.light_map_registry.get_baked_light_maps(location_index, level_index)
 
         lit_world_coords: set[Coord] = set(baked_player_light_map.coords.keys())
-        for light_emitter_coord, level_light_map in baked_level_light_maps.items():
-            if light_emitter_coord in queried_tile_grid.keys():
-                lit_world_coords.update(level_light_map.coords.keys())
+        if not baked_level_light_maps is None:
+            for light_emitter_coord, level_light_map in baked_level_light_maps.items():
+                if light_emitter_coord in queried_tile_grid.keys():
+                    lit_world_coords.update(level_light_map.coords.keys())
 
         result = QueriedTileResult()
         for world_coord, queried_tile in queried_tile_grid.items():

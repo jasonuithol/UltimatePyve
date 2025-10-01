@@ -90,7 +90,7 @@ class LightMapRegistry:
         return self.maximum_radius
 
     def get_baked_light_maps(self, location_index: int, level: int) -> dict[Coord, LightMap]:
-        return self.baked_light_maps[location_index, level]
+        return self.baked_light_maps.get((location_index, level),None)
 
 class LightMapBuilder:
 
