@@ -1,10 +1,12 @@
 from typing import List
 from dark_libraries.service_provider import ServiceProvider
+
 from display.interactive_console import InteractiveConsole
 from game.interactable import Interactable
 from game.interactable.interactable import MoveIntoResult
 from game.interactable.interactable_factory_registry import InteractableFactoryRegistry
-from items.party_inventory import PartyInventory
+
+from .party_inventory import PartyInventory
 from .world_item import WorldItem
 from .global_location import GlobalLocation
 
