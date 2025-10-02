@@ -60,6 +60,8 @@ class DisplayEngine:
         # Update window title with current location/world of player.
         pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}] fps={int(self.clock.get_fps())}, light-radius={self.world_clock.get_current_light_radius()}")
 
+        scaled_border_thiccness = self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR
+
         #
         # Main Display
         #
@@ -90,10 +92,7 @@ class DisplayEngine:
         vp_scaled_surface = self.view_port.get_output_surface()
 
         # Blit to screen
-        self.screen.blit(vp_scaled_surface, (
-            self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR, 
-            self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR # yes width because we rotate the font blocks.
-        ))
+        self.screen.blit(vp_scaled_surface, (scaled_border_thiccness, scaled_border_thiccness))
 
         #
         # InteractiveConsole
@@ -101,7 +100,7 @@ class DisplayEngine:
         ic_scaled_surface = self.interactive_console.get_output_surface()
 
         self.screen.blit(ic_scaled_surface, (
-            vp_scaled_surface.get_width() + self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR * 2, 
+            vp_scaled_surface.get_width() + scaled_border_thiccness * 2, 
             vp_scaled_surface.get_height() - ic_scaled_surface.get_height()
         ))
 

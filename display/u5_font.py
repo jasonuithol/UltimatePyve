@@ -39,9 +39,6 @@ class U5Glyph:
         rotated._surface = pygame.transform.rotate(self._surface, 90)
         return rotated
 
-#    def set_transparent_color(self, mapped_rgb_color: int):
-#        self._surface.set_colorkey(mapped_rgb_color)
-
     def copy(self) -> Self:
         clone = object.__new__(self.__class__)
         clone._surface = self._surface.copy()

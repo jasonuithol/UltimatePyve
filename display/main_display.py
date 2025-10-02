@@ -31,8 +31,8 @@ class MainDisplay(ScalableComponent):
         pass 
 
     def _after_inject(self):
-        vp_w, vp_h = self.display_config.VIEW_PORT_SIZE.scale(self.display_config.TILE_SIZE).to_tuple()
-        ic_w, ic_h = self.display_config.CONSOLE_SIZE.scale(self.display_config.FONT_SIZE).to_tuple()
+        vp_w, vp_h = (self.display_config.VIEW_PORT_SIZE * self.display_config.TILE_SIZE).to_tuple()
+        ic_w, ic_h = (self.display_config.CONSOLE_SIZE * self.display_config.FONT_SIZE).to_tuple()
 
         super().__init__(
             unscaled_size_in_pixels = Size(
@@ -45,11 +45,7 @@ class MainDisplay(ScalableComponent):
             scale_factor = self.display_config.SCALE_FACTOR
         )
 
-        self.size_in_glyphs = Size(
-            self._unscaled_size_in_pixels.w // self.display_config.FONT_SIZE.w, 
-            self._unscaled_size_in_pixels.h // self.display_config.FONT_SIZE.h
-        )
-
+        self.size_in_glyphs = self._unscaled_size_in_pixels // self.display_config.FONT_SIZE
         self.viewport_width_in_glyphs = self.view_port.unscaled_size().w // self.display_config.FONT_SIZE.w
 
         # 6 being half the width of the panorama output of 12 chars.

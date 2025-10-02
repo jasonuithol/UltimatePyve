@@ -1,4 +1,3 @@
-from typing import Iterator
 from animation.sprite_registry import SpriteRegistry
 from dark_libraries.custom_decorators import auto_init, immutable
 
@@ -33,19 +32,6 @@ class QueriedTileGenerator:
             terrain = self.terrain_registry.get_terrain(TILE_ID_GRASS),
             sprite  = None
         )
-        '''
-        self.black_tile = Tile(
-            tile_id = 0,
-            pixels = [[0 for _ in range(16)] for _ in range(16)]
-        )
-        self.black_tile.create_surface(self.display_config.EGA_PALETTE)
-
-        self.queried_tile_black = QueriedTile(
-            tile    = self.black_tile,
-            terrain = None,
-            sprite  = None
-        )
-        '''
 
     def query_tile_grid(self, u5map: U5Map, level_ix: int, view_rect: Rect, skip_interactables: bool = False) -> QueriedTileResult:
 

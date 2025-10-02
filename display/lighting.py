@@ -1,7 +1,7 @@
 import math
 from typing import Self
 
-from dark_libraries.dark_math import Coord, Rect
+from dark_libraries.dark_math import Coord, Rect, Vector2
 
 from game.terrain.terrain_registry import TerrainRegistry
 from maps.u5map import U5Map
@@ -43,7 +43,7 @@ class LightMap:
     def translate(self, centre_offset: Coord):
         translated = LightMap()
         for coord in self.coords.keys():
-            translated.coords[centre_offset.add(coord)] = 1
+            translated.coords[centre_offset + coord] = 1
         return translated
 
     def intersect(self, coords: set[Coord]):
@@ -87,10 +87,15 @@ class LightMapBuilder:
     
     # Builds an unbaked lightmap of specified radius
     def _build_light_map(self, radius: int) -> LightMap:
+        light_map_centre = 0,0
         light_map = LightMap()
         for view_coord in self.display_config.VIEW_PORT_SIZE:
-            light_map_coord: Coord = view_coord.add(self.light_emitter_coord.scale(-1))
-            distance = int(abs((light_map_coord.x ** 2) + (light_map_coord.y ** 2)) ** 0.5)
+            light_map_coord: Coord = view_coord - self.light_emitter_coord
+
+            # This tweak makes the lightmaps the right shape
+            biblically_accurate_offset = 0.5
+
+            distance = int(light_map_coord.pythagorean_distance(light_map_centre) + biblically_accurate_offset)
             if distance <= radius:
                 light_map.light(light_map_coord)
         return light_map
@@ -134,13 +139,14 @@ class LevelLightMapBaker:
     queried_tile_generator: QueriedTileGenerator
 
     def _get_fov_visible_coords(self, u5_map: U5Map, level_index: int, light_emitter_coord: Coord) -> set[Coord]:
+
+        radius_offset = Vector2(__class__.FIXED_LIGHT_RADIUS, __class__.FIXED_LIGHT_RADIUS)
+        centre_thiccness = (1,1)
+
         # Calculate which tiles are visible from the light emitter's field of view.
         view_rect = Rect(
-            light_emitter_coord.add(Coord(-1 * __class__.FIXED_LIGHT_RADIUS, -1 * __class__.FIXED_LIGHT_RADIUS)), 
-            size = (
-                2 * __class__.FIXED_LIGHT_RADIUS + 1,
-                2 * __class__.FIXED_LIGHT_RADIUS + 1
-            )
+            light_emitter_coord - radius_offset, 
+            size = (radius_offset * 2) + centre_thiccness
         )
         queried_tiles = self.queried_tile_generator.query_tile_grid(u5_map, level_index, view_rect, skip_interactables = True)
         visible_tiles = self.fov_calculator.calculate_fov_visibility(queried_tiles, light_emitter_coord, view_rect)

@@ -1,19 +1,5 @@
-from dark_libraries.dark_math import Coord, Rect, Vector2
+from dark_libraries.dark_math import Coord, Rect
 from .queried_tiles import QueriedTile
-
-WINDOWED_VECTORS = [
-    Vector2( 0,  1), # bottom
-    Vector2( 0, -1), # top
-    Vector2( 1,  0), # right
-    Vector2(-1,  0), # left
-]
-
-NEIGHBOUR_VECTORS = WINDOWED_VECTORS + [
-    Vector2( 1,  1), # bottom-right
-    Vector2( 1, -1), # top-right
-    Vector2(-1,  1), # bottom-left
-    Vector2(-1, -1)  # bottom-right
-]
 
 class FieldOfViewCalculator:
 
@@ -25,7 +11,7 @@ class FieldOfViewCalculator:
     ) -> dict[Coord, QueriedTile]:
 
         # these are the coords you can be on to make windows transparent to light.
-        windowed_coords = [fov_centre_coord.add(windowed_vector) for windowed_vector in WINDOWED_VECTORS]
+        windowed_coords = fov_centre_coord.get_4way_neighbours()
 
         # I'm pretty sure set.copy() is broken af.
         queued:  set[Coord] = {fov_centre_coord}
@@ -41,8 +27,7 @@ class FieldOfViewCalculator:
             allows_light = queried_tile.terrain == None or not queried_tile.terrain.blocks_light or (world_coord in windowed_coords and queried_tile.terrain.windowed)
 
             if allows_light or world_coord == fov_centre_coord:
-                for neighbour_vector in NEIGHBOUR_VECTORS:
-                    neighbour_coord = world_coord.add(neighbour_vector)
+                for neighbour_coord in world_coord.get_8way_neighbours():
                     if view_rect.is_in_bounds(neighbour_coord) and not neighbour_coord in visited:
 
                         # this square is in view, and has a neighbour that is visible, and doesn't block light.

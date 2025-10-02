@@ -46,22 +46,18 @@ class ViewPort(ScalableComponent):
 
     # returns WORLD COORDS
     def _get_view_centre(self) -> Coord:
-        width, height = self.view_rect.size.to_tuple()
-        offset = Coord(width // 2, height // 2)
-        view_centre = self.view_rect.minimum_corner.add(offset)
-
+        offset = self.view_rect.size.to_offset() // 2
+        view_centre = self.view_rect.minimum_corner + offset
         return view_centre
 
     def centre_view_on(self, world_coord: Coord) -> None:
         if self._get_view_centre() != world_coord:
-            width, height = self.view_rect.size.to_tuple()
-            offset = Coord(width // 2, height // 2)
-            new_corner = world_coord.subtract(offset)
-
-            self.view_rect = Rect(new_corner, Size(width, height))
+            offset = self.view_rect.size.to_offset() // 2
+            new_corner = world_coord - offset
+            self.view_rect = Rect(new_corner, self.view_rect.size)
 
     def to_view_port_coord(self, world_coord: Coord) -> Coord:
-        return world_coord.subtract(self.view_rect.minimum_corner)
+        return world_coord - self.view_rect.minimum_corner
 
     def calculate_lighting(self, queried_tile_grid: QueriedTileResult, location_index: int, level_index: int) -> QueriedTileResult:
         
