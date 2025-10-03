@@ -1,5 +1,6 @@
 # file: dark_libraries/dark_math.py
 
+import math
 from typing import Iterable, Self
 
 FOURWAY_NEIGHBOURS = [
@@ -72,7 +73,35 @@ class Vector2(tuple):
         assert len(other) >= 2, "Argument must have at least two elements."
         return ( ((self[0] - other[0]) ** 2) + ((self[1] - other[1]) ** 2) ) ** 0.5
 
-    def taxi_distance(self, other: tuple) -> int:
+    def normal(self, other: tuple) -> tuple[float,float]:
+        assert len(other) >= 2, "Argument must have at least two elements."
+        distance = self.pythagorean_distance(other)
+        assert not (distance == 0), "Cannot call normal when self == other"
+        return ((other[0] - self[0]) / distance, (other[1] - self[1]) / distance)
+
+    # TODO: must be a faster way of doing this.
+    def normal_4way(self, other: tuple) -> Self:
+        assert len(other) >= 2, "Argument must have at least two elements."
+        dx, dy = other[0] - self[0], other[1] - self[1]
+        assert not(dx == 0 and dy == 0), f"Cannot call normal_4way when self {self} == other {other}"
+        if dx == 0:
+            if dy > 0:
+                return self.__class__(0, +1)
+            else:
+                return self.__class__(0, -1)     
+        gradient = dy/dx
+        if -1 <= gradient < 1: # left or right
+            if dx > 0:
+                return self.__class__(+1, 0)
+            else:
+                return self.__class__(-1, 0)
+        else:
+            if dy > 0:
+                return self.__class__(0, +1)
+            else:
+                return self.__class__(0, -1)
+
+    def taxi_distance(self, other: tuple[int,int]) -> int:
         assert len(other) >= 2, "Argument must have at least two elements."
         return abs(self[0] - other[0]) + abs(self[1] - other[1])
 
@@ -87,6 +116,12 @@ class Vector2(tuple):
 
     def get_8way_neighbours(self):
         return [self.add(neighbour) for neighbour in EIGHTWAY_NEIGHBOURS]
+
+    def translate_polar(self, pythagorean_distance: float, radians: float):
+        dx = int(pythagorean_distance * math.cos(radians))
+        dy = int(pythagorean_distance * math.sin(radians))
+        return self.__class__(self[0] + dx, self[1] + dy)
+
 
 class Coord(Vector2):
 

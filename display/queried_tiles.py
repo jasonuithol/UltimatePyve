@@ -7,6 +7,7 @@ from game.interactable.interactable_factory_registry import InteractableFactoryR
 from game.terrain.terrain import Terrain
 from game.terrain.terrain_registry import TerrainRegistry
 from maps.u5map import U5Map
+from npc.npcs import NpcRegistry
 
 from .tileset import TILE_ID_GRASS, Tile, TileRegistry
 
@@ -25,6 +26,7 @@ class QueriedTileGenerator:
     tile_registry: TileRegistry
     sprite_registry: SpriteRegistry
     terrain_registry: TerrainRegistry
+    npc_registry: NpcRegistry
 
     def init(self):
         self.queried_tile_grass = QueriedTile(
@@ -38,6 +40,7 @@ class QueriedTileGenerator:
         if not skip_interactables:
             correct_level_interactables_loaded = u5map.location_metadata.location_index == self.interactable_factory_registry.location_index and level_ix == self.interactable_factory_registry.level_index
             assert correct_level_interactables_loaded, "InteractableFactoryRegistry.load_level(u5map, level_ix) for supplied level parameters must be called first !"
+            npc_dict = {npc.npc_state.coord: npc for npc in self.npc_registry.get_npcs()}
 
         result = QueriedTileResult() 
         for world_coord in view_rect:
@@ -71,11 +74,20 @@ class QueriedTileGenerator:
             # Don't try to render a non-existant tile id.
             assert 0 <= tile_id < len(self.tile_registry.tiles), f"tile id {tile_id!r} out of range."
 
+            # First, get the sprite for the terrain/interactable if it exists.
+            sprite = self.sprite_registry.get_sprite(tile_id)
+
+            if not skip_interactables:
+                # Then see if an NPC is standing on it and use that instead.
+                npc_interactable = npc_dict.get(world_coord, None)
+                if not npc_interactable is None:
+                    sprite = npc_interactable.sprite
+
             result[world_coord] = QueriedTile(
                 tile = self.tile_registry.tiles[tile_id],
                 terrain = self.terrain_registry.get_terrain(tile_id),
                 # if the tile_id is animated, pull a frame tile from the sprite and draw that instead.
-                sprite = self.sprite_registry.get_sprite(tile_id)
+                sprite = sprite
             )
 
         return result

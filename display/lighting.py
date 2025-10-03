@@ -182,10 +182,7 @@ class LevelLightMapBaker:
 
         for location_index, u5_map in self.u5_map_registry.u5maps.items():
             num_lights = 0
-
             for level_index in u5_map.levels.keys():
-
-                print(f"Baking light levels for {u5_map.location_metadata.name}, level={level_index}")
                 num_lights += self._bake_level(u5_map, level_index)
 
             print(f"[lighting] Baked {num_lights} fixed lights for {u5_map.location_metadata.name} (location_index={location_index})")

@@ -4,7 +4,7 @@ import gc
 import pygame
 
 from dark_libraries.service_provider import ServiceProvider
-from dark_libraries.dark_math import Coord, Vector2
+from dark_libraries.dark_math        import Coord, Vector2
 
 from animation.animated_tile_factory import AnimatedTileFactory
 from animation.flame_sprite_factory  import FlameSpriteFactory
@@ -14,7 +14,7 @@ from animation.sprite                import Sprite
 from display.display_engine      import DisplayEngine
 from display.interactive_console import InteractiveConsole
 from display.lighting            import LevelLightMapBaker, LightMapBuilder
-from display.queried_tiles import QueriedTileGenerator
+from display.queried_tiles       import QueriedTileGenerator
 from display.tileset             import TileLoader
 from display.u5_font             import U5FontLoader, U5GlyphLoader
 from display.view_port           import ViewPort
@@ -24,8 +24,7 @@ from game.player_state import PlayerState
 from game.interactable import InteractableFactoryRegistry, DoorTypeFactory
 from game.modding      import Modding
 from game.terrain      import TerrainFactory
-
-from game.world_clock import WorldClock
+from game.world_clock  import WorldClock
 
 from items.consumable_items     import ConsumableItemTypeLoader
 from items.equipable_items      import EquipableItemTypeFactory
@@ -33,8 +32,11 @@ from items.party_inventory      import PartyInventory
 from items.world_loot_loader    import WorldLootLoader
 from items.item_type            import InventoryOffset
 
-from maps.u5map_loader import U5MapLoader
+from maps.u5map_loader   import U5MapLoader
 from maps.u5map_registry import U5MapRegistry
+
+from npc.monsters import MonsterSpawner
+from npc.npcs import NpcRegistry, NpcSpriteFactory
 
 import service_composition
 
@@ -61,6 +63,7 @@ class Main:
     u5map_registry: U5MapRegistry
     interactive_console: InteractiveConsole
     queried_tile_generator: QueriedTileGenerator
+    npc_registry: NpcRegistry
 #    saved_game: SavedGame
 
     #
@@ -83,6 +86,9 @@ class Main:
     level_light_map_baker: LevelLightMapBaker
 #    saved_game_loader: SavedGameLoader
 
+    npc_sprite_factory: NpcSpriteFactory
+    monster_spawner: MonsterSpawner
+
     modding: Modding
     world_clock: WorldClock
 
@@ -97,6 +103,7 @@ class Main:
         self.u5map_loader.register_maps()
         self.u5_font_loader.register_fonts()
         self.u5_glyph_loader.register_glyphs()
+        self.npc_sprite_factory.register_npc_sprites()
 
 #        self.saved_game_loader.load_existing()
 
@@ -251,9 +258,14 @@ class Main:
 
                 # Allow "in=game" time to pass
                 if player_input_received:
+                    #
+                    # TODO: Create a registry for this
+                    #
                     self.interactable_factory_registry.pass_time()
                     self.world_clock.pass_time()
                     self.player_state.pass_time()
+                    self.npc_registry.pass_time()
+                    self.monster_spawner.pass_time()
 
             #
             # all events processed.

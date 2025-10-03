@@ -6,10 +6,11 @@ import display.service_composition
 import game.service_composition
 import animation.service_composition
 import items.service_composition
+import npc.service_composition
 
 def compose(provider: ServiceProvider):
 
-    for module in [maps, display, game, animation, items]:
+    for module in [maps, display, game, animation, items, npc]:
         print(f"Pre-registering {module.__name__.upper()}")
         module.service_composition.compose(provider)
 
