@@ -1,26 +1,29 @@
 # file: display/display_engine.py
 import pygame
 
-from typing import Optional
 from dark_libraries.dark_math import Coord
 
-import animation.sprite as sprite
-from display.display_config import DisplayConfig
+from animation.sprite import Sprite
+from game.map_content.map_content_registry import MapContentRegistry
 from game.world_clock import WorldClock
-from maps.u5map import U5Map
+from maps.u5map       import U5Map
 
+from .display_config      import DisplayConfig
 from .interactive_console import InteractiveConsole
-from .view_port import ViewPort
-from .main_display import MainDisplay
+from .tileset             import Tile
+from .view_port           import ViewPort
+from .main_display        import MainDisplay
 
 class DisplayEngine:
 
-    # Injectable Properties
-    display_config: DisplayConfig
-    main_display: MainDisplay
-    view_port: ViewPort
+    # Injectable
+    display_config:      DisplayConfig
+    main_display:        MainDisplay
+    view_port:           ViewPort
     interactive_console: InteractiveConsole
 
+    # Map generation
+    map_content_registry: MapContentRegistry
     world_clock: WorldClock
 
     def init(self):
@@ -28,6 +31,7 @@ class DisplayEngine:
         # Set up pygame
         pygame.init()
         pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
+
         self.screen = pygame.display.set_mode(
             size  = self.main_display.scaled_size().to_tuple(),
             flags = pygame.SCALED | pygame.DOUBLEBUF, 
@@ -36,20 +40,29 @@ class DisplayEngine:
         self.clock = pygame.time.Clock()
 
         # Init internal state
-        self.avatar: sprite.Sprite = None
-        self.active_map: Optional[U5Map] = None
+        self.avatar: Sprite = None
+        self.active_map: U5Map = None
         self.active_level = 0
 
         print(f"Initialised DisplayEngine(id={hex(id(self))})")
 
-
-    def set_avatar_sprite(self, sprite: sprite.Sprite) -> None:
+    def _get_map_tiles(self) -> dict[Coord, Tile]:
+        return {
+            world_coord:
+            self.map_content_registry.get_coord_contents(
+                location_index = self.active_map.location_metadata.location_index,
+                level_index = self.active_level,
+                coord = world_coord
+            ).get_renderable_frame()
+            for world_coord in self.view_port.view_rect
+        }
+    
+    def set_avatar_sprite(self, sprite: Sprite):
         self.avatar = sprite
 
-    def set_active_map(self, u5map: U5Map, map_level: int) -> None:
+    def set_active_map(self, u5map: U5Map, map_level: int):
         self.active_map = u5map
         self.active_level = map_level
-
 
     #
     # TODO: Most of this is ViewPort logic.  Fix
@@ -58,7 +71,13 @@ class DisplayEngine:
     def render(self, player_coord: Coord):
 
         # Update window title with current location/world of player.
-        pygame.display.set_caption(f"{self.active_map.location_metadata.name} [{player_coord}] fps={int(self.clock.get_fps())}, light-radius={self.world_clock.get_current_light_radius()}")
+        pygame.display.set_caption(
+            f"{self.active_map.location_metadata.name} [{player_coord}]" 
+            +
+            f" fps={int(self.clock.get_fps())}"
+            +
+            f" time={self.world_clock.get_daylight_savings_time()}"
+        )
 
         scaled_border_thiccness = self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR
 
@@ -66,11 +85,9 @@ class DisplayEngine:
         # Main Display
         #
         self.main_display.draw()
-
         md_scaled_surface = self.main_display.get_output_surface()
-
-        # Blit to screen
-        self.screen.blit(md_scaled_surface, (0,0))
+        md_scaled_pixel_offset = (0,0)
+        self.screen.blit(md_scaled_surface, md_scaled_pixel_offset)
 
         #
         # ViewPort
@@ -79,30 +96,27 @@ class DisplayEngine:
         # Centre the viewport on the player.
         self.view_port.centre_view_on(player_coord)
 
-        # Render current viewport from raw map data
-        self.view_port.draw_map(
-            self.active_map,
-            self.active_level
-        )
+        # Render current viewport from populated map data.
+        map_tiles = self._get_map_tiles()
+        self.view_port.draw_map(map_tiles)
 
         # draw the player over the top of whatever is at it's position.
-        self.view_port.draw_sprite(player_coord, self.avatar)
+        avatar_tile = self.avatar.get_current_frame_tile()
+        self.view_port.draw_tile(player_coord, avatar_tile)
 
-        # Scale for display
         vp_scaled_surface = self.view_port.get_output_surface()
-
-        # Blit to screen
-        self.screen.blit(vp_scaled_surface, (scaled_border_thiccness, scaled_border_thiccness))
+        vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)
+        self.screen.blit(vp_scaled_surface, vp_scaled_pixel_offset)
 
         #
         # InteractiveConsole
         #
         ic_scaled_surface = self.interactive_console.get_output_surface()
-
-        self.screen.blit(ic_scaled_surface, (
+        ic_scaled_pixel_offset = (
             vp_scaled_surface.get_width() + scaled_border_thiccness * 2, 
             vp_scaled_surface.get_height() - ic_scaled_surface.get_height()
-        ))
+        )
+        self.screen.blit(ic_scaled_surface, ic_scaled_pixel_offset)
 
         pygame.display.flip()
 

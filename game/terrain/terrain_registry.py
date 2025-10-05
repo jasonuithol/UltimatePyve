@@ -1,5 +1,4 @@
-from typing import Optional
-from game.terrain import Terrain
+from .terrain import Terrain
 
 class TerrainRegistry:
 
@@ -9,7 +8,7 @@ class TerrainRegistry:
     def register_terrain(self, tile_id: int, terrain: Terrain):
         self._terrains[tile_id] = terrain
 
-    def get_terrain(self, tile_id: int) -> Optional[Terrain]:
+    def get_terrain(self, tile_id: int) -> Terrain | None:
         return self._terrains.get(tile_id, None)
 
     def can_traverse(self, transport_mode: str, tile_id: int) -> bool:

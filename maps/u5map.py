@@ -23,18 +23,13 @@ class U5Map:
 
         assert self.is_in_bounds(coord), f"Coordinates {coord} out of bounds."
 
-        try:
-            level = self.levels[level_ix]
-        except Exception as e:
-            print(f"Error accessing level {level_ix} from levels list, size {len(self.levels)}: {e}")
-            raise
+        assert level_ix in self.levels.keys(), f"Unknown level_ix {level_ix} for map {self.location_metadata.name} (known keys={self.levels.keys()})"
+        level = self.levels[level_ix]
 
-        try:
-            index = coord.y * self.size_in_tiles.w + coord.x
-            return level[index]
-        except Exception as e:
-            print(f"Error accessing tile {index} from level, size {len(level)}: {e}")
-            raise
+        index = coord.y * self.size_in_tiles.w + coord.x
+
+        assert index < len(level), f"Index {index} out of bounds trying to access level bytearray of size {len(level)}"
+        return level[index]
 
     def get_coord_iteration(self):
         for y in range(self.size_in_tiles.h):

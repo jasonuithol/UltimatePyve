@@ -1,14 +1,18 @@
 from dark_libraries.dark_math import Coord, Rect
-from .queried_tiles import QueriedTile
+
+from game.map_content.map_content_registry import MapContentRegistry
 
 class FieldOfViewCalculator:
 
+    map_content_registry: MapContentRegistry
+
     def calculate_fov_visibility(
         self, 
-        queried_tile_grid_dict: dict[Coord, QueriedTile], 
+        location_index: int,
+        level_index: int,
         fov_centre_coord: Coord, # must be in world co-ordinates
         view_rect: Rect          # must be in world co-ordinates
-    ) -> dict[Coord, QueriedTile]:
+    ) -> set[Coord]:
 
         # these are the coords you can be on to make windows transparent to light.
         windowed_coords = fov_centre_coord.get_4way_neighbours()
@@ -16,15 +20,17 @@ class FieldOfViewCalculator:
         # I'm pretty sure set.copy() is broken af.
         queued:  set[Coord] = {fov_centre_coord}
         visited: set[Coord] = {fov_centre_coord}
-        result:  dict[Coord, QueriedTile] = {}
+        result:  set[Coord] = set()
 
         while len(queued):
             world_coord = queued.pop()
-            queried_tile = queried_tile_grid_dict[world_coord]
 
-            result[world_coord] = queried_tile
+            result.add(world_coord)
 
-            allows_light = queried_tile.terrain == None or not queried_tile.terrain.blocks_light or (world_coord in windowed_coords and queried_tile.terrain.windowed)
+            coord_contents = self.map_content_registry.get_coord_contents(location_index, level_index, world_coord)
+            terrain = coord_contents.get_terrain()
+
+            allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)
 
             if allows_light or world_coord == fov_centre_coord:
                 for neighbour_coord in world_coord.get_8way_neighbours():

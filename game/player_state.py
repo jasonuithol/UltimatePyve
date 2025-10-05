@@ -13,25 +13,29 @@ from items.party_inventory import PartyInventory, InventoryOffset
 
 from maps.u5map import U5Map
 from maps.u5map_registry import U5MapRegistry
+from npc.monster_spawner import MonsterSpawner
+from npc.npc_registry import NpcRegistry
 
 from .interactable.interactable import Interactable, MoveIntoResult
 #from .saved_game import SavedGame
 from .interactable.interactable_factory_registry import InteractableFactoryRegistry
 from .map_transitions import get_entry_trigger
-from .terrain import TerrainRegistry
+from .terrain.terrain_registry import TerrainRegistry
 from .transport_mode_registry import TransportModeRegistry
 
 class PlayerState:
 
     # Injectable
-    u5map_registry: U5MapRegistry
+    u5map_registry:                U5MapRegistry
     interactable_factory_registry: InteractableFactoryRegistry
-    terrain_registry: TerrainRegistry
-    transport_mode_registry: TransportModeRegistry
-    party_inventory: PartyInventory
-    interactive_console: InteractiveConsole
-    sound_track_player: SoundTrackPlayer
-    world_clock: WorldClock
+    terrain_registry:              TerrainRegistry
+    transport_mode_registry:       TransportModeRegistry
+    party_inventory:               PartyInventory
+    interactive_console:           InteractiveConsole
+    sound_track_player:            SoundTrackPlayer
+    world_clock:                   WorldClock
+    monster_spawner:               MonsterSpawner
+    npc_registry:                  NpcRegistry
 
     # either "britannia" or "underworld"
     outer_map: U5Map = None
@@ -71,6 +75,12 @@ class PlayerState:
 
     def is_in_outer_map(self) -> bool:
         return self.inner_map is None
+
+    def get_coord(self) -> Coord:
+        if self.is_in_outer_map():
+            return self.outer_coord
+        else:
+            return self.inner_coord
 
     def get_current_position(self) -> Tuple[U5Map, int, Coord]:
         if self.is_in_outer_map():
@@ -123,6 +133,8 @@ class PlayerState:
 
         # Load interactables for the level
         self.interactable_factory_registry.load_level(location_index, level_index)
+        self.monster_spawner.load_level(location_index, level_index)
+        self.npc_registry.load_level(location_index, level_index)
 
     def _on_changing_transport_mode(self):
         # load soundtrack for transport mode e.g. horse, or boat
@@ -141,6 +153,7 @@ class PlayerState:
     def _move_to_inner_map_level(self, level_index: int):
         self.inner_map_level = level_index
         self._on_changing_map(self.inner_map.location_metadata.location_index, level_index)
+        self._on_coord_change()
 
     def _return_to_outer_map(self):
         self.interactive_console.print_ascii(f"Exited {self.inner_map.location_metadata.name.capitalize()}")
@@ -149,6 +162,8 @@ class PlayerState:
         self.inner_map_level = None
         self.inner_coord = None
         self._on_changing_map(self.outer_map.location_metadata.location_index, self.outer_map_level)
+        self._on_coord_change()
+
 
     #
     # Player driven State transitions
@@ -227,8 +242,12 @@ class PlayerState:
             # north
             self.last_nesw_dir = 0
             msg = "North"
-
         self.interactive_console.print_ascii(msg)
+        self._on_coord_change()
+
+    def _on_coord_change(self):
+        self.monster_spawner.set_player_coord(self.get_coord())
+        self.npc_registry.set_player_coord(self.get_coord())
 
     def jimmy(self, direction: Vector2):
 

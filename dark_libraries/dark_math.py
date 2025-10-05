@@ -128,6 +128,9 @@ class Coord(Vector2):
     # NOTE: This does NOT get inherited !
     __slots__ = ()
 
+    def to_offset(self) -> Vector2:
+        return Vector2(self.x, self.y)
+
 class Size(Vector2):
 
     # NOTE: This does NOT get inherited !
@@ -151,8 +154,8 @@ class Size(Vector2):
     def to_rect(self, minimum_corner: Coord) -> 'Rect':
         return Rect(minimum_corner, self)
     
-    def to_offset(self) -> Coord:
-        return Coord(self.w, self.h)
+    def to_offset(self) -> Vector2:
+        return Vector2(self.w, self.h)
 
     def __iter__(self) -> Iterable[Coord]:
         for y in range(self.h):

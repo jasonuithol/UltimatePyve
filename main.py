@@ -1,7 +1,8 @@
 # file: main.py
-from datetime import datetime
-import gc
 import pygame
+import gc
+
+from datetime import datetime
 
 from dark_libraries.service_provider import ServiceProvider
 from dark_libraries.dark_math        import Coord, Vector2
@@ -11,20 +12,21 @@ from animation.flame_sprite_factory  import FlameSpriteFactory
 from animation.avatar_sprite_factory import AvatarSpriteFactory
 from animation.sprite                import Sprite
 
-from display.display_engine      import DisplayEngine
-from display.interactive_console import InteractiveConsole
-from display.lighting            import LevelLightMapBaker, LightMapBuilder
-from display.queried_tiles       import QueriedTileGenerator
-from display.tileset             import TileLoader
-from display.u5_font             import U5FontLoader, U5GlyphLoader
-from display.view_port           import ViewPort
-from display.main_display        import MainDisplay
+from display.display_engine             import DisplayEngine
+from display.interactive_console        import InteractiveConsole
+from display.lighting.light_map_baker   import LevelLightMapBaker
+from display.lighting.light_map_builder import LightMapBuilder
+from display.tileset                    import TileLoader
+from display.u5_font                    import U5FontLoader, U5GlyphLoader
+from display.view_port                  import ViewPort
+from display.main_display               import MainDisplay
 
-from game.player_state import PlayerState
-from game.interactable import InteractableFactoryRegistry, DoorTypeFactory
-from game.modding      import Modding
-from game.terrain      import TerrainFactory
-from game.world_clock  import WorldClock
+from game.player_state            import PlayerState
+from game.interactable            import InteractableFactoryRegistry, DoorTypeFactory
+from game.modding                 import Modding
+from game.terrain.terrain_factory import TerrainFactory
+from game.world_clock             import WorldClock
+from game.map_content.map_content_registry             import MapContentRegistry
 
 from items.consumable_items     import ConsumableItemTypeLoader
 from items.equipable_items      import EquipableItemTypeFactory
@@ -35,8 +37,9 @@ from items.item_type            import InventoryOffset
 from maps.u5map_loader   import U5MapLoader
 from maps.u5map_registry import U5MapRegistry
 
-from npc.monsters import MonsterSpawner
-from npc.npcs import NpcRegistry, NpcSpriteFactory
+from npc.monster_spawner    import MonsterSpawner
+from npc.npc_registry       import NpcRegistry
+from npc.npc_sprite_factory import NpcSpriteFactory
 
 import service_composition
 
@@ -62,7 +65,7 @@ class Main:
     interactable_factory_registry: InteractableFactoryRegistry
     u5map_registry: U5MapRegistry
     interactive_console: InteractiveConsole
-    queried_tile_generator: QueriedTileGenerator
+    map_content_registry: MapContentRegistry
     npc_registry: NpcRegistry
 #    saved_game: SavedGame
 
@@ -77,6 +80,7 @@ class Main:
     terrain_factory: TerrainFactory
     door_type_factory: DoorTypeFactory
     u5map_loader: U5MapLoader
+    u5map_registry: U5MapRegistry
     world_loot_loader: WorldLootLoader
     equipable_item_type_factory: EquipableItemTypeFactory
     consumable_item_type_loader: ConsumableItemTypeLoader
@@ -101,6 +105,7 @@ class Main:
         self.flame_sprite_factory.register_sprites()
         self.terrain_factory.register_terrains()
         self.u5map_loader.register_maps()
+
         self.u5_font_loader.register_fonts()
         self.u5_glyph_loader.register_glyphs()
         self.npc_sprite_factory.register_npc_sprites()
@@ -147,8 +152,11 @@ class Main:
         self.consumable_item_type_loader.register_item_types()
         self.world_loot_loader.register_loot_containers()
 
+        for u5map in self.u5map_registry.u5maps.values():
+            # Requires maps, tiles, sprites, terrain, interactables all loaded first.
+            self.map_content_registry.add_u5map(u5map)
+
         self.light_map_builder.build_light_maps()
-        self.queried_tile_generator.init()
         self.level_light_map_baker.bake_level_light_maps()
 
         #
@@ -158,10 +166,13 @@ class Main:
 
         current_u5map, current_level_index, _ = self.player_state.get_current_position()
         
+        print("TIM BROOKE-TAYLOR")
         self.player_state._on_changing_map(
             location_index = current_u5map.location_metadata.location_index, 
             level_index    = current_level_index
         )
+        self.player_state._on_coord_change()
+
 
         #
         # TODO: Need something way better than this
@@ -261,11 +272,11 @@ class Main:
                     #
                     # TODO: Create a registry for this
                     #
-                    self.interactable_factory_registry.pass_time()
                     self.world_clock.pass_time()
+                    self.interactable_factory_registry.pass_time()
                     self.player_state.pass_time()
-                    self.npc_registry.pass_time()
                     self.monster_spawner.pass_time()
+                    self.npc_registry.pass_time()
 
             #
             # all events processed.
