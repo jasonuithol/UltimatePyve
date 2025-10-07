@@ -2,6 +2,9 @@ import colorama
 # Makes best effort to turn on ANSI support for console error messages.
 colorama.init()
 
+# 3rd party messages will stand out (i.e. pygame, package deprecation warnings.)
+print(colorama.Fore.CYAN)
+
 # Set up pygame
 import gc
 import pygame
