@@ -1,41 +1,41 @@
 # file: dark_libraries/service_provider.py
 import inspect, typing, sys
 
-class ServiceProvider:
+from dark_libraries.logging import LoggerMixin
+
+class ServiceProvider(LoggerMixin):
 
     _instance: typing.Self = None
 
     @classmethod
     def get_provider(cls):
         if cls._instance is None:
-            return ServiceProvider()
+            return cls()
         return cls._instance
 
     def __init__(self):
-        if ServiceProvider._instance is None:
-            self._instances = {}
-            self._mappings = {}
-            ServiceProvider._instance = self
-        else:
-            raise ValueError("Cannot instantiate multiple ServiceProvider roots.")
+        assert self.__class__._instance is None, "Cannot instantiate multiple ServiceProvider roots."
+
+        super().__init__()
+        self._instances = {}
+        self._mappings = {}
+        self.__class__._instance = self
 
     def _assert_is_class(self, cls, needs_empty_constructor=True):
-        if not inspect.isclass(cls):
-            raise TypeError(f"cls is not a class object, but instead is an instance of {type(cls)!r}")
+        assert inspect.isclass(cls), f"cls is not a class object, but instead is an instance of {type(cls)!r}"
+
         if needs_empty_constructor:
             param_count = len(inspect.signature(cls).parameters)
-            if param_count > 0:
-                raise TypeError(f"Constructor has {param_count} parameters, needs 0: {cls!r}")
+            assert param_count == 0, f"Constructor has {param_count} parameters, needs 0: {cls!r}"
 
     def _assert_is_instance(self, obj):
-        if inspect.isclass(obj):
-            raise TypeError(f"obj is not an instance, but instead is a class object ({obj!r})")
+        assert not inspect.isclass(obj), f"obj is not an instance, but instead is a class object ({obj!r})"
 
     def register(self, cls):
         self._assert_is_class(cls)
         instance = cls()
         self._instances[cls] = instance
-        print(f"[DI] Registered {cls.__name__} as new instance")
+        self.log(f"Registered {cls.__name__} as new instance")
         return instance
 
     def register_instance(self, obj, as_type=None):
@@ -44,37 +44,37 @@ class ServiceProvider:
             self._assert_is_class(as_type)
         key = as_type or type(obj)
         self._instances[key] = obj
-        print(f"[DI] Registered pre-instantiated singleton: {key.__name__}")
+        self.log(f"Registered pre-instantiated singleton: {key.__name__}")
 
     def register_mapping(self, abstract, concrete):
         self._assert_is_class(abstract, needs_empty_constructor=False)
         self._assert_is_class(concrete)
         self.register(concrete)
         self._mappings[abstract] = concrete
-        print(f"[DI] Mapped {abstract.__name__} → {concrete.__name__}")
+        self.log(f"Mapped {abstract.__name__} → {concrete.__name__}")
 
     def _is_property_injectable(self, instance: object, name: str, anno_type, use_logging = True) -> bool:
 
         if use_logging:
-            log = print
+            log = self.log
         else:
             log = lambda x: None
 
         # 1. Skip private
         if name.startswith("_"):
-            log(f"[DI] Skipping private property: {name}")
+            log(f"Skipping private property: {name}")
             return False
 
         # 2. Skip pre-initialized
         current_val = getattr(instance, name, None)
         if current_val is not None:
-            log(f"[DI] Skipping pre-initialized property: {name} =", f"{current_val!r}"[:100])
+            log(f"Skipping pre-initialized property: {name} = {current_val!r}"[:100])
             return False
 
         # 3. Skip non-resolvable.
         dep = self._resolve_type(anno_type)
         if dep is None:
-            log(f"[DI] No matching dependency for {anno_type.__name__} (skipped)")
+            log(f"No matching dependency for {anno_type.__name__} (skipped)")
             return False
         
         #
@@ -106,11 +106,11 @@ class ServiceProvider:
                     # Resolve and inject
                     dep = self._resolve_type(anno_type)
                     setattr(instance, name, dep)
-                    print(f"[DI] Injected {anno_type.__name__} into {instance.__class__.__name__}.{name}")
+                    self.log(f"Injected {anno_type.__name__} into {instance.__class__.__name__}.{name}")
 
         for instance in self._instances.values():
             if hasattr(instance, '_after_inject'):
-                print(f"[DI] Found _after_inject handler for {instance.__class__.__name__}, invoking...")
+                self.log(f"Found _after_inject handler for {instance.__class__.__name__}, invoking...")
                 instance._after_inject()
 
     def resolve(self, type_):

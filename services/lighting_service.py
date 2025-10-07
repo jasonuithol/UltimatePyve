@@ -1,0 +1,49 @@
+from dark_libraries.dark_math import Coord
+
+from data.global_registry import GlobalRegistry
+from models.party_state import PartyState
+from services.light_map_level_baker import LightMapLevelBaker
+from services.world_clock import WorldClock
+
+from models.light_map import LightMap
+
+class LightingService:
+
+    # Injectable
+    world_clock: WorldClock
+    player_state: PartyState
+    global_registry: GlobalRegistry
+    light_map_level_baker: LightMapLevelBaker
+
+    def init(self):
+        # Needs FOV calculator, which needs map_cache.
+        self.light_map_level_baker.bake_level_light_maps()
+
+    def get_player_light_radius(self):
+        current_radius = self.world_clock.get_current_light_radius()
+
+        # in case the player has lit a torch or something
+        if not self.player_state.light_radius is None:
+            current_radius = max(current_radius, self.player_state.light_radius)
+            
+        viewable_radius = max(1, min(current_radius, max(self.global_registry.unbaked_light_maps.keys())))
+
+        return viewable_radius
+
+
+    def calculate_lighting(self, location_index: int, level_index: int, player_light_radius: int, player_coord: Coord, fov_visible_coords: set[Coord]) -> set[Coord]:
+
+        player_light_radius = self.get_player_light_radius()
+
+        baked_player_light_map: LightMap = self.global_registry.unbaked_light_maps.get(player_light_radius).translate(player_coord).intersect(fov_visible_coords)
+        baked_level_light_maps = self.global_registry.unbaked_light_maps.get(location_index, level_index)
+
+        # Make a set of lit coords in the view_rect
+        lit_world_coords: set[Coord] = set(baked_player_light_map.coords.keys())
+        if not baked_level_light_maps is None:
+            for light_emitter_coord, baked_level_light_map in baked_level_light_maps.items():
+
+                if light_emitter_coord in fov_visible_coords:
+                    lit_world_coords.update(baked_level_light_map.coords.keys())
+
+        return lit_world_coords
