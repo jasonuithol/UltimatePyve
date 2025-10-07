@@ -2,11 +2,12 @@ import math
 
 from dark_libraries.dark_math import Vector2
 
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from models.light_map import LightMap
 from view.display_config import DisplayConfig
 
-class LightMapBuilder:
+class LightMapBuilder(LoggerMixin):
 
     # Injectable
     display_config: DisplayConfig
@@ -43,12 +44,12 @@ class LightMapBuilder:
 
             light_map = self._build_light_map(radius, light_emitter_view_offset)
             self.global_registry.unbaked_light_maps.register(radius, light_map)
-            print(f"[lighting] Built LightMap for radius {radius} with {len(light_map)} lit tiles.")
+            self.log(f"Built LightMap for radius {radius} with {len(light_map)} lit tiles.")
 
             # We are building too many radii, so let's just cut it off when we've lit every viewable tile, 
             # rather than tune the math that needs to be tuned for shape, not limits.
             if len(light_map) == max_lit_tiles:
-                print(f"[lighting] Maximum lit tiles of {max_lit_tiles} reached at radius {radius}, terminating light map generation.")
+                self.log(f"Maximum lit tiles of {max_lit_tiles} reached at radius {radius}, terminating light map generation.")
                 break
 
-        print(f"[lighting] Registered {len(self.global_registry.unbaked_light_maps)} light maps.")
+        self.log(f"Registered {len(self.global_registry.unbaked_light_maps)} light maps.")

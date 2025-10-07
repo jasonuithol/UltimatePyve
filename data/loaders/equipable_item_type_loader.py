@@ -1,3 +1,4 @@
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.data_ovl            import DataOVL
@@ -8,7 +9,7 @@ from models.enums.inventory_offset  import InventoryOffset
 from models.equipable_items import EquipableItemType
 
 
-class EquipableItemTypeLoader:
+class EquipableItemTypeLoader(LoggerMixin):
 
     # Injectable
     dataOvl: DataOVL
@@ -57,7 +58,7 @@ class EquipableItemTypeLoader:
                 rune_id = rune_id
             )
             self.global_registry.item_types.register(dra_values_index, item_type)
-            print(f"[items] Registered equippable item type: name={item_type.name}")
+            self.log(f"Registered equippable item type: name={item_type.name}")
         
         def build_helm(description_index: tuple[int,int], short_index: int, dra_values_index: int):
             build_item(description_index, short_index, dra_values_index, EquipableItemSlot.HEAD, EquipableItemTileId.HELM, EquipableItemRuneId.HELM)

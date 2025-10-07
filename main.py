@@ -1,3 +1,7 @@
+import colorama
+# Makes best effort to turn on ANSI support for console error messages.
+colorama.init()
+
 # Set up pygame
 import gc
 import pygame

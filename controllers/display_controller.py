@@ -3,6 +3,7 @@ import pygame
 
 from dark_libraries.dark_math import Coord
 
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from services.map_cache.map_level_contents import MapLevelContents
 from models.sprite import Sprite
@@ -15,7 +16,7 @@ from view.interactive_console import InteractiveConsole
 from view.view_port           import ViewPort
 from view.main_display        import MainDisplay
 
-class DisplayController:
+class DisplayController(LoggerMixin):
 
     # Injectable
     display_config:      DisplayConfig
@@ -43,7 +44,7 @@ class DisplayController:
         self.active_location_index: int = None
         self.active_level_index: int = None
 
-        print(f"Initialised DisplayEngine(id={hex(id(self))})")
+        self.log(f"Initialised DisplayEngine(id={hex(id(self))})")
 
     def _get_map_tiles(self) -> dict[Coord, Tile]:
         map_level_contents: MapLevelContents = self.global_registry.map_contents.get((

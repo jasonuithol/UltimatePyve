@@ -40,11 +40,8 @@ class MapCacheService(LoggerMixin):
                     terrain = self.global_registry.terrains.get(tile_id),
                     sprite  = self.global_registry.sprites.get(tile_id)
                 )
-            #
-            # TODO: Build the CoordContents
-            #
             self._contents[cache_key] = MapLevelContents(cache_value)
-        print(f"[map_content_registry] Cached map {u5_map.location_metadata.name}")
+        self.log(f"Cached map {u5_map.location_metadata.name}")
 
     def get_coord_contents(self, location_index: int, level_index: int, coord: Coord) -> CoordContents:
         assert any(self._contents), "Must have a map cached"

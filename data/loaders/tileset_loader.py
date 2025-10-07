@@ -2,6 +2,7 @@
 import pygame, struct
 from pathlib import Path
 
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from models.tile import Tile, TileData
 from view.display_config import DisplayConfig
@@ -54,7 +55,7 @@ def lzw_decompress(data: bytes) -> bytes:
         prev = code
     return bytes(result)
 
-class TileLoader:
+class TileLoader(LoggerMixin):
 
     TOTAL_TILES = 512
 
@@ -93,7 +94,7 @@ class TileLoader:
             tile = self.tile_from_bytes(tile_id, data)
             self.global_registry.tiles.register(tile_id, tile)
 
-        print(f"[tileset] Loaded {len(self.global_registry.tiles)} tiles from {path}")
+        self.log(f"Loaded {len(self.global_registry.tiles)} tiles from {path}")
     
 if __name__ == "__main__":
     import pygame

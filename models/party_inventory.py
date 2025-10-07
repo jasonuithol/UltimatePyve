@@ -1,14 +1,16 @@
+from dark_libraries.logging import LoggerMixin
 from models.enums.inventory_offset import InventoryOffset
 
-class PartyInventory:
-    def _after_inject(self):
+class PartyInventory(LoggerMixin):
+    def __init__(self):
+        super().__init__()
         self.inventory: dict[InventoryOffset,int] = {}
 
     def add(self, inventory_offset: InventoryOffset, additional_qty: int):
         current_qty = self.inventory.get(inventory_offset, 0)
         self.inventory[inventory_offset] = current_qty + additional_qty
         assert self.inventory[inventory_offset] >= 0, "Cannot have a negative amount of something, it's the dark ages."
-        print(f"[inventory] Updated party inventory: {inventory_offset.name} {current_qty} -> {current_qty + additional_qty}")
+        self.log(f"Updated party inventory: {inventory_offset.name} {current_qty} -> {current_qty + additional_qty}")
 
     def get_quantity(self, inventory_offset: InventoryOffset):
         return self.inventory.get(inventory_offset, 0)

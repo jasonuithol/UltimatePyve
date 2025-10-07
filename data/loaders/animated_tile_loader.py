@@ -26,4 +26,4 @@ class AnimatedTileLoader(LoggerMixin):
                 frame_time  = 0.5 if num_frames < 3 else 0.3
             )
             self.global_registry.sprites.register(tile_id, s)
-            print(f"[sprites] Registered animated terrain for base tile_id={tile_id} with {num_frames} frames.")
+            self.log(f"Registered animated terrain for base tile_id={tile_id} with {num_frames} frames.")

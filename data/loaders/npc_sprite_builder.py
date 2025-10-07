@@ -1,4 +1,5 @@
 from enum import Enum
+from dark_libraries.logging import LoggerMixin
 from models.enums.npc_ids import HumanTileId, MonsterTileId
 from models.sprite import Sprite
 
@@ -6,7 +7,7 @@ from data.global_registry import GlobalRegistry
 
 NUM_FRAMES = 4
 
-class NpcSpriteBuilder:
+class NpcSpriteBuilder(LoggerMixin):
 
     # Injectable
     global_registry: GlobalRegistry
@@ -19,7 +20,7 @@ class NpcSpriteBuilder:
                 frame_time  = 0.5 if num_frames < 3 else 0.3
             )
             self.global_registry.sprites.register(tile_id, s)
-            print(f"[sprites] Registered animated {tile_enum.__name__} {enum_name} with {num_frames} frames.")
+            self.log(f"Registered animated {tile_enum.__name__} {enum_name} with {num_frames} frames.")
 
     def register_npc_sprites(self):
         self._register_enum_sprites(HumanTileId, NUM_FRAMES)
