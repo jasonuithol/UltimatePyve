@@ -263,13 +263,15 @@ class PartyController(LoggerMixin):
     #
 
     def switch_outer_map(self):
-        if self.party_state.get_current_location().location_index != 0:
+        current_location = self.party_state.get_current_location()
+        if current_location.location_index != 0:
             return
-        if self.party_state.get_current_location().level_index == 0:        
-            self.outer_map_level = 255 # underworld
+        if current_location.level_index == 0:        
+            current_location.level_index = 255 # underworld
         else:
-            self.outer_map_level = 0   # britannia
-    
+            current_location.level_index = 0   # britannia
+        self._on_change_map_level(current_location.location_index, current_location.level_index)
+
     def rotate_transport(self):
         self.party_state.transport_mode = (self.party_state.transport_mode + 1) % len(self.global_registry.transport_modes)
 
