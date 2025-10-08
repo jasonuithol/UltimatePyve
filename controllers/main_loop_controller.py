@@ -14,6 +14,7 @@ from models.party_state       import PartyState
 
 from services.avatar_sprite_factory import AvatarSpriteFactory
 from services.console_service import ConsoleService
+from services.npc_service import NpcService
 from services.world_clock     import WorldClock
 from services.monster_spawner import MonsterSpawner
 
@@ -44,7 +45,8 @@ class MainLoopController:
     avatar_sprite_factory: AvatarSpriteFactory
     console_service:       ConsoleService
     monster_spawner:       MonsterSpawner
-    world_clock: WorldClock
+    world_clock:           WorldClock
+    npc_service:           NpcService
 
     def update(self):
         # Player sprite
@@ -107,6 +109,16 @@ class MainLoopController:
 
         # Nothing changed
     
+    def pass_time(self):
+        #
+        # TODO: Create a registry or event dispatcher for this
+        #
+        self.world_clock.pass_time()
+#                    self.interactable_factory_registry.pass_time()
+        self.party_controller.pass_time()
+        self.monster_spawner.pass_time()
+        self.npc_service.pass_time()
+
     def run(self):
 
         self.console_service.print_ascii([i for i in range(128)])
@@ -130,14 +142,7 @@ class MainLoopController:
 
                 # Allow "in=game" time to pass
                 if player_input_received:
-                    #
-                    # TODO: Create a registry for this
-                    #
-                    self.world_clock.pass_time()
-#                    self.interactable_factory_registry.pass_time()
-                    self.party_controller.pass_time()
-                    self.monster_spawner.pass_time()
-#                    self.npc_registry.pass_time()
+                    self.pass_time()
 
             #
             # all events processed.

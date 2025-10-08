@@ -28,4 +28,4 @@ class MapLevelContents:
         return self._coord_contents_dict.get(coord,  __class__._out_of_bounds_tile_grass)
 
     def __iter__(self) -> Iterable[tuple[Coord, CoordContents]]:
-        return self._coord_contents_dict.items()
+        return self._coord_contents_dict.items().__iter__()

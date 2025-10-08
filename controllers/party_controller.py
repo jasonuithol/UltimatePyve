@@ -22,6 +22,7 @@ from models.party_state       import PartyState
 from services.avatar_sprite_factory import AvatarSpriteFactory
 from services.door_instance_factory import DoorInstanceFactory
 from services.monster_spawner import MonsterSpawner
+from services.npc_service import NpcService
 from services.sound_track_player     import SoundTrackPlayer
 from services.world_clock     import WorldClock
 
@@ -43,6 +44,7 @@ class PartyController(LoggerMixin):
     avatar_sprite_factory: AvatarSpriteFactory
     door_instance_factory: DoorInstanceFactory
     monster_spawner:       MonsterSpawner
+    npc_service:           NpcService
 
     display_controller: DisplayController
     
@@ -51,6 +53,7 @@ class PartyController(LoggerMixin):
         self.display_controller.set_active_map(new_location_index, new_level_index)
         self.door_instance_factory.load_level(new_location_index, new_level_index)
         self.monster_spawner.load_level(new_location_index, new_level_index)
+        self.npc_service.load_level(new_location_index, new_level_index)
         '''
         self.world_loot_service.register_loot_containers()
         self.map_cache_service.init()
@@ -58,6 +61,7 @@ class PartyController(LoggerMixin):
 
     def _on_change_coord(self, new_coord: Coord):
         self.monster_spawner.set_player_coord(new_coord)
+        self.npc_service.set_player_coord(new_coord)
 
     def _say_blocked(self):
         self.console_service.print_ascii("Blocked !")

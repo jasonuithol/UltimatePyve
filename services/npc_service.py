@@ -3,6 +3,7 @@ from dark_libraries.dark_math import Coord
 from services.map_cache.map_cache_service import MapCacheService
 
 from models.npc_agent import NpcAgent
+from services.map_cache.map_level_contents import MapLevelContents
 
 class NpcService:
 
@@ -30,12 +31,12 @@ class NpcService:
 
     def pass_time(self):
 
-        map_level_contents = self.map_cache_service.get_map_level_contents(self.location_index, self.level_index)
+        map_level_contents: MapLevelContents  = self.map_cache_service.get_map_level_contents(self.location_index, self.level_index)
 
         blocked_coords: set[Coord] = {
             coord
             # TODO: make a method for this ?
-            for coord, coord_content in map_level_contents._data.items()
+            for coord, coord_content in map_level_contents
             if coord_content.get_terrain().walk == True
         }
 

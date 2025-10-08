@@ -104,9 +104,6 @@ class DisplayController(LoggerMixin):
         self.active_map = self.global_registry.maps.get(location_index)
 
     #
-    # TODO: Most of this is ViewPort logic.  Fix
-    #       The rest contains visual composition logic, move to MainDisplay
-    # 
     # TODO: remove player_coord as a parameter and add it to the state
     #
     def render(self, player_coord: Coord):
