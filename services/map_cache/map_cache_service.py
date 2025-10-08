@@ -16,6 +16,7 @@ class MapCacheService(LoggerMixin):
     global_registry: GlobalRegistry
 
     def __init__(self):
+        super().__init__()
         self._contents = dict[tuple[int,int], MapLevelContents]()
 
     # Call this AFTER mods have loaded.
