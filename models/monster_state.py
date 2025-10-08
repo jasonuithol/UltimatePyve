@@ -24,14 +24,12 @@ class MonsterState(NpcState):
         u5map: U5Map = self.global_registry.maps.get(self.global_location.location_index)
 
         obvious_move = self.get_coord() + self.get_coord().normal_4way(player_coord)
-        print(f"Considering obvious move: {obvious_move} blocked={obvious_move in blocked_coords} in_bounds={u5map.size_in_tiles.is_in_bounds(obvious_move)}")
         if (not obvious_move in blocked_coords) and u5map.size_in_tiles.is_in_bounds(obvious_move):
             return obvious_move
 
         alternative_moves = self.get_coord().get_4way_neighbours()
         random.shuffle(alternative_moves)
         for alternative_move in alternative_moves:
-            print(f"Considering alternative move: {alternative_move} blocked={alternative_move in blocked_coords} in_bounds={u5map.size_in_tiles.is_in_bounds(alternative_move)}")
             if (not alternative_move in blocked_coords) and u5map.size_in_tiles.is_in_bounds(obvious_move):
                 return alternative_move
 
