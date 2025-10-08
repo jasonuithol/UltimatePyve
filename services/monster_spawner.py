@@ -20,7 +20,7 @@ class MonsterSpawner(NpcSpawner, LoggerMixin):
 
     MONSTER_SPAWN_DISTANCE: float = 10
     MONSTER_SPAWN_PROBABILITY: float = 0.1
-    MAXIMUM_MONSTER_COUNT = 1
+    MAXIMUM_MONSTER_COUNT = 10
 
     npc_service: NpcService
     map_cache_service: MapCacheService
@@ -33,6 +33,10 @@ class MonsterSpawner(NpcSpawner, LoggerMixin):
         self.player_coord = player_coord
 
     def pass_time(self):
+
+        if self.location_index != 0:
+            # This is a monster free zone.
+            return
 
         if len(self.npc_service.get_npcs()) >= __class__.MAXIMUM_MONSTER_COUNT:
             # have enough monsters now.

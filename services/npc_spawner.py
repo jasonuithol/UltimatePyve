@@ -3,8 +3,9 @@ from typing import Protocol
 from data.global_registry import GlobalRegistry
 
 from models.npc_agent import NpcAgent
-from services.npc_service import NpcService
 from models.npc_state import NpcState
+
+from services.npc_service import NpcService
 
 class NpcSpawner(Protocol):
 
