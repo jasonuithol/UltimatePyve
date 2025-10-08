@@ -2,23 +2,25 @@
 import pygame
 
 from dark_libraries.dark_math import Coord
-
 from dark_libraries.logging import LoggerMixin
+
 from data.global_registry import GlobalRegistry
-from models.u5_map import U5Map
-from services.field_of_view_calculator import FieldOfViewCalculator
-from services.lighting_service import LightingService
-from services.map_cache.map_cache_service import MapCacheService
-from services.map_cache.map_level_contents import MapLevelContents
+
 from models.sprite import Sprite
 from models.tile   import Tile
-
-from services.world_clock import WorldClock
+from models.u5_map import U5Map
 
 from view.display_config      import DisplayConfig
 from view.interactive_console import InteractiveConsole
 from view.view_port           import ViewPort
 from view.main_display        import MainDisplay
+
+from services.field_of_view_calculator import FieldOfViewCalculator
+from services.lighting_service import LightingService
+from services.map_cache.map_cache_service import MapCacheService
+from services.map_cache.map_level_contents import MapLevelContents
+from services.npc_service import NpcService
+from services.world_clock import WorldClock
 
 class DisplayController(LoggerMixin):
 
@@ -29,11 +31,12 @@ class DisplayController(LoggerMixin):
     interactive_console: InteractiveConsole
 
     # Map generation
-    global_registry: GlobalRegistry
+    global_registry:   GlobalRegistry
     map_cache_service: MapCacheService
-    world_clock: WorldClock
-    fov_calculator: FieldOfViewCalculator
-    lighting_service: LightingService
+    world_clock:       WorldClock
+    fov_calculator:    FieldOfViewCalculator
+    lighting_service:  LightingService
+    npc_service:       NpcService
 
     def init(self):
 
@@ -76,9 +79,19 @@ class DisplayController(LoggerMixin):
             visible_coords
         )
 
+        npcs = self.npc_service.get_npcs()
+
+        def get_frame(world_coord: Coord):
+            if not world_coord in visible_coords.intersection(lit_coords):
+                return None
+            npc = npcs.get(world_coord, None)
+            if not npc is None:
+                return npc.sprite.get_current_frame_tile()
+            return map_level_contents.get_coord_contents(world_coord).get_renderable_frame()
+        
         return {
             world_coord:
-            map_level_contents.get_coord_contents(world_coord).get_renderable_frame() if world_coord in visible_coords.intersection(lit_coords) else None
+            get_frame(world_coord)
             for world_coord in self.view_port.view_rect
         }
     

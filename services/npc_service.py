@@ -50,8 +50,8 @@ class NpcService:
                 occupied_coords.add(new_coord)
                 occupied_coords.remove(old_coord)
 
-    def get_npcs(self):
-        return self.active_npcs
+    def get_npcs(self) -> dict[Coord, NpcAgent]:
+        return {npc.get_coord(): npc for npc in self.active_npcs}
 
     def add_npc(self, npc_agent: NpcAgent):
         self.active_npcs.append(npc_agent)
