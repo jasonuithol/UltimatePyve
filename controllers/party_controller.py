@@ -216,21 +216,21 @@ class PartyController(LoggerMixin):
         # Transport direction, and console message.
         if move_offset.x == 1:
             # east
-            self.last_east_west = 0
-            self.last_nesw_dir = 1
+            self.party_state.last_east_west = 0
+            self.party_state.last_nesw_dir = 1
             msg = "East"
         elif move_offset.x == -1:
             # west
-            self.last_east_west = 1
-            self.last_nesw_dir = 3
+            self.party_state.last_east_west = 1
+            self.party_state.last_nesw_dir = 3
             msg = "West"
         elif move_offset.y == 1:
             # south
-            self.last_nesw_dir = 2
+            self.party_state.last_nesw_dir = 2
             msg = "South"
         elif move_offset.y == -1:
             # north
-            self.last_nesw_dir = 0
+            self.party_state.last_nesw_dir = 0
             msg = "North"
             
         self.console_service.print_ascii(msg)
@@ -271,6 +271,6 @@ class PartyController(LoggerMixin):
             self.outer_map_level = 0   # britannia
     
     def rotate_transport(self):
-        self.transport_mode = (self.transport_mode + 1) % len(self.global_registry.transport_modes)
+        self.party_state.transport_mode = (self.party_state.transport_mode + 1) % len(self.global_registry.transport_modes)
 
 
