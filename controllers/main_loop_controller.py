@@ -38,7 +38,7 @@ class MainLoopController:
     global_registry: GlobalRegistry
     party_state: PartyState
 
-    player_controller:    PartyController
+    party_controller:    PartyController
     display_controller: DisplayController
 
     avatar_sprite_factory: AvatarSpriteFactory
@@ -53,7 +53,8 @@ class MainLoopController:
         self.display_controller.set_avatar_sprite(player_sprite)
 
         # update display
-        self.display_controller.render(new_coords)
+        party_location = self.party_state.get_current_location()
+        self.display_controller.render(party_location.coord)
 
     def obtain_action_direction(self) -> Vector2:
 
@@ -79,29 +80,29 @@ class MainLoopController:
 
         return None
     
-    def process_event(self, player_state: PartyState, event: pygame.event.Event):
+    def process_event(self, event: pygame.event.Event):
 
         if event.key == pygame.K_TAB:
-            player_state.switch_outer_map()
+            self.party_controller.switch_outer_map()
             return
 
         if event.key == pygame.K_BACKQUOTE:
-            player_state.rotate_transport()
+            self.party_controller.rotate_transport()
             return
          
         move_direction = get_direction(event)
         if not move_direction is None:
-            player_state.move(move_direction)
+            self.party_controller.move(move_direction)
             return 
 
         if event.key == pygame.K_j:
             direction = self.obtain_action_direction()
             if direction:
-                player_state.jimmy(direction)
+                self.party_controller.jimmy(direction)
                 return
             
         if event.key == pygame.K_i:
-            player_state.ignite_torch()
+            self.party_controller.ignite_torch()
             return
 
         # Nothing changed
@@ -125,7 +126,7 @@ class MainLoopController:
                         running = False
                     else:
                         player_input_received = True
-                        self.process_event(self.player_state, event)
+                        self.process_event(event)
 
                 # Allow "in=game" time to pass
                 if player_input_received:
@@ -133,10 +134,10 @@ class MainLoopController:
                     # TODO: Create a registry for this
                     #
                     self.world_clock.pass_time()
-                    self.interactable_factory_registry.pass_time()
-                    self.player_state.pass_time()
+#                    self.interactable_factory_registry.pass_time()
+                    self.party_controller.pass_time()
                     self.monster_spawner.pass_time()
-                    self.npc_registry.pass_time()
+#                    self.npc_registry.pass_time()
 
             #
             # all events processed.

@@ -5,6 +5,7 @@ from dark_libraries.logging import LoggerMixin
 class Registry[TKey, TValue](LoggerMixin):
 
     def __init__(self):
+        super().__init__()
         self._instances = dict[TKey, TValue]()
     
     def register(self, key: TKey, value: TValue):

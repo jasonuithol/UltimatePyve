@@ -1,5 +1,9 @@
 from data.global_registry import GlobalRegistry
 
+#
+# TODO: THIS CLASS IS SCHEDULED FOR DEMOLITION (insane overengineering)
+#
+
 class TransportModeLoader:
 
     global_registry: GlobalRegistry

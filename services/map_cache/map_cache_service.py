@@ -17,7 +17,7 @@ class MapCacheService(LoggerMixin):
 
     def __init__(self):
         super().__init__()
-        self._contents = dict[tuple[int,int], MapLevelContents]()
+        self._map_level_content_dict = dict[tuple[int,int], MapLevelContents]()
 
     # Call this AFTER mods have loaded.
     def init(self):
@@ -33,21 +33,22 @@ class MapCacheService(LoggerMixin):
 
     def cache_u5map(self, u5_map: U5Map):
         for level_index in u5_map.levels.keys():
+            coord_contents_dict = dict[Coord, MapLevelContents]()            
             for coord in u5_map.get_coord_iteration():
                 tile_id = u5_map.get_tile_id(level_index, coord)
-                cache_key = u5_map.location_metadata.location_index, level_index
-                cache_value = CoordContents(
+                coord_contents_dict[coord] = CoordContents(
                     tile    = self.global_registry.tiles.get(tile_id),
                     terrain = self.global_registry.terrains.get(tile_id),
                     sprite  = self.global_registry.sprites.get(tile_id)
                 )
-            self._contents[cache_key] = MapLevelContents(cache_value)
+            cache_key = u5_map.location_metadata.location_index, level_index
+            self._map_level_content_dict[cache_key] = MapLevelContents(coord_contents_dict)
         self.log(f"Cached map {u5_map.location_metadata.name}")
 
     def get_coord_contents(self, location_index: int, level_index: int, coord: Coord) -> CoordContents:
-        assert any(self._contents), "Must have a map cached"
-        map_level_contents = self._contents[(location_index, level_index)]
+        assert any(self._map_level_content_dict), "Must have a map cached"
+        map_level_contents = self._map_level_content_dict[(location_index, level_index)]
         return map_level_contents.get_coord_contents(coord)
     
     def get_map_level_contents(self, location_index: int, level_index: int) -> MapLevelContents:
-        return self._contents[(location_index, level_index)]
+        return self._map_level_content_dict[(location_index, level_index)]

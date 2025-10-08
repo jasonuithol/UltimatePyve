@@ -4,6 +4,7 @@ from dark_libraries.dark_math        import Coord
 from dark_libraries.service_provider import ServiceProvider
 
 from models.door_type        import DoorType
+from models.enums.door_type_tile_id import DoorTypeTileId
 from models.magic            import S_MAGIC_UNLOCK
 from models.enums.inventory_offset  import InventoryOffset
 from models.party_inventory  import PartyInventory
@@ -14,6 +15,7 @@ from view.interactive_console import InteractiveConsole
 
 class DoorInstance(Interactable):
     def __init__(self, door_type: DoorType, coord: Coord):
+        assert not door_type is None, "door_type cannot be None"
         self.door_type: DoorType = door_type
         self.coord: Coord = coord
         self.interactive_console: InteractiveConsole = ServiceProvider.get_provider().resolve(InteractiveConsole)
@@ -114,7 +116,7 @@ class DoorInstance(Interactable):
             return
 
         self.is_open = True
-        self.tile_id = DoorType.D_OPENED
+        self.tile_id = DoorTypeTileId.D_OPENED.value
         self.turns_until_close = 4
     
     def jimmy(self):

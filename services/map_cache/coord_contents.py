@@ -13,8 +13,8 @@ class CoordContents:
         self.tile = tile
         self.terrain = terrain
         self.terrain_sprite = sprite
+        self.terrain_interactable: Interactable = None
 
-        self.interactable: Interactable = None
         self.global_registry: GlobalRegistry = ServiceProvider.get_provider().resolve(GlobalRegistry)
 
     def set_terrain_interactable(self, terrain_interactable: Interactable):

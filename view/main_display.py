@@ -3,6 +3,7 @@
 from enum import Enum
 from dark_libraries.dark_math import Coord, Size
 from data.global_registry import GlobalRegistry
+from services.font_mapper import FontMapper
 from services.world_clock import CelestialGlyphCodes, WorldClock
 from view.view_port import ViewPort
 
@@ -26,6 +27,7 @@ class MainDisplay(ScalableComponent):
     world_clock: WorldClock
     view_port: ViewPort
     global_registry: GlobalRegistry
+    font_mapper: FontMapper
 
     def __init__(self):
         pass 
@@ -62,10 +64,10 @@ class MainDisplay(ScalableComponent):
         #
         # BORDER TOP, BOTTOM, LEFT, RIGHT GLYPHS
         #
-        self.right_block_glyph = self.global_registry.font_glyphs.get((
+        self.right_block_glyph = self.font_mapper.map_code(
             "IBM.CH", 
             BorderGlyphCodes.BLOCK_GLYPH_IBM_FONT_ID.value
-        )).replace_color(
+        ).replace_color(
             # Set foreground to blue (this is the thick blue border)
             old_mapped_rgb = self._color_white, 
             new_mapped_rbg = self._color_dark_blue
@@ -93,10 +95,10 @@ class MainDisplay(ScalableComponent):
 
         # This is used to fix a gap between the block borders and the right hand side rounded corner glyphs.
         # Use "self._color_black" as the transparency color when overlaying the target corner glyphs.
-        self.right_cnr_overlay_glyph = self.global_registry.font_glyphs.get((
+        self.right_cnr_overlay_glyph = self.font_mapper.map_code(
             "IBM.CH", 
             BorderGlyphCodes.BLOCK_GLYPH_IBM_FONT_ID.value
-        )).replace_color(
+        ).replace_color(
             # Change block background to blue.  This will become the "brush"
             old_mapped_rgb = self._color_black,
             new_mapped_rbg = self._color_dark_blue
@@ -107,7 +109,7 @@ class MainDisplay(ScalableComponent):
         )
 
         # Make the glyphs blue foreground and black background.        
-        corner_maker_func = lambda font_id: self.global_registry.font_glyphs.get(("IBM.CH", font_id)).replace_color(self._color_white, self._color_dark_blue)
+        corner_maker_func = lambda font_id: self.font_mapper.map_code("IBM.CH", font_id).replace_color(self._color_white, self._color_dark_blue)
 
         self.top_left_cnr_glyph     = corner_maker_func(BorderGlyphCodes.TOP_LEFT_CNR_GLYPH_IBM_FONT_ID.value)
         self.bottom_left_cnr_glyph  = corner_maker_func(BorderGlyphCodes.BOTTOM_LEFT_CNR_GLYPH_IBM_FONT_ID.value)
@@ -117,7 +119,7 @@ class MainDisplay(ScalableComponent):
         self.bottom_right_cnr_glyph = corner_maker_func(BorderGlyphCodes.BOTTOM_RIGHT_CNR_GLYPH_IBM_FONT_ID.value).overlay_with(self.right_cnr_overlay_glyph, self._color_black)
 
         # Just a big old block of blue.
-        self.junction_glyph = self.global_registry.font_glyphs.get(("IBM.CH", BorderGlyphCodes.SPACE_IBM_FONT_ID.value)).replace_color(self._color_black, self._color_dark_blue)
+        self.junction_glyph = self.font_mapper.map_code("IBM.CH", BorderGlyphCodes.SPACE_IBM_FONT_ID.value).replace_color(self._color_black, self._color_dark_blue)
 
         #
         # CELESTIAL GLYPHS
@@ -126,7 +128,7 @@ class MainDisplay(ScalableComponent):
         # The sun and moon phases.  The sun is yellow and the moons are light grey.
         self.celestial_glyphs = {
             celestial_glyph_code.value:
-            self.global_registry.font_glyphs.get(("RUNES.CH", celestial_glyph_code.value)).replace_color(
+            self.font_mapper.map_code("RUNES.CH", celestial_glyph_code.value).replace_color(
                 self._color_white, 
                 self._color_yellow if celestial_glyph_code == CelestialGlyphCodes.SUN else self._color_light_grey
             )
@@ -134,7 +136,7 @@ class MainDisplay(ScalableComponent):
         }
 
         # A blank space.
-        self.celestial_glyphs[0] = self.global_registry.font_glyphs.get(("IBM.CH", BorderGlyphCodes.SPACE_IBM_FONT_ID.value))
+        self.celestial_glyphs[0] = self.font_mapper.map_code("IBM.CH", BorderGlyphCodes.SPACE_IBM_FONT_ID.value)
 
         #
         # PROMPTS
@@ -143,12 +145,12 @@ class MainDisplay(ScalableComponent):
         #
 
         # Make a blue right-pointing rounded triangle, and then shift it left 1 pixel.
-        self.right_prompt_overlay = self.global_registry.font_glyphs.get(("IBM.CH", BorderGlyphCodes.RIGHT_PROMPT_IBM_FONT_ID.value)).replace_color(self._color_white, self._color_dark_blue)
+        self.right_prompt_overlay = self.font_mapper.map_code("IBM.CH", BorderGlyphCodes.RIGHT_PROMPT_IBM_FONT_ID.value).replace_color(self._color_white, self._color_dark_blue)
         self.right_prompt_overlay._surface.scroll(dx = -1, dy = 0)
 
         # Fetch a default white right-pointing rounded triangle, and then overlay the shifted blue triangle over it, using black as the transparency color.
         # The result is supposed to be a blue triangle with a thin white border.  It almost but not quite works.
-        self.right_prompt = self.global_registry.font_glyphs.get(("IBM.CH", BorderGlyphCodes.RIGHT_PROMPT_IBM_FONT_ID.value)).overlay_with(
+        self.right_prompt = self.font_mapper.map_code("IBM.CH", BorderGlyphCodes.RIGHT_PROMPT_IBM_FONT_ID.value).overlay_with(
             overlay = self.right_prompt_overlay,
             transparent_mapped_rgb = self._color_black
         )
@@ -208,7 +210,7 @@ class MainDisplay(ScalableComponent):
         surf = self.get_input_surface()
         char_y_bottom = self.size_in_glyphs.h - 1
 
-        for cursor, glyph in enumerate(self.global_registry.font_glyphs.get(("IBM.CH", "East  Winds"))):
+        for cursor, glyph in enumerate(self.font_mapper.map_ascii_string("East  Winds")):
             glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor + 2, char_y_bottom), surf)
 
     def draw(self):

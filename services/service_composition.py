@@ -10,6 +10,7 @@ from services.font_mapper import FontMapper
 from services.lighting_service import LightingService
 from services.modding_service     import ModdingService
 from services.monster_spawner     import MonsterSpawner
+from services.npc_service import NpcService
 from services.sound_track_player  import SoundTrackPlayer
 
 from services.world_clock import WorldClock
@@ -29,6 +30,7 @@ def compose(provider: ServiceProvider):
     provider.register(ModdingService)
     provider.register(MonsterSpawner)
     provider.register(SoundTrackPlayer)
+    provider.register(NpcService)
 
     provider.register(WorldClock)
     provider.register(FontMapper)

@@ -20,6 +20,8 @@ from models.party_inventory   import PartyInventory
 from models.party_state       import PartyState
 
 from services.avatar_sprite_factory import AvatarSpriteFactory
+from services.door_instance_factory import DoorInstanceFactory
+from services.monster_spawner import MonsterSpawner
 from services.sound_track_player     import SoundTrackPlayer
 from services.world_clock     import WorldClock
 
@@ -39,18 +41,23 @@ class PartyController(LoggerMixin):
     sound_track_player:    SoundTrackPlayer
     world_clock:           WorldClock
     avatar_sprite_factory: AvatarSpriteFactory
+    door_instance_factory: DoorInstanceFactory
+    monster_spawner:       MonsterSpawner
 
     display_controller: DisplayController
     
     # Anything changing map, OR level should call this.
     def _on_change_map_level(self, new_location_index: int, new_level_index: int):
         self.display_controller.set_active_map(new_location_index, new_level_index)
-
+        self.door_instance_factory.load_level(new_location_index, new_level_index)
+        self.monster_spawner.load_level(new_location_index, new_level_index)
         '''
         self.world_loot_service.register_loot_containers()
         self.map_cache_service.init()
         '''
 
+    def _on_change_coord(self, new_coord: Coord):
+        self.monster_spawner.set_player_coord(new_coord)
 
     def _say_blocked(self):
         self.console_service.print_ascii("Blocked !")
@@ -73,14 +80,15 @@ class PartyController(LoggerMixin):
         self.party_state.push_location(inner_location)
 
         self._on_change_map_level(inner_location.location_index, inner_location.level_index)
+        self._on_change_coord(inner_location.coord)
 
         self.log(f"Set party location to outer={outer_location}, inner={inner_location}")
 
-    def load_transport_state(self):
+    def load_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
         self.party_state.set_transport_state(
-            transport_mode = 0,  # walk
-            last_east_west = 0,  # east
-            last_nesw_dir = 1    # east
+            transport_mode = transport_mode,
+            last_east_west = transport_mode,
+            last_nesw_dir = transport_mode
         )
 
         current_transport_mode, current_direction = self.party_state.get_transport_state()
@@ -106,7 +114,7 @@ class PartyController(LoggerMixin):
     # TODO: Choose a better name for this method
     def can_traverse(self, target: Coord) -> MoveIntoResult:
 
-        transport_mode     = self.global_registry.transport_modes.get(self.transport_mode)
+        transport_mode     = self.global_registry.transport_modes.get(self.party_state.transport_mode)
         current_location   = self.party_state.get_current_location()
         current_map: U5Map = self.global_registry.maps.get(current_location.location_index)
         target_tile_id     = current_map.get_tile_id(current_location.level_index, target)
@@ -121,7 +129,7 @@ class PartyController(LoggerMixin):
 
         # It's just regular terrain.
         terrain: Terrain = self.global_registry.terrains.get(target_tile_id)
-        can_traverse_base_terrain = terrain.can_traverse(transport_mode, target_tile_id)
+        can_traverse_base_terrain = terrain.can_traverse(transport_mode)
 
         if not can_traverse_base_terrain:
             self._say_blocked()
@@ -153,8 +161,9 @@ class PartyController(LoggerMixin):
                 new_location = self.party_state.get_current_location()
                 
                 self._on_change_map_level(new_location.location_index, new_location.level_index)
+                self._on_change_coord(new_location.coord)
 
-                self.interactive_console.print_ascii(f"Exited {current_map.location_metadata.name.capitalize()}")
+                self.console_service.print_ascii(f"Exited {current_map.location_metadata.name.capitalize()}")
                 return
 
         # Handle un-traversable terrain.
@@ -164,6 +173,7 @@ class PartyController(LoggerMixin):
 
         # Move
         self.party_state.change_coord(target_location.coord)
+        self._on_change_coord(target_location.coord)
 
         # map level change checks.
         target_tile_id = current_map.get_tile_id(current_location.level_index, target_location.coord)
@@ -176,9 +186,10 @@ class PartyController(LoggerMixin):
             self.party_state.push_location(new_location)
 
             self._on_change_map_level(new_location.location_index, new_location.level_index)
+            self._on_change_coord(new_location.coord)
 
             new_map: U5Map = self.global_registry.maps.get(new_location.location_index)
-            self.interactive_console.print_ascii(f"Entered {new_map.location_metadata.name.capitalize()}")
+            self.console_service.print_ascii(f"Entered {new_map.location_metadata.name.capitalize()}")
             return
 
         # ladders                
@@ -200,7 +211,7 @@ class PartyController(LoggerMixin):
         if current_location.level_index != new_level_index:
             self.party_state.change_level(new_level_index)
             self._on_change_map_level(target_location.location_index, new_level_index)
-
+       
 
         # Transport direction, and console message.
         if move_offset.x == 1:
@@ -222,7 +233,7 @@ class PartyController(LoggerMixin):
             self.last_nesw_dir = 0
             msg = "North"
             
-        self.interactive_console.print_ascii(msg)
+        self.console_service.print_ascii(msg)
 
     def jimmy(self, direction: Vector2):
 

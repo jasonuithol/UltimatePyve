@@ -5,6 +5,7 @@ from data.global_registry import GlobalRegistry
 from data.loaders.entry_trigger_loader import EntryTriggerLoader
 from data.loaders.tileset_loader       import TileLoader
 from data.loaders.terrain_loader       import TerrainLoader
+from data.loaders.transport_mode_loader import TransportModeLoader
 from data.loaders.u5_map_loader         import U5MapLoader
 from data.loaders.animated_tile_loader import AnimatedTileLoader
 from data.loaders.door_type_loader     import DoorTypeLoader
@@ -13,6 +14,7 @@ from data.loaders.flame_sprite_loader  import FlameSpriteLoader
 from data.loaders.consumable_item_type_loader import ConsumableItemTypeLoader
 from data.loaders.equipable_item_type_loader  import EquipableItemTypeLoader
 
+from data.registries.registry_base import Registry
 from services.light_map_level_baker import LightMapLevelBaker
 from data.loaders.light_map_builder     import LightMapBuilder
 from data.loaders.npc_sprite_builder    import NpcSpriteBuilder
@@ -47,8 +49,18 @@ class GlobalRegistryLoader(LoggerMixin):
     light_map_level_baker:       LightMapLevelBaker
 #    saved_game_loader: SavedGameLoader
     npc_sprite_builder:          NpcSpriteBuilder
+    transport_mode_loader:       TransportModeLoader
 
     modding: ModdingService
+
+    def _post_load_check(self) -> bool:
+        all_registries_loaded = True
+        for name, registry in self.global_registry.__dict__.items():
+            if isinstance(registry, Registry):
+                if len(registry) == 0:
+                    self.log(f"ERROR: {name} registry is empty.")
+                    all_registries_loaded = False
+        return all_registries_loaded
 
     def load(self):
 
@@ -77,13 +89,18 @@ class GlobalRegistryLoader(LoggerMixin):
 
         # npc
         self.npc_sprite_builder.register_npc_sprites()
-
-        self.log("All registries loaded.")
+        self.transport_mode_loader.load()
 
         #
-        # MODS ARE LOADED HERE
+        # TODO: LOAD REGISTRY SPECIFIC MODS AFTER EACH OG REGISTRY IS LOADED.
         #
-        self.modding.load_mods()
+#        self.modding.load_mods()
+
+        if self._post_load_check():
+            self.log("All registries loaded.")
+        else:
+            self.log("WARNING: Some registries did not load.")
+
 
         
                 

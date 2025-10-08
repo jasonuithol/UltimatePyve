@@ -27,7 +27,10 @@ class GlobalRegistry:
         self.terrains = Registry[int, Terrain]()  # tile_id
 
         self.entry_triggers = Registry[GlobalLocation, GlobalLocation]()
+
+        # This is over-engineering, but I was getting circular imports and so this happened.
         self.door_types     = Registry[int,            DoorType]()
+        
         self.interactables  = Registry[Coord,          Interactable]()
 
         # item oriented features.

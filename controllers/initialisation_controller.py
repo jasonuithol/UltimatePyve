@@ -46,6 +46,7 @@ class InitialisationController(LoggerMixin):
         )
 
         self.party_controller.load_inner_location(current_location)
+        self.party_controller.load_transport_state(0,0,1) # on foot, "facing" east
 
         #
         # We pretend that we're loading a saved game at this world time.

@@ -52,3 +52,4 @@ class LoggerMixin:
     def __init__(self):
         self._logger = Logger(self)
         self.log = self._logger.log
+        super().__init__()

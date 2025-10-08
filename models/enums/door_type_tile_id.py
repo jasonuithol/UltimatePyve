@@ -1,12 +1,17 @@
 from enum import Enum
-from models.door_type import DoorType
 
 class DoorTypeTileId(Enum):
-    DoorType.D_MAGIC_NORMAL
-    DoorType.D_MAGIC_WINDOWED
 
-    DoorType.D_UNLOCKED_NORMAL
-    DoorType.D_UNLOCKED_WINDOWED
+    # Tile types.
+    D_OPENED            = 68
 
-    DoorType.D_LOCKED_NORMAL
-    DoorType.D_LOCKED_WINDOWED
+    D_UNLOCKED_NORMAL   = 184
+    D_UNLOCKED_WINDOWED = 186
+
+    D_LOCKED_NORMAL     = 185
+    D_LOCKED_WINDOWED   = 187
+
+    D_MAGIC_NORMAL      = 151
+    D_MAGIC_WINDOWED    = 152
+
+

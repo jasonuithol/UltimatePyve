@@ -5,6 +5,8 @@ from dark_libraries.dark_math import Coord
 
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
+from models.u5_map import U5Map
+from services.map_cache.map_cache_service import MapCacheService
 from services.map_cache.map_level_contents import MapLevelContents
 from models.sprite import Sprite
 from models.tile   import Tile
@@ -26,6 +28,7 @@ class DisplayController(LoggerMixin):
 
     # Map generation
     global_registry: GlobalRegistry
+    map_cache_service: MapCacheService
     world_clock: WorldClock
 
     def init(self):
@@ -43,14 +46,15 @@ class DisplayController(LoggerMixin):
         self.avatar: Sprite = None
         self.active_location_index: int = None
         self.active_level_index: int = None
+        self.active_map: U5Map = None
 
-        self.log(f"Initialised DisplayEngine(id={hex(id(self))})")
+        self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
     def _get_map_tiles(self) -> dict[Coord, Tile]:
-        map_level_contents: MapLevelContents = self.global_registry.map_contents.get((
+        map_level_contents: MapLevelContents = self.map_cache_service.get_map_level_contents(
             self.active_location_index,
-            self.active_level
-        ))
+            self.active_level_index
+        )
 
         return {
             world_coord:
@@ -63,7 +67,8 @@ class DisplayController(LoggerMixin):
 
     def set_active_map(self, location_index: int, level_index: int):
         self.active_location_index = location_index
-        self.active_level = level_index
+        self.active_level_index = level_index
+        self.active_map = self.global_registry.maps.get(location_index)
 
     #
     # TODO: Most of this is ViewPort logic.  Fix
