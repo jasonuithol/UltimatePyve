@@ -11,6 +11,7 @@ from data.global_registry_loader    import GlobalRegistryLoader
 
 from controllers.display_controller import DisplayController
 from controllers.party_controller   import PartyController
+from services.light_map_level_baker import LightMapLevelBaker
 from services.map_cache.map_cache_service import MapCacheService
 from services.world_clock           import WorldClock
 from services.world_loot.world_loot_service import WorldLootService
@@ -29,6 +30,8 @@ class InitialisationController(LoggerMixin):
 
     party_controller:   PartyController
     display_controller: DisplayController
+
+    light_map_level_baker: LightMapLevelBaker
 
     def init(self):
         
@@ -66,6 +69,7 @@ class InitialisationController(LoggerMixin):
 
         self.world_loot_service.register_loot_containers()
         self.map_cache_service.init()
+        self.light_map_level_baker.bake_level_light_maps()
 
         self.log("Initialisation completed.")
 

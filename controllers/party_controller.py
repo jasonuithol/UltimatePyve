@@ -246,9 +246,9 @@ class PartyController(LoggerMixin):
         TORCH_RADIUS = 3
         TORCH_DURATION_HOURS = 4
         if self.party_inventory.get_quantity(InventoryOffset.TORCHES) == 0:
-            self.interactive_console.print_ascii("No torches !")
+            self.console_service.print_ascii("No torches !")
             return
-        self.interactive_console.print_ascii("Ignite torch !")
+        self.console_service.print_ascii("Ignite torch !")
         self.party_inventory.add(InventoryOffset.TORCHES, -1)
         self.party_state.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
 

@@ -1,5 +1,6 @@
 from dark_libraries.dark_math import Coord, Rect, Vector2
 
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.global_location import GlobalLocation
@@ -10,7 +11,7 @@ from models.light_map       import LightMap
 from services.field_of_view_calculator import FieldOfViewCalculator
 from view.display_config import DisplayConfig
 
-class LightMapLevelBaker:
+class LightMapLevelBaker(LoggerMixin):
 
     FIXED_LIGHT_RADIUS = 3
 
@@ -31,35 +32,24 @@ class LightMapLevelBaker:
         )
         return self.fov_calculator.calculate_fov_visibility(location_index, level_index, light_emitter_coord, view_rect)
 
-    def _bake_light_map(self, location_index: int, level_index: int, light_emitter_coord: Coord):
-
+    def _bake_light_map(self, location_index: int, level_index: int, light_emitter_coord: Coord) -> LightMap:
         visible_world_coords = self._get_fov_visible_coords(location_index, level_index, light_emitter_coord)
-        baked_light_map = self.default_light_map.translate(light_emitter_coord).intersect(visible_world_coords)
-
-        light_emitter_location = GlobalLocation(
-            location_index, 
-            level_index, 
-            light_emitter_coord
-        )
-
-        self.global_registry.baked_light_maps.register(
-            light_emitter_location,
-            baked_light_map
-        )
+        return self.default_light_map.translate(light_emitter_coord).intersect(visible_world_coords)
 
     def _bake_level(self, u5_map: U5Map, level_index: int) -> int:
-        num_lights = 0
+        baked_dict = dict[Coord, LightMap]()
         for map_coord in u5_map.get_coord_iteration():
             tile_id = u5_map.get_tile_id(level_index, map_coord)
             terrain: Terrain = self.global_registry.terrains.get(tile_id)
             if terrain.emits_light:
-                self._bake_light_map(
+                baked_dict[map_coord] = self._bake_light_map(
                     u5_map.location_metadata.location_index, 
                     level_index, 
                     light_emitter_coord = map_coord
                 )
-                num_lights += 1
-        return num_lights
+        key = (u5_map.location_metadata.location_index, level_index)
+        self.global_registry.baked_light_level_maps.register(key, baked_dict)
+        return len(baked_dict)
     
     # all baked level light maps are built in coords relative to the level map
     def bake_level_light_maps(self):

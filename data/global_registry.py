@@ -30,7 +30,7 @@ class GlobalRegistry:
 
         # This is over-engineering, but I was getting circular imports and so this happened.
         self.door_types     = Registry[int,            DoorType]()
-        
+
         self.interactables  = Registry[Coord,          Interactable]()
 
         # item oriented features.
@@ -41,9 +41,10 @@ class GlobalRegistry:
         self.transport_modes = Registry[int, str]() # transport_mode_index
 
         # display oriented features.
-        self.fonts              = Registry[str,             U5Font]()     # font_name
-        self.font_glyphs        = Registry[tuple[str, int], U5Glyph]()    # (font_name, glyph_code)
-        self.unbaked_light_maps = Registry[int,             LightMap]()   # radius
+        self.fonts                  = Registry[str,             U5Font]()     # font_name
+        self.font_glyphs            = Registry[tuple[str, int], U5Glyph]()    # (font_name, glyph_code)
+        self.unbaked_light_maps     = Registry[int,             LightMap]()   # radius
+        self.baked_light_level_maps = Registry[tuple[int,int],  dict[Coord, LightMap]]()   # location, level -> coord, lightmap
 
         # soundtracks.
         self.location_soundtracks  = Registry[int, str]() # location_index

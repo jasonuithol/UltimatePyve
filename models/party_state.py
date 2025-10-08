@@ -76,4 +76,4 @@ class PartyState:
         return self.light_radius
 
     def get_light_expiry(self) -> datetime:
-        return self.light_radius
+        return self.light_expiry

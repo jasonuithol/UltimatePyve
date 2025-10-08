@@ -28,6 +28,8 @@ class MapCacheService(LoggerMixin):
                 sprite       = None
             )            
         )
+
+        # cache every map
         for u5_map in self.global_registry.maps.values():
             self.cache_u5map(u5_map)
 

@@ -7,6 +7,7 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from models.u5_map import U5Map
 from services.field_of_view_calculator import FieldOfViewCalculator
+from services.lighting_service import LightingService
 from services.map_cache.map_cache_service import MapCacheService
 from services.map_cache.map_level_contents import MapLevelContents
 from models.sprite import Sprite
@@ -32,6 +33,7 @@ class DisplayController(LoggerMixin):
     map_cache_service: MapCacheService
     world_clock: WorldClock
     fov_calculator: FieldOfViewCalculator
+    lighting_service: LightingService
 
     def init(self):
 
@@ -66,9 +68,17 @@ class DisplayController(LoggerMixin):
             self.view_port.view_rect
         )
 
+        lit_coords = self.lighting_service.calculate_lighting(
+            self.active_location_index,
+            self.active_level_index,
+            self.lighting_service.get_player_light_radius(),
+            player_coord,
+            visible_coords
+        )
+
         return {
             world_coord:
-            map_level_contents.get_coord_contents(world_coord).get_renderable_frame() if world_coord in visible_coords else None
+            map_level_contents.get_coord_contents(world_coord).get_renderable_frame() if world_coord in visible_coords.intersection(lit_coords) else None
             for world_coord in self.view_port.view_rect
         }
     
