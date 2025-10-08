@@ -54,7 +54,7 @@ class InitialisationController(LoggerMixin):
         #
         # We pretend that we're loading a saved game at this world time.
         #
-        self.world_clock.set_world_time(datetime(year=139, month=4, day=5, hour=23, minute=35))
+        self.world_clock.set_world_time(datetime(year=139, month=4, day=5, hour=8, minute=35))
 
         #
         # We pretend that we're loading a saved game with this inventory.

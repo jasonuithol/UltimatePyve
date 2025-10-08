@@ -8,6 +8,9 @@ from models.npc_state import NpcState
 
 class NpcSpawner(Protocol):
 
+    def __init__(self):
+        super().__init__()
+
     # Injectable
     global_registry: GlobalRegistry
     npc_service:     NpcService

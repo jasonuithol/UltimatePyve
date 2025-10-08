@@ -175,6 +175,11 @@ class PartyController(LoggerMixin):
             self._say_blocked()
             return
 
+        # handle bumping into NPCs.
+        if target_location.coord in self.npc_service.get_occupied_coords():
+            self._say_blocked()
+            return
+
         # Move
         self.party_state.change_coord(target_location.coord)
         self._on_change_coord(target_location.coord)

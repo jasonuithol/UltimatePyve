@@ -1,9 +1,8 @@
 from dark_libraries.dark_math import Coord
 
-from services.map_cache.map_cache_service import MapCacheService
-
 from models.npc_agent import NpcAgent
-from services.map_cache.map_level_contents import MapLevelContents
+
+from services.map_cache.map_cache_service  import MapCacheService
 
 class NpcService:
 
@@ -30,19 +29,10 @@ class NpcService:
         self.player_coord = player_coord
 
     def pass_time(self):
+        blocked_coords = self.map_cache_service.get_blocked_coords(self.location_index, self.level_index, transport_mode_index = 0)
+        occupied_coords = self.get_occupied_coords()
 
-        map_level_contents: MapLevelContents  = self.map_cache_service.get_map_level_contents(self.location_index, self.level_index)
-
-        blocked_coords: set[Coord] = {
-            coord
-            # TODO: make a method for this ?
-            for coord, coord_content in map_level_contents
-            if coord_content.get_terrain().walk == True
-        }
-
-        occupied_coords = {npc.get_coord() for npc in self.active_npcs}
-        occupied_coords.add(self.player_coord)
-
+        # Give all the NPCs a turn.
         for npc in self.active_npcs:
             old_coord = npc.get_coord()
             npc.pass_time(blocked_coords.union(occupied_coords), self.player_coord)
@@ -59,4 +49,7 @@ class NpcService:
 
     def remove_npc(self, npc_agent: NpcAgent):
         self.active_npcs.remove(npc_agent)
+
+    def get_occupied_coords(self) -> set[Coord]:
+        return {npc.get_coord() for npc in self.active_npcs}.union({self.player_coord})
 
