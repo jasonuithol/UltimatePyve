@@ -17,7 +17,7 @@ class MonsterState(NpcState):
         super().__init__(global_location)
         
         self.console_service: ConsoleService = ServiceProvider.get_provider().resolve(ConsoleService)
-        self.logger = Logger(self)
+        self.logger = Logger(self, use_object_id_suffix = True)
 
     def find_next_move(self, blocked_coords: set[Coord], player_coord: Coord) -> Coord:
 
