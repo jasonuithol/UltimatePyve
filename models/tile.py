@@ -5,6 +5,7 @@ from dark_libraries.dark_math import Coord, Size
 from view.display_config import EgaPalette
 
 TILE_ID_GRASS = 5
+TILE_ID_BLACK = 255
 
 type TileData = list[list[int]]
 

@@ -4,6 +4,7 @@ from dark_libraries.dark_math import Size
 
 class ScalableComponent:
     def __init__(self, unscaled_size_in_pixels: Size, scale_factor: int):
+        super().__init__()
         self._unscaled_size_in_pixels = unscaled_size_in_pixels
         self._scale_factor = scale_factor
         self._unscaled_surface: pygame.Surface = pygame.Surface(self._unscaled_size_in_pixels.to_tuple())

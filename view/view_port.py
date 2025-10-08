@@ -2,21 +2,25 @@
 import pygame
 
 from dark_libraries.dark_math import Coord, Size, Rect
-from models.tile import Tile
+from dark_libraries.logging import LoggerMixin
+from data.global_registry import GlobalRegistry
+from models.tile import Tile, TILE_ID_BLACK
 
 from .display_config import DisplayConfig
 from .scalable_component import ScalableComponent
 
-class ViewPort(ScalableComponent):
+class ViewPort(ScalableComponent, LoggerMixin):
 
     # Injectable Properties
     display_config: DisplayConfig
+    global_registry: GlobalRegistry
 
     def __init__(self):
-        pass
+        LoggerMixin.__init__(self)
 
     def _after_inject(self):
-        super().__init__(
+        ScalableComponent.__init__(
+            self,
             unscaled_size_in_pixels = self.display_config.VIEW_PORT_SIZE.scale(self.display_config.TILE_SIZE),
             scale_factor            = self.display_config.SCALE_FACTOR
         )
@@ -45,6 +49,8 @@ class ViewPort(ScalableComponent):
 
     def draw_tile(self, world_coord: Coord, tile: Tile):
         screen_coord = self.to_view_port_coord(world_coord).scale(self.display_config.TILE_SIZE)
+        if tile is None:
+            tile = self.global_registry.tiles.get(TILE_ID_BLACK)
         tile.blit_to_surface(
             self.get_input_surface(), 
             screen_coord

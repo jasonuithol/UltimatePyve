@@ -6,6 +6,7 @@ from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from models.u5_map import U5Map
+from services.field_of_view_calculator import FieldOfViewCalculator
 from services.map_cache.map_cache_service import MapCacheService
 from services.map_cache.map_level_contents import MapLevelContents
 from models.sprite import Sprite
@@ -30,6 +31,7 @@ class DisplayController(LoggerMixin):
     global_registry: GlobalRegistry
     map_cache_service: MapCacheService
     world_clock: WorldClock
+    fov_calculator: FieldOfViewCalculator
 
     def init(self):
 
@@ -50,15 +52,23 @@ class DisplayController(LoggerMixin):
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
-    def _get_map_tiles(self) -> dict[Coord, Tile]:
+    def _get_map_tiles(self, player_coord: Coord) -> dict[Coord, Tile]:
+
         map_level_contents: MapLevelContents = self.map_cache_service.get_map_level_contents(
             self.active_location_index,
             self.active_level_index
         )
 
+        visible_coords = self.fov_calculator.calculate_fov_visibility(
+            self.active_location_index,
+            self.active_level_index,
+            player_coord,
+            self.view_port.view_rect
+        )
+
         return {
             world_coord:
-            map_level_contents.get_coord_contents(world_coord).get_renderable_frame()
+            map_level_contents.get_coord_contents(world_coord).get_renderable_frame() if world_coord in visible_coords else None
             for world_coord in self.view_port.view_rect
         }
     
@@ -73,6 +83,8 @@ class DisplayController(LoggerMixin):
     #
     # TODO: Most of this is ViewPort logic.  Fix
     #       The rest contains visual composition logic, move to MainDisplay
+    # 
+    # TODO: remove player_coord as a parameter and add it to the state
     #
     def render(self, player_coord: Coord):
 
@@ -103,7 +115,7 @@ class DisplayController(LoggerMixin):
         self.view_port.centre_view_on(player_coord)
 
         # Render current viewport from populated map data.
-        map_tiles = self._get_map_tiles()
+        map_tiles = self._get_map_tiles(player_coord)
         self.view_port.draw_map(map_tiles)
 
         # draw the player over the top of whatever is at it's position.
