@@ -1,5 +1,6 @@
 import re
 import colorama
+import sys
 
 from datetime import datetime
 from typing import Callable
@@ -24,6 +25,7 @@ class Logger:
             class_prefix         = __class__._to_snake_case(instance.__class__.__name__),
             instance_suffix_func = __class__._objectid_suffix_func(instance) if use_object_id_suffix else None
         )
+        self.show_debug = "-debug" in sys.argv
 
     def set_prefix_mode(self, class_prefix: str, instance_suffix_func: SuffixFunc):
 
@@ -41,13 +43,22 @@ class Logger:
         if "ERROR" in msg:
             ascii_control_code_prefix = colorama.Style.BRIGHT + colorama.Fore.RED
 
-        if "WARN" in msg:
+        elif "WARN" in msg:
             ascii_control_code_prefix = colorama.Style.BRIGHT + colorama.Fore.YELLOW
+
+        elif "DEBUG" in msg:
+            if self.show_debug == False:
+                return
+
+        else:
+            # the "default" level.  consider it the INFO level.
+            if self.show_debug == True:
+                ascii_control_code_prefix = colorama.Style.BRIGHT + colorama.Fore.WHITE
 
         time_prefix = datetime.now().strftime("%H:%M:%S.%f")
         entire_prefix = f"[{time_prefix} {self.prefix}]".ljust(48)
         print(ascii_control_code_prefix + entire_prefix + msg + ascii_control_code_suffix)
-
+        
 class LoggerMixin:
     def __init__(self):
         self._logger = Logger(self)

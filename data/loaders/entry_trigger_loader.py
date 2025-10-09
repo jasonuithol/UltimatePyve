@@ -23,8 +23,6 @@ class EntryTriggerLoader(LoggerMixin):
 
         for trigger_index, (x, y) in enumerate(zip(xs, ys)):
 
-#            location_index = trigger_index + 1
-
             entry_map: U5Map = self.global_registry.maps.get(0)
             entry_coord = Coord(x,y)
 
@@ -40,14 +38,13 @@ class EntryTriggerLoader(LoggerMixin):
                     entry_point = GlobalLocation(0, checkable_level_index, entry_coord)
                     break
 
-#            assert not entry_point is None, f""
             if entry_point is None:
                 self.log(f"ERROR: Cannot find enterable terrain at coord={entry_coord} for either the overworld or underworld. Skipping registration.")
                 continue
 
             exit_u5map: U5Map = None
             for potential_exit in self.global_registry.maps.values():
-                if potential_exit.location_metadata.trigger_index == trigger_index:
+                if potential_exit._location_metadata.trigger_index == trigger_index:
                     exit_u5map = potential_exit
                     break
 
@@ -56,13 +53,14 @@ class EntryTriggerLoader(LoggerMixin):
                 continue
 
             exit_point = GlobalLocation(
-                exit_u5map.location_metadata.location_index,
-                exit_u5map.location_metadata.default_level,
+                exit_u5map.location_index,
+                exit_u5map.default_level_index,
                 Coord(
-                    (exit_u5map.size_in_tiles.w - 1) // 2, 
-                    exit_u5map.size_in_tiles.h - 2
+                    (exit_u5map.get_size().w - 1) // 2, 
+                    exit_u5map.get_size().h - 2
                 )
             )
-
             self.global_registry.entry_triggers.register(entry_point, exit_point)
+
+        self.log(f"Loaded {len(self.global_registry.entry_triggers)} entry triggers into the over/under world")
 

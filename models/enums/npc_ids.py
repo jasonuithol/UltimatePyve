@@ -1,26 +1,34 @@
 
 from enum import Enum
 
-class HumanTileId(Enum):
-    WIZARD = 320
+#
+# IMPORTANT: DO NOT CHANGE THE SPELLING OF THESE ENUM MEMBERS
+# (unless you know what you're doing)
+#
+
+class NpcTileId(Enum):
+
+    MIRROR_REFLECTION = 316 # Of lord british
+
+    MAGE = 320
     BARD = 324
     FIGHTER = 328
-    AVATAR = 332
-    TOWNSFOLD = 336
+    ADVENTURER = 332 # i.e the Avatar
+    VILLAGER = 336
     MERCHANT = 340
     JESTER = 344
-    MUSICIAN = 348
-    IN_STOCKS = 352
-    IN_CHAINS = 356
+    MINSTREL_WITH_LUTE = 348
+    MAN_IN_STOCKS = 352
+    MAN_IN_MANACLES = 356
     CHILD = 360
     BEGGAR = 364
     GUARD = 368
-    BRITISH_GHOST = 372
+
+    APPARITION = 372 # of Lord British
     BLACKTHORN = 376
     LORD_BRITISH = 380
 
-class MonsterTileId(Enum):
-    SEAHORSE = 384
+    SEA_HORSE = 384
     SQUID = 388
     SEA_SERPENT = 392
     SHARK = 396
@@ -38,7 +46,7 @@ class MonsterTileId(Enum):
     INSECT_SWARM = 444
     ORC = 448
     SKELETON = 452
-    PYTHON = 456
+    SNAKE = 456
     ETTIN = 460
     HEADLESS = 464
     WISP = 468
@@ -49,5 +57,5 @@ class MonsterTileId(Enum):
     #gap
     MONGBAT = 496
     CORPSER = 500
-    ROT_WORM = 504
+    ROTWORM = 504
     SHADOWLORD = 508

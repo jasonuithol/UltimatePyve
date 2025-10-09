@@ -1,7 +1,8 @@
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from models.terrain import Terrain
 
-class TerrainLoader:
+class TerrainLoader(LoggerMixin):
 
     # Injectable
     global_registry: GlobalRegistry
@@ -159,4 +160,5 @@ class TerrainLoader:
         terrains = self._build_terrains()
         for tile_id, terrain in enumerate(terrains):
             self.global_registry.terrains.register(tile_id, terrain)
+        self.log(f"Registered {len(self.global_registry.terrains)} Terrain objects")
             

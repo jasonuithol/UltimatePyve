@@ -71,14 +71,15 @@ class WorldLootService(LoggerMixin):
             item_containers[global_location].add(world_item)
 
             # This is just for logging purpii.
-            map_name = self.global_registry.maps.get(global_location.location_index).location_metadata.name
-            self.log(f"Loaded world loot {world_item.item_type.name} x {world_item.quantity} at {map_name}:{global_location}")
+            map_name = self.global_registry.maps.get(global_location.location_index).name
+            self.log(f"DEBUG: Loaded world loot {world_item.item_type.name} x {world_item.quantity} at {map_name}:{global_location}")
 
         return item_containers
 
     def register_loot_containers(self):
         for global_location, item_container in self._build_item_containers().items():
             self.global_registry.world_loot.register(global_location, item_container)
+        self.log(f"Registered {len(self.global_registry.world_loot)} loot containers in the world.")
 
     def unregister_loot_container(self, global_location: GlobalLocation):
         self.global_registry.world_loot.unregister(global_location)

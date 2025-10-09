@@ -20,21 +20,21 @@ class LightMapLevelBaker(LoggerMixin):
     global_registry:    GlobalRegistry
     fov_calculator:     FieldOfViewCalculator
 
-    def _get_fov_visible_coords(self, location_index: int, level_index: int, light_emitter_coord: Coord) -> set[Coord]:
+    def _get_fov_visible_coords(self, light_emitter_location: GlobalLocation) -> set[Coord]:
 
         radius_offset = Vector2(__class__.FIXED_LIGHT_RADIUS, __class__.FIXED_LIGHT_RADIUS)
         centre_thiccness = (1,1)
 
         # Calculate which tiles are visible from the light emitter's field of view.
         view_rect = Rect(
-            light_emitter_coord - radius_offset, 
+            light_emitter_location.coord - radius_offset, 
             size = (radius_offset * 2) + centre_thiccness
         )
-        return self.fov_calculator.calculate_fov_visibility(location_index, level_index, light_emitter_coord, view_rect)
+        return self.fov_calculator.calculate_fov_visibility(light_emitter_location, view_rect)
 
-    def _bake_light_map(self, location_index: int, level_index: int, light_emitter_coord: Coord) -> LightMap:
-        visible_world_coords = self._get_fov_visible_coords(location_index, level_index, light_emitter_coord)
-        return self.default_light_map.translate(light_emitter_coord).intersect(visible_world_coords)
+    def _bake_light_map(self, light_emitter_location: GlobalLocation) -> LightMap:
+        visible_world_coords = self._get_fov_visible_coords(light_emitter_location)
+        return self.default_light_map.translate(light_emitter_location.coord).intersect(visible_world_coords)
 
     def _bake_level(self, u5_map: U5Map, level_index: int) -> int:
         baked_dict = dict[Coord, LightMap]()
@@ -43,11 +43,13 @@ class LightMapLevelBaker(LoggerMixin):
             terrain: Terrain = self.global_registry.terrains.get(tile_id)
             if terrain.emits_light:
                 baked_dict[map_coord] = self._bake_light_map(
-                    u5_map.location_metadata.location_index, 
-                    level_index, 
-                    light_emitter_coord = map_coord
+                    GlobalLocation(
+                        u5_map.location_index, 
+                        level_index, 
+                        map_coord
+                    )
                 )
-        key = (u5_map.location_metadata.location_index, level_index)
+        key = (u5_map.location_index, level_index)
         self.global_registry.baked_light_level_maps.register(key, baked_dict)
         return len(baked_dict)
     
@@ -58,7 +60,8 @@ class LightMapLevelBaker(LoggerMixin):
 
         for location_index, u5_map in self.global_registry.maps.items():
             num_lights = 0
-            for level_index in u5_map.levels.keys():
+            for level_index in u5_map.get_level_indexes():
                 num_lights += self._bake_level(u5_map, level_index)
 
-            print(f"[lighting] Baked {num_lights} fixed lights for {u5_map.location_metadata.name} (location_index={location_index})")
+            self.log(f"DEBUG: Baked {num_lights} fixed lights for {u5_map.name} (location_index={location_index})")            
+        self.log(f"DEBUG: Baked {len(self.global_registry.unbaked_light_maps)} light level maps.")

@@ -109,7 +109,7 @@ if __name__ == "__main__":
     tile_loader.load_tiles()
 
     # Override scale factor
-    tile_loader.display_config.SCALE_FACTOR = 3
+    tile_loader.display_config.SCALE_FACTOR = 2
 
     GRID_COLS = 40
     GRID_ROWS = (TileLoader.TOTAL_TILES // GRID_COLS) + 1

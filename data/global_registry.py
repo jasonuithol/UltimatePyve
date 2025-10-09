@@ -1,7 +1,9 @@
 from dark_libraries.dark_math      import Coord
 from data.registries.registry_base import Registry
 
+from models.combat_map import CombatMap, DungeonRoom
 from models.door_type import DoorType
+from models.npc_metadata import NpcMetadata
 from models.u5_font    import U5Font
 from models.tile       import Tile
 from models.sprite     import Sprite
@@ -49,3 +51,7 @@ class GlobalRegistry:
         # soundtracks.
         self.location_soundtracks  = Registry[int, str]() # location_index
         self.transport_soundtracks = Registry[int, str]() # transport_mode_index
+
+        self.combat_maps   = Registry[int, CombatMap]()
+        self.dungeon_rooms = Registry[int, DungeonRoom]()
+        self.npc_metadata  = Registry[int, NpcMetadata]()

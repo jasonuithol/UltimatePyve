@@ -3,7 +3,9 @@ from data.global_registry import GlobalRegistry
 from models.sprite import Sprite
 from models.tile import Tile
 
-# I AM A SERVICE ! DO NOT MOVE ME TO LOADERS !
+#
+# TODO: These are just regular-ass sprites.  By all means have an "avatar sprite service" but don't build them every time.
+#
 class AvatarSpriteFactory:
 
     # Injectable

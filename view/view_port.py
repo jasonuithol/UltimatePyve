@@ -70,7 +70,6 @@ class ViewPort(ScalableComponent, LoggerMixin):
 #
 if __name__ == "__main__":
 
-    from data.loaders.overworld import load_britannia
 
     class StubInteractableFactoryRegistry:
         def get_interactable(self, world_coord):
@@ -90,9 +89,8 @@ if __name__ == "__main__":
     
     view_port._after_inject()
 
-    u5map = load_britannia()
     view_port.centre_view_on(Coord(42,42))
-    view_port.draw_map(u5map, 0)
+#    view_port.draw_map(u5map, 0)
 
     screen.blit(view_port.get_output_surface(),(0,0))
     pygame.display.flip()

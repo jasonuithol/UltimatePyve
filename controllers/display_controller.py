@@ -6,6 +6,7 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
+from models.global_location import GlobalLocation
 from models.sprite import Sprite
 from models.tile   import Tile
 from models.u5_map import U5Map
@@ -64,18 +65,20 @@ class DisplayController(LoggerMixin):
             self.active_level_index
         )
 
-        visible_coords = self.fov_calculator.calculate_fov_visibility(
+        player_location = GlobalLocation(
             self.active_location_index,
             self.active_level_index,
-            player_coord,
+            player_coord
+        )
+
+        visible_coords = self.fov_calculator.calculate_fov_visibility(
+            player_location,
             self.view_port.view_rect
         )
 
         lit_coords = self.lighting_service.calculate_lighting(
-            self.active_location_index,
-            self.active_level_index,
+            player_location,
             self.lighting_service.get_player_light_radius(),
-            player_coord,
             visible_coords
         )
 
@@ -106,11 +109,11 @@ class DisplayController(LoggerMixin):
     #
     # TODO: remove player_coord as a parameter and add it to the state
     #
-    def render(self, player_coord: Coord):
+    def render(self, party_coord: Coord):
 
         # Update window title with current location/world of player.
         pygame.display.set_caption(
-            f"{self.active_map.location_metadata.name} [{player_coord}]" 
+            f"{self.active_map.name} [{party_coord}]" 
             +
             f" fps={int(self.clock.get_fps())}"
             +
@@ -132,15 +135,15 @@ class DisplayController(LoggerMixin):
         #
 
         # Centre the viewport on the player.
-        self.view_port.centre_view_on(player_coord)
+        self.view_port.centre_view_on(party_coord)
 
         # Render current viewport from populated map data.
-        map_tiles = self._get_map_tiles(player_coord)
+        map_tiles = self._get_map_tiles(party_coord)
         self.view_port.draw_map(map_tiles)
 
         # draw the player over the top of whatever is at it's position.
         avatar_tile = self.avatar.get_current_frame_tile()
-        self.view_port.draw_tile(player_coord, avatar_tile)
+        self.view_port.draw_tile(party_coord, avatar_tile)
 
         vp_scaled_surface = self.view_port.get_output_surface()
         vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)

@@ -19,13 +19,16 @@ class ConsumableItemTypeLoader(LoggerMixin):
             name=tile_id.name.capitalize()
         )
         self.global_registry.item_types.register(tile_id.value, item_type)
-        self.log(f"Registered consumable item type: {item_type.name}")
+        self.log(f"DEBUG: Registered consumable item type: {item_type.name}")
 
     def register_item_types(self):
+        before = len(self.global_registry.item_types)
         self.build_consumable(TileId.CHEST, None)
         self.build_consumable(TileId.GOLD,  InventoryOffset.GOLD)
         self.build_consumable(TileId.GEM,   InventoryOffset.GEMS)
         self.build_consumable(TileId.TORCH, InventoryOffset.TORCHES)
         self.build_consumable(TileId.FOOD,  InventoryOffset.FOOD)
+        after = len(self.global_registry.item_types)
+        self.log(f"Registered {after - before} consumable item types.")
 
         

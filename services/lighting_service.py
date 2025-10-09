@@ -1,6 +1,7 @@
 from dark_libraries.dark_math import Coord
 
 from data.global_registry import GlobalRegistry
+from models.global_location import GlobalLocation
 from models.party_state import PartyState
 from services.light_map_level_baker import LightMapLevelBaker
 from services.world_clock import WorldClock
@@ -31,12 +32,12 @@ class LightingService:
         return viewable_radius
 
 
-    def calculate_lighting(self, location_index: int, level_index: int, player_light_radius: int, player_coord: Coord, fov_visible_coords: set[Coord]) -> set[Coord]:
+    def calculate_lighting(self, player_location: GlobalLocation, player_light_radius: int, fov_visible_coords: set[Coord]) -> set[Coord]:
 
         player_light_radius = self.get_player_light_radius()
 
-        baked_player_light_map: LightMap = self.global_registry.unbaked_light_maps.get(player_light_radius).translate(player_coord).intersect(fov_visible_coords)
-        baked_level_light_maps = self.global_registry.baked_light_level_maps.get((location_index, level_index))
+        baked_player_light_map: LightMap = self.global_registry.unbaked_light_maps.get(player_light_radius).translate(player_location.coord).intersect(fov_visible_coords)
+        baked_level_light_maps = self.global_registry.baked_light_level_maps.get((player_location.location_index, player_location.level_index))
 
         # Make a set of lit coords in the view_rect
         lit_world_coords: set[Coord] = set(baked_player_light_map.coords_or_offsets.keys())

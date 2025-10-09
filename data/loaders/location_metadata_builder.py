@@ -1,8 +1,9 @@
+from dark_libraries.logging import LoggerMixin
 from models.data_ovl import DataOVL
 from models.location_metadata import LocationMetadata
 
 
-class LocationMetadataBuilder:
+class LocationMetadataBuilder(LoggerMixin):
 
     # Injectable
     dataOvl: DataOVL
@@ -142,6 +143,8 @@ class LocationMetadataBuilder:
 
         # NOT OPTIONAL: order of appearance serves as index by trigger_index.
         metadata.sort(key=lambda m: m.trigger_index)
+
+        self.log(f"Built (but not registered) {len(metadata)} location metadata records for embedding in U5Map instances.")
 
         return metadata
                         

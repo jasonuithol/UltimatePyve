@@ -2,7 +2,9 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
+from data.loaders.combat_map_loader import CombatMapLoader
 from data.loaders.entry_trigger_loader import EntryTriggerLoader
+from data.loaders.npc_metadata_loader import NpcMetadataLoader
 from data.loaders.tileset_loader       import TileLoader
 from data.loaders.terrain_loader       import TerrainLoader
 from data.loaders.transport_mode_loader import TransportModeLoader
@@ -51,6 +53,9 @@ class GlobalRegistryLoader(LoggerMixin):
     npc_sprite_builder:          NpcSpriteBuilder
     transport_mode_loader:       TransportModeLoader
 
+    combat_map_loader:           CombatMapLoader
+    npc_metadata_loader:         NpcMetadataLoader
+
     modding: ModdingService
 
     def _post_load_check(self) -> bool:
@@ -73,6 +78,8 @@ class GlobalRegistryLoader(LoggerMixin):
         self.animated_tile_loader.register_sprites()
         self.flame_sprite_loader.register_sprites()
 
+        self.combat_map_loader.load()
+
         # font
         self.u5_font_loader.register_fonts()
         self.u5_glyph_loader.register_glyphs()
@@ -90,6 +97,8 @@ class GlobalRegistryLoader(LoggerMixin):
         # npc
         self.npc_sprite_builder.register_npc_sprites()
         self.transport_mode_loader.load()
+        self.npc_metadata_loader.load()
+
 
         #
         # TODO: LOAD REGISTRY SPECIFIC MODS AFTER EACH OG REGISTRY IS LOADED.

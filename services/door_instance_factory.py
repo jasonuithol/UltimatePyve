@@ -23,6 +23,7 @@ class DoorInstanceFactory(InteractableFactory, LoggerMixin):
 
     def __init__(self):
         super().__init__()
+        self.log("WARNING: This class is scheduled for demolition")
 
     # Injectable
     global_registry: GlobalRegistry
@@ -39,10 +40,15 @@ class DoorInstanceFactory(InteractableFactory, LoggerMixin):
             return
         
         u5_map: U5Map = self.global_registry.maps.get(location_index)
+        if u5_map is None:
+            self.log("WARNING: Skipping registration of door instances.")
+            # is a combat map or dungeon room.  NOT IMPLEMENTED - WAIT UNTIL REPLACEMENT
+            return
 
         for coord in u5_map.get_coord_iteration():
             
-            tile_id = u5_map.get_tile_id(level_ix=level_index, coord=coord)
+            tile_id = u5_map.get_tile_id(level_index = level_index, coord = coord)
+
             if __class__.is_door_tile(tile_id):
 
                 door_type = self.global_registry.door_types.get(tile_id)

@@ -34,24 +34,16 @@ class NpcService:
         if self._location_index != 0 and location_index == 0:
             self._unfreeze_active_npcs()
         
+        #
+        # TODO: Changing town/dungeon levels.
+        #
+
         self._location_index = location_index
         self._level_index = level_index
 
     def set_player_coord(self, player_coord: Coord):
         self.player_coord = player_coord
 
-    def pass_time(self):
-        blocked_coords = self.map_cache_service.get_blocked_coords(self._location_index, self._level_index, transport_mode_index = 0)
-        occupied_coords = self.get_occupied_coords()
-
-        # Give all the NPCs a turn.
-        for npc in self._active_npcs:
-            old_coord = npc.get_coord()
-            npc.pass_time(blocked_coords.union(occupied_coords), self.player_coord)
-            new_coord = npc.get_coord()
-            if old_coord != new_coord:
-                occupied_coords.add(new_coord)
-                occupied_coords.remove(old_coord)
 
     def get_npcs(self) -> dict[Coord, NpcAgent]:
         return {npc.get_coord(): npc for npc in self._active_npcs}

@@ -3,6 +3,7 @@ import pygame
 import random
 from typing import Optional, Iterator
 
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from view.display_config import DisplayConfig
 from models.tile import Tile
@@ -25,7 +26,7 @@ with the exception of the flames of truth etc - there's a simple formula that ma
 FLAME_OVERLAY_INDEX = NORMAL_TILE_INDEX + 16
 '''
 
-class FlameSpriteLoader:
+class FlameSpriteLoader(LoggerMixin):
 
     # Injectable
     display_config: DisplayConfig
@@ -92,9 +93,12 @@ class FlameSpriteLoader:
         return sprite
 
     def register_sprites(self):
+        before = len(self.global_registry.sprites)
         for tile_id in self._flame_animatable:
             sprite = self._build_sprite(tile_id)
             self.global_registry.sprites.register(tile_id, sprite)
+        after = len(self.global_registry.sprites)
+        self.log(f"Registered {after - before} flame sprites.")
 
 #
 # MAIN

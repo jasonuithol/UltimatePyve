@@ -1,21 +1,24 @@
 # file: display/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
 
+from services.console_service   import ConsoleService
+from services.font_mapper       import FontMapper
 from services.avatar_sprite_factory    import AvatarSpriteFactory
-from services.console_service          import ConsoleService
-from services.door_instance_factory    import DoorInstanceFactory
 from services.field_of_view_calculator import FieldOfViewCalculator
-
-from services.font_mapper import FontMapper
 from services.lighting_service import LightingService
-from services.modding_service     import ModdingService
+
+from services.door_instance_factory    import DoorInstanceFactory
+
 from services.monster_spawner     import MonsterSpawner
+from services.combat_map_service import CombatMapService
 from services.npc_service import NpcService
+
+from services.modding_service     import ModdingService
 from services.sound_track_player  import SoundTrackPlayer
 
 from services.world_clock import WorldClock
 
-from .map_cache.service_composition import compose as compose_map_cache
+from .map_cache.service_composition  import compose as compose_map_cache
 from .world_loot.service_composition import compose as compose_world_loot
 
 def compose(provider: ServiceProvider):
@@ -34,6 +37,7 @@ def compose(provider: ServiceProvider):
 
     provider.register(WorldClock)
     provider.register(FontMapper)
+    provider.register(CombatMapService)
 
     compose_map_cache(provider)
     compose_world_loot(provider)

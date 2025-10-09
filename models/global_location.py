@@ -25,3 +25,6 @@ class GlobalLocation:
 
     def move(self, offset: tuple[int,int]):
         self.coord = self.coord + offset
+
+    def is_in_town(self) -> bool:
+        return 1 <= self.location_index < 27

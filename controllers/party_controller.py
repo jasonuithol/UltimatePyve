@@ -155,19 +155,19 @@ class PartyController(LoggerMixin):
         target_location = current_location + move_offset
 
         # Handle out-of-bounds.
-        if current_map.location_metadata.location_index == 0:
+        if current_map.location_index == 0:
             # When in the overworld/underworld, wrap the coord because it's a globe.
             target_location.coord = current_map.get_wrapped_coord(target_location.coord)
         else:
             # When in a town/dungeon room/combat map etc, going out-of-bounds means exiting the map
-            if not current_map.size_in_tiles.is_in_bounds(target_location.coord):
+            if not current_map.get_size().is_in_bounds(target_location.coord):
                 self.party_state.pop_location()
                 new_location = self.party_state.get_current_location()
                 
                 self._on_change_map_level(new_location.location_index, new_location.level_index)
                 self._on_change_coord(new_location.coord)
 
-                self.console_service.print_ascii(f"Exited {current_map.location_metadata.name.capitalize()}")
+                self.console_service.print_ascii(f"Exited {current_map.name.capitalize()}")
                 return
 
         # Handle un-traversable terrain.
@@ -198,7 +198,7 @@ class PartyController(LoggerMixin):
             self._on_change_coord(new_location.coord)
 
             new_map: U5Map = self.global_registry.maps.get(new_location.location_index)
-            self.console_service.print_ascii(f"Entered {new_map.location_metadata.name.capitalize()}")
+            self.console_service.print_ascii(f"Entered {new_map.name.capitalize()}")
             return
 
         # ladders                
@@ -211,10 +211,10 @@ class PartyController(LoggerMixin):
         # stairs
         if target_terrain.stairs == True:
             # NOTE: This is just a guess, but seems to be working out ok.
-            if current_location.level_index == current_map.location_metadata.default_level:
-                new_level_index = current_map.location_metadata.default_level + 1
+            if current_location.level_index == current_map.default_level_index:
+                new_level_index = current_map.default_level_index + 1
             else:
-                new_level_index = current_map.location_metadata.default_level
+                new_level_index = current_map.default_level_index
 
         # update level if changed.
         if current_location.level_index != new_level_index:
@@ -284,4 +284,15 @@ class PartyController(LoggerMixin):
     def rotate_transport(self):
         self.party_state.transport_mode = (self.party_state.transport_mode + 1) % len(self.global_registry.transport_modes)
 
+    def enter_combat(self):
+        self.party_state.push_location(
+            GlobalLocation(-666, 0, Coord(5, 10))
+        )
+        self._on_change_map_level(-666, 0)
+        self._on_change_coord(Coord(5, 10))
 
+    def exit_combat(self):
+        self.party_state.pop_location()
+        current_location = self.party_state.get_current_location()
+        self._on_change_map_level(current_location.location_index, current_location.level_index)
+        self._on_change_coord(current_location.coord)

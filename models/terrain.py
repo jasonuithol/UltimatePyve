@@ -1,8 +1,13 @@
 # file: terrain.py
 from dataclasses import dataclass
 
+from models.enums.terrain_category import TerrainCategory
+
 @dataclass
 class Terrain:
+
+    terrain_category: TerrainCategory = None
+
     walk: bool = False
     horse: bool = False
     carpet: bool = False

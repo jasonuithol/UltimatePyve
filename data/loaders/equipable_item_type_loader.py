@@ -17,6 +17,8 @@ class EquipableItemTypeLoader(LoggerMixin):
         
     def build(self):
 
+        before = len(self.global_registry.item_types)
+
 #        mysterious_indexes_armour = to_ints(dataOvl.armor_index_plus10)
     
         descriptions_armour = DataOVL.to_strs(self.dataOvl.armour_strings)
@@ -58,7 +60,7 @@ class EquipableItemTypeLoader(LoggerMixin):
                 rune_id = rune_id
             )
             self.global_registry.item_types.register(dra_values_index, item_type)
-            self.log(f"Registered equippable item type: name={item_type.name}")
+            self.log(f"DEBUG: Registered equippable item type: name={item_type.name}")
         
         def build_helm(description_index: tuple[int,int], short_index: int, dra_values_index: int):
             build_item(description_index, short_index, dra_values_index, EquipableItemSlot.HEAD, EquipableItemTileId.HELM, EquipableItemRuneId.HELM)
@@ -139,6 +141,9 @@ class EquipableItemTypeLoader(LoggerMixin):
         build_amulet((3, 3),None,45,EquipableItemRuneId.AMULET) # Amulet of Turning
         build_amulet((3, 4),None,46,EquipableItemRuneId.AMULET) # Spiked Collar
         build_amulet((2,29),None,47,EquipableItemRuneId.ANKH) # Ankh 
+
+        after = len(self.global_registry.item_types)
+        self.log(f"Registered {after - before} equipable item types.")
 
 #
 # MAIN

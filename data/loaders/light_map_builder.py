@@ -44,7 +44,7 @@ class LightMapBuilder(LoggerMixin):
 
             light_map = self._build_light_map(radius, light_emitter_view_offset)
             self.global_registry.unbaked_light_maps.register(radius, light_map)
-            self.log(f"Built LightMap for radius {radius} with {len(light_map)} lit tiles.")
+            self.log(f"DEBUG: Built LightMap for radius {radius} with {len(light_map)} lit tiles.")
 
             # We are building too many radii, so let's just cut it off when we've lit every viewable tile, 
             # rather than tune the math that needs to be tuned for shape, not limits.

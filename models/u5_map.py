@@ -1,73 +1,62 @@
 # file: game/u5map.py
-from dark_libraries.custom_decorators import auto_init, immutable
-from dark_libraries.dark_math import Coord, Size
+from typing import Iterable
+from dark_libraries.custom_decorators import immutable
+from dark_libraries.dark_math         import Coord, Size
 
-from .location_metadata import LocationMetadata
+from models.u5_map_level      import U5MapLevel
+from models.location_metadata import LocationMetadata
 
 @immutable
-@auto_init
 class U5Map:
-    size_in_tiles: Size
-    levels: dict[int, bytearray]          # size_in_tiles x size_in_tiles tile IDs per level
-    chunk_dim: int                        # 16 for U5
-    grid_dim: int                         # size_in_tiles.w/chunk_dim
-    location_metadata: LocationMetadata
+
+    def __init__(self, levels: dict[int, U5MapLevel], location_metadata: LocationMetadata):
+        self._levels = levels
+        self._location_metadata = location_metadata
+        self._size = self._get_first_map().get_size()
+
+    @property
+    def name(self) -> str:
+        return self._location_metadata.name
+
+    @property
+    def location_index(self) -> int:
+        return self._location_metadata.location_index
+    
+    @property
+    def default_level_index(self) -> int:
+        return self._location_metadata.default_level
+
+    def _get_first_map(self) -> U5MapLevel:
+        key = next(self._levels.keys().__iter__())
+        return self._levels[key]
+
+    def get_size(self) -> Size:
+        return self._size
+    
+    def get_map_level(self, level_index: int) -> U5MapLevel:
+        assert level_index in self._levels.keys(), f"Unknown level_index {level_index} for map {self.name} (known keys={self._levels.keys()})"
+        return self._levels[level_index]
+
+    def get_level_indexes(self) -> set[int]:
+        return self._levels.keys()
 
     def is_in_bounds(self, coord: Coord) -> bool:
-        return self.size_in_tiles.is_in_bounds(coord)
+        return self.get_size().is_in_bounds(coord)
 
     def get_wrapped_coord(self, coord: Coord) -> Coord:
-        return Coord(coord.x % self.size_in_tiles.x, coord.y % self.size_in_tiles.y)
+        return Coord(coord.x % self.get_size().x, coord.y % self.get_size().y)
 
-    def get_tile_id(self, level_ix: int, coord: Coord) -> int:
+    def get_tile_id(self, level_index: int, coord: Coord) -> int:
+        map_level = self.get_map_level(level_index)
+        return map_level.get_tile_id(coord)
 
-        assert self.is_in_bounds(coord), f"Coordinates {coord} out of bounds."
+    def get_coord_iteration(self) -> Iterable[Coord]:
+        return self._get_first_map().coords()
 
-        assert level_ix in self.levels.keys(), f"Unknown level_ix {level_ix} for map {self.location_metadata.name} (known keys={self.levels.keys()})"
-        level = self.levels[level_ix]
+    def render_to_disk(self):
+        for level_index, map_level in self._levels.items():
+            map_level.render_to_disk(f"{self.name}_{level_index}")
 
-        index = coord.y * self.size_in_tiles.w + coord.x
+    def __iter__(self) -> Iterable[tuple[int, U5MapLevel]]:
+        yield from self._levels.items()
 
-        assert index < len(level), f"Index {index} out of bounds trying to access level bytearray of size {len(level)}"
-        return level[index]
-
-    def get_coord_iteration(self):
-        for y in range(self.size_in_tiles.h):
-            for x in range(self.size_in_tiles.w):
-                yield Coord(x,y)
-
-    def render_to_disk(self, level_index: int):
-
-        import pygame
-        from models.tile import Tile
-        from data.global_registry import GlobalRegistry
-        from data.loaders.tileset_loader import TileLoader
-        from view.display_config import DisplayConfig
-
-        pygame.init()
-
-        global_registry = GlobalRegistry()
-        global_registry._after_inject()
-
-        tile_loader = TileLoader()
-        tile_loader.global_registry = global_registry
-        tile_loader.display_config = DisplayConfig()
-        tile_loader.load_tiles()
-
-        surf = pygame.Surface(self.size_in_tiles.scale(tile_loader.display_config.TILE_SIZE).to_tuple())
-        for x in range(self.size_in_tiles.x):
-            for y in range(self.size_in_tiles.y):
-
-                map_coord = Coord(x, y)
-                tile_id = self.get_tile_id(level_index, map_coord)
-                tile: Tile = tile_loader.global_registry.tiles.get(tile_id)
-
-                pixel_coord = map_coord.scale(tile_loader.display_config.TILE_SIZE)
-                tile.blit_to_surface(surf, pixel_coord)
-        pygame.image.save(
-            surf,
-            f"{self.location_metadata.name}_{level_index}.png"
-        )
-        pygame.quit()
-
-        return surf

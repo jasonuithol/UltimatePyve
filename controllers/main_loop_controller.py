@@ -4,6 +4,7 @@ import gc
 
 from controllers.display_controller  import DisplayController
 from controllers.initialisation_controller import InitialisationController
+from controllers.monster_controller import MonsterController
 from controllers.party_controller    import PartyController
 from dark_libraries.service_provider import ServiceProvider
 from dark_libraries.dark_math        import Vector2
@@ -37,16 +38,16 @@ class MainLoopController:
 
     # Injectable
     global_registry: GlobalRegistry
-    party_state: PartyState
+    party_state:     PartyState
 
-    party_controller:    PartyController
-    display_controller: DisplayController
+    party_controller:      PartyController
+    display_controller:    DisplayController
+    monster_controller:    MonsterController
 
     avatar_sprite_factory: AvatarSpriteFactory
     console_service:       ConsoleService
     monster_spawner:       MonsterSpawner
     world_clock:           WorldClock
-    npc_service:           NpcService
 
     def update(self):
         # Player sprite
@@ -117,7 +118,7 @@ class MainLoopController:
 #                    self.interactable_factory_registry.pass_time()
         self.party_controller.pass_time()
         self.monster_spawner.pass_time()
-        self.npc_service.pass_time()
+        self.monster_controller.pass_time()
 
     def run(self):
 

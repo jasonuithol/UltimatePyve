@@ -35,7 +35,7 @@ class ServiceProvider(LoggerMixin):
         self._assert_is_class(cls)
         instance = cls()
         self._instances[cls] = instance
-        self.log(f"Registered {cls.__name__} as new instance")
+        self.log(f"DEBUG: Registered {cls.__name__} as new instance")
         return instance
 
     def register_instance(self, obj, as_type=None):
@@ -44,14 +44,14 @@ class ServiceProvider(LoggerMixin):
             self._assert_is_class(as_type)
         key = as_type or type(obj)
         self._instances[key] = obj
-        self.log(f"Registered pre-instantiated singleton: {key.__name__}")
+        self.log(f"DEBUG: Registered pre-instantiated singleton: {key.__name__}")
 
     def register_mapping(self, abstract, concrete):
         self._assert_is_class(abstract, needs_empty_constructor=False)
         self._assert_is_class(concrete)
         self.register(concrete)
         self._mappings[abstract] = concrete
-        self.log(f"Mapped {abstract.__name__} → {concrete.__name__}")
+        self.log(f"DEBUG: Mapped {abstract.__name__} → {concrete.__name__}")
 
     def _is_property_injectable(self, instance: object, name: str, anno_type, use_logging = True) -> bool:
 
@@ -62,19 +62,19 @@ class ServiceProvider(LoggerMixin):
 
         # 1. Skip private
         if name.startswith("_"):
-            log(f"Skipping private property: {name}")
+            log(f"Skipping private property: {instance.__class__.__name__}.{name}")
             return False
 
         # 2. Skip pre-initialized
         current_val = getattr(instance, name, None)
         if current_val is not None:
-            log(f"Skipping pre-initialized property: {name} = {current_val!r}"[:100])
+            log(f"Skipping pre-initialized property: {instance.__class__.__name__}.{name} = {current_val!r}"[:100])
             return False
 
         # 3. Skip non-resolvable.
         dep = self._resolve_type(anno_type)
         if dep is None:
-            log(f"No matching dependency for {anno_type.__name__} (skipped)")
+            log(f"WARNING: No matching dependency for {instance.__class__.__name__}.{name} on type {anno_type.__name__} (skipped)")
             return False
         
         #
@@ -106,11 +106,12 @@ class ServiceProvider(LoggerMixin):
                     # Resolve and inject
                     dep = self._resolve_type(anno_type)
                     setattr(instance, name, dep)
-                    self.log(f"Injected {anno_type.__name__} into {instance.__class__.__name__}.{name}")
+                    self.log(f"DEBUG: Injected {anno_type.__name__} into {instance.__class__.__name__}.{name}")
 
+        self.log("Injection complete. Calling _after_inject handlers.")
         for instance in self._instances.values():
             if hasattr(instance, '_after_inject'):
-                self.log(f"Found _after_inject handler for {instance.__class__.__name__}, invoking...")
+                self.log(f"DEBUG: Found _after_inject handler for {instance.__class__.__name__}, invoking...")
                 instance._after_inject()
 
     def resolve(self, type_):

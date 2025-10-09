@@ -14,12 +14,15 @@ class DoorTypeLoader(LoggerMixin):
     global_registry: GlobalRegistry
 
     def load(self):
+        self.log("WARNING: This class is scheduled for demolition")
         for original_tile_id in DoorTypeTileId:
             if original_tile_id == DoorTypeTileId.D_OPENED:
                 continue
             door_type = DoorType(original_tile_id.value)
             self.global_registry.door_types.register(original_tile_id.value, door_type)
-        self.log(f"Registered {len(DoorTypeTileId)} door types.")
+        self.log(f"Registered {len(self.global_registry.door_types)} door types.")
+
+
 '''
 #
 # main
