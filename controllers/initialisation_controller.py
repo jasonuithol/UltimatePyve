@@ -9,8 +9,8 @@ from models.enums.inventory_offset  import InventoryOffset
 from data.global_registry           import GlobalRegistry
 from data.global_registry_loader    import GlobalRegistryLoader
 
-from controllers.display_controller import DisplayController
 from controllers.party_controller   import PartyController
+from services.display_service import DisplayService
 from services.light_map_level_baker import LightMapLevelBaker
 from services.map_cache.map_cache_service import MapCacheService
 from services.world_clock           import WorldClock
@@ -28,8 +28,8 @@ class InitialisationController(LoggerMixin):
     world_loot_service: WorldLootService
     map_cache_service:  MapCacheService
 
-    party_controller:   PartyController
-    display_controller: DisplayController
+    party_controller: PartyController
+    display_service:  DisplayService
 
     light_map_level_baker: LightMapLevelBaker
 
@@ -37,7 +37,7 @@ class InitialisationController(LoggerMixin):
         
         self.global_registry_loader.load()
 
-        self.display_controller.init()
+        self.display_service.init()
 
 #        self.saved_game_loader.load_existing()
 

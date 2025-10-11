@@ -2,13 +2,12 @@ import random
 from typing import Iterable
 
 from controllers.combat_controller import CombatController
-from data.global_registry import GlobalRegistry
 
+from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging   import LoggerMixin
 
 from models.npc_agent import NpcAgent
-from models.party_state     import PartyState
 from models.global_location import GlobalLocation
 
 from services.console_service             import ConsoleService
@@ -16,21 +15,22 @@ from services.map_cache.map_level_contents import MapLevelContents
 from services.npc_service                 import NpcService
 from services.map_cache.map_cache_service import MapCacheService
 
-class MonsterController(LoggerMixin):
+class MonsterService(LoggerMixin, DarkEventListenerMixin):
 
     # Injectable
-    party_state:       PartyState
-
     console_service:   ConsoleService
     map_cache_service: MapCacheService
     npc_service:       NpcService
     combat_controller: CombatController
 
+    def __init__(self):
+        super().__init__()        
+        self._party_location: GlobalLocation = None
+
     def _move_generator(self, monster_coord: Coord) -> Iterable[Coord]:
 
         # First of all, try the obvious move.
-        party_coord = self.party_state.get_current_location().coord
-        yield monster_coord + monster_coord.normal_4way(party_coord)
+        yield monster_coord + monster_coord.normal_4way(self._party_location.coord)
 
         # OK, strike out in a random direction then
         alternative_moves = monster_coord.get_4way_neighbours()
@@ -39,8 +39,7 @@ class MonsterController(LoggerMixin):
 
     def find_next_move(self, blocked_coords: set[Coord], monster_coord: Coord) -> Coord:
 
-        party_location = self.party_state.get_current_location()
-        map_level_contents: MapLevelContents = self.map_cache_service.get_map_level_contents(party_location.location_index, party_location.level_index)
+        map_level_contents: MapLevelContents = self.map_cache_service.get_map_level_contents(self._party_location.location_index, self._party_location.level_index)
         map_coords = set(map_level_contents._coord_contents_dict.keys())
      
         for move in self._move_generator(monster_coord):
@@ -49,14 +48,14 @@ class MonsterController(LoggerMixin):
 
         return None
 
-    def _move(self, blocked_coords: set[Coord], monster_location: GlobalLocation):
+    def _move(self, blocked_coords: set[Coord], monster_location: GlobalLocation) -> GlobalLocation:
         next_monster_coord = self.find_next_move(blocked_coords, monster_location.coord)
         if next_monster_coord is None:
             self.log(f"Unable to move from {monster_location.coord}")
-            return
+            return None
         assert monster_location.coord.taxi_distance(next_monster_coord) == 1, f"Cannot move directly from {monster_location.coord} to {next_monster_coord}"
         self.log(f"DEBUG: Moving from {monster_location.coord} to {next_monster_coord}")
-        monster_location.coord = next_monster_coord
+        return monster_location.move_to_coord(next_monster_coord)
 
     def _attack(self, npc_agent: NpcAgent):
         #
@@ -65,11 +64,16 @@ class MonsterController(LoggerMixin):
         self.console_service.print_ascii("Attacked !")
         self.combat_controller.enter_combat(npc_agent)
 
-    def pass_time(self):
+    def loaded(self, party_location: GlobalLocation):
+        self._party_location = party_location
+
+    def pass_time(self, party_location: GlobalLocation):
+
+        self._party_location = party_location
 
         blocked_coords = self.map_cache_service.get_blocked_coords(
-            self.party_state.get_current_location().location_index, 
-            self.party_state.get_current_location().level_index, 
+            self._party_location.location_index, 
+            self._party_location.level_index, 
             transport_mode_index = 0
         )
 
@@ -79,10 +83,12 @@ class MonsterController(LoggerMixin):
         for npc in self.npc_service._active_npcs:
             old_coord = npc.get_coord()
 
-            if npc.get_coord().taxi_distance(self.party_state.get_current_location().coord) == 1:
+            if npc.get_coord().taxi_distance(self._party_location.coord) == 1:
                 self._attack(npc)
             else:
-                self._move(blocked_coords.union(occupied_coords), npc.global_location)
+                move_coord = self._move(blocked_coords.union(occupied_coords), npc.global_location)
+                if not move_coord is None:
+                    npc.global_location = move_coord
 
             new_coord = npc.get_coord()
 

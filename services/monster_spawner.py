@@ -1,7 +1,7 @@
 import math
 import random
 
-from dark_libraries.dark_math import Coord
+from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.logging   import LoggerMixin
 
 from models.global_location import GlobalLocation
@@ -13,10 +13,11 @@ from services.npc_service import NpcService
 
 from .npc_spawner import NpcSpawner
 
-class MonsterSpawner(NpcSpawner, LoggerMixin):
+class MonsterSpawner(NpcSpawner, LoggerMixin, DarkEventListenerMixin):
 
     def __init__(self):
         super().__init__()
+        self._party_location: GlobalLocation = None
 
     MONSTER_SPAWN_RADIUS: float = 10
     MONSTER_SPAWN_PROBABILITY: float = 0.1
@@ -25,18 +26,16 @@ class MonsterSpawner(NpcSpawner, LoggerMixin):
     npc_service: NpcService
     map_cache_service: MapCacheService
 
-    def load_level(self, location_index: int, level_index: int):
-        self.location_index = location_index
-        self.level_index = level_index
+    def loaded(self, party_location: GlobalLocation):
+        self._party_location = party_location
 
-    def set_player_coord(self, player_coord: Coord):
-        self.player_coord = player_coord
+    def pass_time(self, party_location: GlobalLocation):
 
-    def pass_time(self):
+        self._party_location = party_location
 
         # This is a monster free zone.
         # TODO: This will prevent dungeon monsters spawning, when dungeons are added.
-        if self.location_index != 0: return
+        if self._party_location.location_index != 0: return
 
         # have enough monsters now.
         if len(self.npc_service._active_npcs) >= __class__.MAXIMUM_MONSTER_COUNT: return
@@ -45,18 +44,21 @@ class MonsterSpawner(NpcSpawner, LoggerMixin):
         if random.randint(1,int(1/__class__.MONSTER_SPAWN_PROBABILITY)) > 1: return
 
         # randomly choose location of monster somewhere on (not in) a circle around the player
-        blocked_coords = self.map_cache_service.get_blocked_coords(self.location_index, self.level_index, transport_mode_index = 0)
+        blocked_coords = self.map_cache_service.get_blocked_coords(self._party_location.location_index, self._party_location.level_index, transport_mode_index = 0)
         occupied_coords = self.npc_service.get_occupied_coords()
 
         monster_coord = None
+        num_iterations = 0
         while monster_coord is None or monster_coord in blocked_coords.union(occupied_coords):
-            monster_coord = self.player_coord.translate_polar(__class__.MONSTER_SPAWN_RADIUS, random.uniform(-math.pi, math.pi))
-        monster_global_location = GlobalLocation(self.location_index, self.level_index, monster_coord)
+            num_iterations += 1
+            assert num_iterations < 100, "Infinite loop detected"
+            monster_coord = self._party_location.coord.translate_polar(__class__.MONSTER_SPAWN_RADIUS, random.uniform(-math.pi, math.pi))
+        monster_global_location = GlobalLocation(self._party_location.location_index, self._party_location.level_index, monster_coord)
 
         # randomly choose kind of monster (that can live on monster_global_location)
         coord_contents = self.map_cache_service.get_location_contents(monster_global_location)
-        u5_map = self.global_registry.maps.get(self.location_index)
-        terrain_tile_id = u5_map.get_tile_id(self.level_index, monster_coord)
+        u5_map = self.global_registry.maps.get(self._party_location.location_index)
+        terrain_tile_id = u5_map.get_tile_id(self._party_location.level_index, monster_coord)
         terrain: Terrain = self.global_registry.terrains.get(terrain_tile_id)
 
         #

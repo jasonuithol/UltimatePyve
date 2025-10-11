@@ -1,5 +1,6 @@
 from dark_libraries.service_provider import ServiceProvider
 
+import dark_libraries.service_composition
 import controllers.service_composition
 import data.service_composition
 import models.service_composition
@@ -8,7 +9,7 @@ import view.service_composition
 
 def compose(provider: ServiceProvider):
 
-    for module in [controllers, data, models, services, view]:
+    for module in [dark_libraries, controllers, data, models, services, view]:
         print(f"(root compose) Pre-registering {module.__name__.upper()}")
         module.service_composition.compose(provider)
 

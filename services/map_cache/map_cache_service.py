@@ -1,4 +1,5 @@
 from typing import Any
+from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging   import LoggerMixin
 
@@ -13,7 +14,7 @@ from models.u5_map_level import U5MapLevel
 from services.map_cache.coord_contents     import CoordContents
 from services.map_cache.map_level_contents import MapLevelContents
 
-class MapCacheService(LoggerMixin):
+class MapCacheService(LoggerMixin, DarkEventListenerMixin):
 
     # Injectable
     global_registry: GlobalRegistry

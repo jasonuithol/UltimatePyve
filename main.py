@@ -1,4 +1,6 @@
 import colorama
+
+from controllers.party_controller import PartyController
 # Makes best effort to turn on ANSI support for console error messages.
 # Warning: Activates colorize in python 3.13+.  If you don't like it, set environment variable PYTHON_COLORS=0
 # Or if you don't like the colors themselves, change the defaults in your terminal.
@@ -16,7 +18,6 @@ from dark_libraries.service_provider import ServiceProvider
 from service_composition import compose
 
 from controllers.initialisation_controller import InitialisationController
-from controllers.main_loop_controller import MainLoopController
 
 pygame.init()
 
@@ -37,5 +38,5 @@ gc.collect()
 pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
 pygame.mixer.init()
 
-main: MainLoopController = provider.resolve(MainLoopController)
-main.run()
+party_controller: PartyController = provider.resolve(PartyController)
+party_controller.run()

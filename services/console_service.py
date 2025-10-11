@@ -8,10 +8,10 @@ class ConsoleService:
     interactive_console: InteractiveConsole
     font_mapper: FontMapper
     
-    def print_ascii(self, msg: str | Iterable[int]):
+    def print_ascii(self, msg: str | Iterable[int], include_carriage_return: bool = True):
         glyphs = self.font_mapper.map_ascii_message(msg)
-        self.interactive_console.print_glyphs(glyphs)
+        self.interactive_console.print_glyphs(glyphs, include_carriage_return)
 
-    def print_runes(self, msg: str | Iterable[int]):
+    def print_runes(self, msg: str | Iterable[int], include_carriage_return: bool = True):
         glyphs = self.font_mapper.map_rune_message(msg)
-        self.interactive_console.print_glyphs(glyphs)
+        self.interactive_console.print_glyphs(glyphs, include_carriage_return)

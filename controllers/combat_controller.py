@@ -1,11 +1,16 @@
-from controllers.display_controller import DisplayController
-from controllers.party_controller import PartyController
+from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
+
+from models.global_location import GlobalLocation
+from services.display_service import DisplayService
+from controllers.party_controller import PartyController
+
 from models.location_metadata import LocationMetadata
 from models.npc_agent import NpcAgent
 from models.party_state import PartyState
 from models.u5_map import U5Map
+
 from services.combat_map_service import CombatMapService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
@@ -21,7 +26,7 @@ class CombatController(LoggerMixin):
     party_state: PartyState
     npc_service: NpcService
 
-    display_controller: DisplayController
+    display_service: DisplayService
     party_controller: PartyController
 
     def enter_combat(self, enemy_npc: NpcAgent):
@@ -54,14 +59,17 @@ class CombatController(LoggerMixin):
 
         # TODO: Remove this
         self.global_registry.maps.register(combat_map_wrapper.location_index, combat_map_wrapper)
-        
+
         self.map_cache_service.cache_u5map(combat_map_wrapper)
 
-        self.party_controller.enter_combat()
+        self.party_state.push_location(
+            GlobalLocation(-666, 0, Coord(5, 10))
+        )
 
 #        self.display_controller.set_active_map(combat_map_wrapper.location_index, 0)
+
         return
-        self.party_controller.exit_combat()
+        self.party_state.pop_location()
 
         self.npc_service.remove_npc(enemy_npc)
 

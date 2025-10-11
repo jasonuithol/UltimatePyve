@@ -1,11 +1,13 @@
 from dark_libraries.dark_math import Coord, Rect
 
+from data.global_registry import GlobalRegistry
 from models.global_location import GlobalLocation
 from services.map_cache.map_cache_service import MapCacheService
 
 class FieldOfViewCalculator:
 
     map_cache_service: MapCacheService
+    global_registry:   GlobalRegistry
 
     def calculate_fov_visibility(
         self, 
@@ -28,9 +30,13 @@ class FieldOfViewCalculator:
 
             result.add(world_coord)
 
-            coord_contents = map_level_contents.get_coord_contents(world_coord)
-            terrain = coord_contents.get_terrain()
-
+            interactable = self.global_registry.interactables.get(world_coord)
+            if interactable is None:
+                coord_contents = map_level_contents.get_coord_contents(world_coord)
+                terrain = coord_contents.get_terrain()
+            else:
+                terrain = self.global_registry.terrains.get(interactable.get_current_tile_id())
+            
             allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)
 
             if allows_light or world_coord == fov_centre_location.coord:

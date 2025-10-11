@@ -1,12 +1,12 @@
+from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.door_instance import DoorInstance
 from models.door_type import DoorType
+from models.global_location import GlobalLocation
 from models.u5_map import U5Map
 from models.enums.door_type_tile_id import DoorTypeTileId
-
-from services.interactable_factory import InteractableFactory
 
 #
 # TODO: THIS CLASS IS SCHEDULED FOR DEMOLITION (insane overengineering)
@@ -19,7 +19,7 @@ from services.interactable_factory import InteractableFactory
 # etc - and make WINDOWED variants of all.
 #
 
-class DoorInstanceFactory(InteractableFactory, LoggerMixin):
+class DoorInstanceFactory(LoggerMixin, DarkEventListenerMixin):
 
     def __init__(self):
         super().__init__()
@@ -32,14 +32,20 @@ class DoorInstanceFactory(InteractableFactory, LoggerMixin):
     def is_door_tile(cls, tile_id: int):
         return tile_id in {door_type.value for door_type in DoorTypeTileId if door_type != DoorTypeTileId.D_OPENED}
 
-    # InteractableFactory implementation: start
-    def load_level(self, location_index: int, level_index: int):
+    # DarkEventListenerMixin implementation: start
+    def loaded(self, party_location: GlobalLocation):
+        self.level_changed(party_location)
 
-        if location_index == 0:
+    def level_changed(self, party_location: GlobalLocation):
+
+        self.log(f"Unregistering {len(self.global_registry.interactables)} door instances.")
+        self.global_registry.interactables.clear()
+
+        if party_location.location_index == 0:
             # There are ZERO doors in the WORLD maps, lets save a bit of loading time.
             return
         
-        u5_map: U5Map = self.global_registry.maps.get(location_index)
+        u5_map: U5Map = self.global_registry.maps.get(party_location.location_index)
         if u5_map is None:
             self.log("WARNING: Skipping registration of door instances.")
             # is a combat map or dungeon room.  NOT IMPLEMENTED - WAIT UNTIL REPLACEMENT
@@ -47,7 +53,7 @@ class DoorInstanceFactory(InteractableFactory, LoggerMixin):
 
         for coord in u5_map.get_coord_iteration():
             
-            tile_id = u5_map.get_tile_id(level_index = level_index, coord = coord)
+            tile_id = u5_map.get_tile_id(level_index = party_location.level_index, coord = coord)
 
             if __class__.is_door_tile(tile_id):
 
@@ -66,4 +72,7 @@ class DoorInstanceFactory(InteractableFactory, LoggerMixin):
                     +
                     f"magic={door.door_type.original_lock_type == DoorType.L_MAGIC_LOCKED}"
                 )
-    # InteractableFactory implementation: end
+    def pass_time(self, party_location: GlobalLocation):
+        for interactable in self.global_registry.interactables.values():
+            interactable.pass_time(party_location)
+    # DarkEventListenerMixin implementation: end

@@ -33,7 +33,7 @@ class GlobalRegistry:
         # This is over-engineering, but I was getting circular imports and so this happened.
         self.door_types     = Registry[int,            DoorType]()
 
-        self.interactables  = Registry[Coord,          Interactable]()
+        self.interactables  = Registry[Coord,          Interactable](can_be_empty=True)
 
         # item oriented features.
         self.item_types = Registry[int, ItemType]() # item_id (NOT InventoryOffset ?!?!?!)
@@ -49,8 +49,8 @@ class GlobalRegistry:
         self.baked_light_level_maps = Registry[tuple[int,int],  dict[Coord, LightMap]]()   # location, level -> coord, lightmap
 
         # soundtracks.
-        self.location_soundtracks  = Registry[int, str]() # location_index
-        self.transport_soundtracks = Registry[int, str]() # transport_mode_index
+        self.location_soundtracks  = Registry[int, str](can_be_empty=True) # location_index
+        self.transport_soundtracks = Registry[int, str](can_be_empty=True) # transport_mode_index
 
         self.combat_maps   = Registry[int, CombatMap]()
         self.dungeon_rooms = Registry[int, DungeonRoom]()

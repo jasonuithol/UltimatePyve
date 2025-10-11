@@ -16,4 +16,4 @@ class NpcAgent:
         return self.global_location.coord
     
     def move_to(self, coord: Coord):
-        self.global_location.coord = coord
+        self.global_location = self.global_location.move_to_coord(coord)

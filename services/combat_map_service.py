@@ -74,7 +74,13 @@ class CombatMapService(LoggerMixin):
 
         u5_map: U5Map = self.global_registry.maps.get(player_location.location_index)
         enemy_terrain_tile_id = u5_map.get_tile_id(player_location.level_index, enemy_npc_agent.get_coord())
+
+        assert not enemy_terrain_tile_id is None, f"Cannot find enemy_terrain_tile_id for player_location.level_index={player_location.level_index}, enemy_npc_agent.get_coord()={enemy_npc_agent.get_coord()}"
+
         enemy_terrain: Terrain = self.global_registry.terrains.get(enemy_terrain_tile_id)
+
+        assert not enemy_terrain is None, f"Cannot find enemy_terrain for enemy_terrain_tile_id={enemy_terrain_tile_id}"
+
         enemy_terrain_is_water = enemy_terrain.walk == False and (enemy_terrain.skiff == True or enemy_terrain.ship == True)
 
         #

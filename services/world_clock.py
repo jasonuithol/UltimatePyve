@@ -3,6 +3,10 @@ from enum import Enum
 from datetime import datetime, timedelta
 from collections import deque
 
+from dark_libraries.dark_events import DarkEventListenerMixin
+from dark_libraries.logging import LoggerMixin
+from models.global_location import GlobalLocation
+
 #
 # rune font values for the celestial objects.
 #
@@ -72,13 +76,14 @@ FELUCCA = Moon(
 
 WORLD_START_TIME = datetime(year=139, month=4, day=4, hour=8, minute=35)
 
-class WorldClock:
+class WorldClock(LoggerMixin, DarkEventListenerMixin):
 
-    def _after_inject(self):
+    def __init__(self):
+        super().__init__()
         self.turns_passed = 0
         self.set_world_time(WORLD_START_TIME)
 
-    def pass_time(self):
+    def pass_time(self, player_location: GlobalLocation):
         self.turns_passed +=1 
         self.world_time += timedelta(minutes=1)
         self.daylight_savings_time += timedelta(minutes=1)
@@ -86,6 +91,7 @@ class WorldClock:
     def set_world_time(self, dt: datetime):
         self.world_time = dt
         self.daylight_savings_time = dt + timedelta(hours = 1)
+        self.log(f"World time set to {self.world_time} (Natural Time)")
 
     def get_natural_time(self):
         return self.world_time

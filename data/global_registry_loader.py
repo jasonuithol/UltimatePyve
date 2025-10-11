@@ -62,7 +62,7 @@ class GlobalRegistryLoader(LoggerMixin):
         all_registries_loaded = True
         for name, registry in self.global_registry.__dict__.items():
             if isinstance(registry, Registry):
-                if len(registry) == 0:
+                if registry._can_be_empty == False and len(registry) == 0:
                     self.log(f"ERROR: {name} registry is empty.")
                     all_registries_loaded = False
         return all_registries_loaded

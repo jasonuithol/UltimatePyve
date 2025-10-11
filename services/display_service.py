@@ -7,10 +7,12 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.global_location import GlobalLocation
+from models.party_state import PartyState
 from models.sprite import Sprite
 from models.tile   import Tile
 from models.u5_map import U5Map
 
+from services.avatar_sprite_factory import AvatarSpriteFactory
 from view.display_config      import DisplayConfig
 from view.interactive_console import InteractiveConsole
 from view.view_port           import ViewPort
@@ -23,7 +25,7 @@ from services.map_cache.map_level_contents import MapLevelContents
 from services.npc_service import NpcService
 from services.world_clock import WorldClock
 
-class DisplayController(LoggerMixin):
+class DisplayService(LoggerMixin):
 
     # Injectable
     display_config:      DisplayConfig
@@ -38,6 +40,9 @@ class DisplayController(LoggerMixin):
     fov_calculator:    FieldOfViewCalculator
     lighting_service:  LightingService
     npc_service:       NpcService
+    avatar_sprite_factory: AvatarSpriteFactory
+
+    party_state: PartyState
 
     def init(self):
 
@@ -50,25 +55,15 @@ class DisplayController(LoggerMixin):
         )
         self.clock = pygame.time.Clock()
 
-        # Init internal state
-        self.avatar: Sprite = None
-        self.active_location_index: int = None
-        self.active_level_index: int = None
-        self.active_map: U5Map = None
-
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
-    def _get_map_tiles(self, player_coord: Coord) -> dict[Coord, Tile]:
+    def _get_map_tiles(self) -> dict[Coord, Tile]:
+
+        player_location = self.party_state.get_current_location()
 
         map_level_contents: MapLevelContents = self.map_cache_service.get_map_level_contents(
-            self.active_location_index,
-            self.active_level_index
-        )
-
-        player_location = GlobalLocation(
-            self.active_location_index,
-            self.active_level_index,
-            player_coord
+            player_location.location_index,
+            player_location.level_index
         )
 
         visible_coords = self.fov_calculator.calculate_fov_visibility(
@@ -84,12 +79,15 @@ class DisplayController(LoggerMixin):
 
         npcs = self.npc_service.get_npcs()
 
-        def get_frame(world_coord: Coord):
+        def get_frame(world_coord: Coord) -> Tile:
             if not world_coord in visible_coords.intersection(lit_coords):
                 return None
             npc = npcs.get(world_coord, None)
             if not npc is None:
                 return npc.sprite.get_current_frame_tile()
+            interactable = self.global_registry.interactables.get(world_coord)
+            if not interactable is None:
+                return self.global_registry.tiles.get(interactable.get_current_tile_id())
             return map_level_contents.get_coord_contents(world_coord).get_renderable_frame()
         
         return {
@@ -97,23 +95,18 @@ class DisplayController(LoggerMixin):
             get_frame(world_coord)
             for world_coord in self.view_port.view_rect
         }
-    
-    def set_avatar_sprite(self, sprite: Sprite):
-        self.avatar = sprite
-
-    def set_active_map(self, location_index: int, level_index: int):
-        self.active_location_index = location_index
-        self.active_level_index = level_index
-        self.active_map = self.global_registry.maps.get(location_index)
 
     #
     # TODO: remove player_coord as a parameter and add it to the state
     #
-    def render(self, party_coord: Coord):
+    def render(self):
+
+        party_location = self.party_state.get_current_location()
+        active_map: U5Map = self.global_registry.maps.get(party_location.location_index)
 
         # Update window title with current location/world of player.
         pygame.display.set_caption(
-            f"{self.active_map.name} [{party_coord}]" 
+            f"{active_map.name} [{party_location.coord}]" 
             +
             f" fps={int(self.clock.get_fps())}"
             +
@@ -135,15 +128,18 @@ class DisplayController(LoggerMixin):
         #
 
         # Centre the viewport on the player.
-        self.view_port.centre_view_on(party_coord)
+#        self.view_port.centre_view_on(party_location.coord)
 
         # Render current viewport from populated map data.
-        map_tiles = self._get_map_tiles(party_coord)
+        map_tiles = self._get_map_tiles()
         self.view_port.draw_map(map_tiles)
 
         # draw the player over the top of whatever is at it's position.
-        avatar_tile = self.avatar.get_current_frame_tile()
-        self.view_port.draw_tile(party_coord, avatar_tile)
+        transport_mode, transport_direction = self.party_state.get_transport_state()
+        avatar_sprite = self.avatar_sprite_factory.create_player(transport_mode, transport_direction)
+
+        avatar_tile = avatar_sprite.get_current_frame_tile()
+        self.view_port.draw_tile(party_location.coord, avatar_tile)
 
         vp_scaled_surface = self.view_port.get_output_surface()
         vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)

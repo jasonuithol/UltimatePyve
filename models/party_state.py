@@ -33,10 +33,10 @@ class PartyState:
         self.location_stack.clear()
 
     def change_level(self, level_index: int):
-        self.location_stack[-1].level_index = level_index
+        self.location_stack[-1] = self.location_stack[-1].move_to_level(level_index)
 
     def change_coord(self, coord: Coord):
-        self.location_stack[-1].coord = coord
+        self.location_stack[-1] = self.location_stack[-1].move_to_coord(coord)
 
     def get_current_location(self) -> GlobalLocation:
         return self.location_stack[-1]

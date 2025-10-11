@@ -1,19 +1,21 @@
-# file: game/player_state.py
 from datetime import timedelta
-from typing import Iterable
+from typing   import Iterable
 
-from controllers.display_controller import DisplayController
-from dark_libraries.dark_math import Coord, Vector2
-from dark_libraries.logging   import LoggerMixin
+import pygame
+
+from dark_libraries.dark_events import DarkEventService
+from dark_libraries.dark_math   import Coord, Vector2
+from dark_libraries.logging     import LoggerMixin
+
 from data.global_registry     import GlobalRegistry
 
-from models.global_location   import GlobalLocation
-from models.interactable      import Interactable
-from models.move_into_result  import MoveIntoResult
+from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
+from models.global_location     import GlobalLocation
+from models.interactable        import Interactable
+from models.move_into_result    import MoveIntoResult
+from models.terrain             import Terrain
+from models.u5_map              import U5Map
 from models.enums.inventory_offset  import InventoryOffset
-from models.sprite            import Sprite
-from models.terrain           import Terrain
-from models.u5_map             import U5Map
 
 # singletons
 from models.party_inventory   import PartyInventory
@@ -21,47 +23,97 @@ from models.party_state       import PartyState
 
 from services.avatar_sprite_factory import AvatarSpriteFactory
 from services.door_instance_factory import DoorInstanceFactory
+from services.main_loop_service import MainLoopService
+from services.sound_track_player    import SoundTrackPlayer
 from services.monster_spawner import MonsterSpawner
-from services.npc_service import NpcService
-from services.sound_track_player     import SoundTrackPlayer
-from services.world_clock     import WorldClock
-
+from services.display_service import DisplayService
 from services.console_service import ConsoleService
+from services.npc_service import NpcService
+from services.world_clock import WorldClock
 
 #from .saved_game import SavedGame
+
+PASS_TIME      = True
+DONT_PASS_TIME = False
 
 class PartyController(LoggerMixin):
 
     # Injectable
-    global_registry: GlobalRegistry
-
-    party_inventory: PartyInventory
     party_state:     PartyState
+    global_registry: GlobalRegistry
+    party_inventory: PartyInventory
 
+    dark_event_service:    DarkEventService
+    main_loop_service:     MainLoopService
     console_service:       ConsoleService
-    sound_track_player:    SoundTrackPlayer
+    npc_service:           NpcService
     world_clock:           WorldClock
+
+    '''
+    sound_track_player:    SoundTrackPlayer
     avatar_sprite_factory: AvatarSpriteFactory
     door_instance_factory: DoorInstanceFactory
     monster_spawner:       MonsterSpawner
-    npc_service:           NpcService
+    display_service:       DisplayService
+    '''
 
-    display_controller: DisplayController
-    
-    # Anything changing map, OR level should call this.
-    def _on_change_map_level(self, new_location_index: int, new_level_index: int):
-        self.display_controller.set_active_map(new_location_index, new_level_index)
-        self.door_instance_factory.load_level(new_location_index, new_level_index)
-        self.monster_spawner.load_level(new_location_index, new_level_index)
-        self.npc_service.load_level(new_location_index, new_level_index)
-        '''
-        self.world_loot_service.register_loot_containers()
-        self.map_cache_service.init()
-        '''
+    def _after_inject(self):
+        self._is_running = True
 
-    def _on_change_coord(self, new_coord: Coord):
-        self.monster_spawner.set_player_coord(new_coord)
-        self.npc_service.set_player_coord(new_coord)
+    def run(self):
+
+        # Propogate the 'loaded' event to listeners.
+        self.dark_event_service.loaded(self.party_state.get_current_location())
+
+        while self._is_running:
+            should_pass_time = self.dispatch_input()
+            
+            if should_pass_time:
+                self.pass_time()
+
+    def dispatch_input(self) -> bool:
+        
+        event = self.main_loop_service.get_next_event()
+
+        if event.type == pygame.QUIT:
+            self._is_running = False
+            return DONT_PASS_TIME
+
+        if event.type != pygame.KEYDOWN:
+            return DONT_PASS_TIME
+
+        #
+        # Received key input, call appropriate handler.
+        #
+        direction_vector = DIRECTION_MAP.get(event.key, None)
+        if not direction_vector is None:
+            self.move(direction_vector)
+            return PASS_TIME
+
+        elif event.key == pygame.K_SPACE:
+            self.console_service.print_ascii("Wait")
+            return PASS_TIME
+
+        elif event.key == pygame.K_j:
+            action_direction = self.main_loop_service.obtain_action_direction()
+            if not action_direction is None:
+                self.jimmy(action_direction)
+                return PASS_TIME
+
+        elif event.key == pygame.K_i:
+            self.ignite_torch()
+            return PASS_TIME
+
+        #
+        # NOTE: For development and testing only
+        #
+        elif event.key == pygame.K_TAB:
+            self.switch_outer_map()
+
+        elif event.key == pygame.K_BACKQUOTE:
+            self.switch_outer_map()
+
+        return DONT_PASS_TIME
 
     def _say_blocked(self):
         self.console_service.print_ascii("Blocked !")
@@ -83,25 +135,14 @@ class PartyController(LoggerMixin):
         self.party_state.push_location(outer_location)
         self.party_state.push_location(inner_location)
 
-        self._on_change_map_level(inner_location.location_index, inner_location.level_index)
-        self._on_change_coord(inner_location.coord)
-
         self.log(f"Set party location to outer={outer_location}, inner={inner_location}")
 
     def load_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
         self.party_state.set_transport_state(
             transport_mode = transport_mode,
-            last_east_west = transport_mode,
-            last_nesw_dir = transport_mode
+            last_east_west = last_east_west,
+            last_nesw_dir = last_nesw_dir
         )
-
-        current_transport_mode, current_direction = self.party_state.get_transport_state()
-
-        player_sprite: Sprite = self.avatar_sprite_factory.create_player(
-            transport_mode = current_transport_mode, 
-            direction      = current_direction
-        )
-        self.display_controller.set_avatar_sprite(player_sprite)
 
         self.log(
             f"Set party transport state to transport_mode={self.party_state.transport_mode}" 
@@ -116,7 +157,7 @@ class PartyController(LoggerMixin):
             self.party_inventory.add(inventory_offset, additional_quantity)
 
     # TODO: Choose a better name for this method
-    def can_traverse(self, target: Coord) -> MoveIntoResult:
+    def _can_traverse(self, target: Coord) -> MoveIntoResult:
 
         transport_mode     = self.global_registry.transport_modes.get(self.party_state.transport_mode)
         current_location   = self.party_state.get_current_location()
@@ -157,21 +198,18 @@ class PartyController(LoggerMixin):
         # Handle out-of-bounds.
         if current_map.location_index == 0:
             # When in the overworld/underworld, wrap the coord because it's a globe.
-            target_location.coord = current_map.get_wrapped_coord(target_location.coord)
+            target_location = target_location.move_to_coord(current_map.get_wrapped_coord(target_location.coord))
         else:
             # When in a town/dungeon room/combat map etc, going out-of-bounds means exiting the map
             if not current_map.get_size().is_in_bounds(target_location.coord):
                 self.party_state.pop_location()
                 new_location = self.party_state.get_current_location()
                 
-                self._on_change_map_level(new_location.location_index, new_location.level_index)
-                self._on_change_coord(new_location.coord)
-
                 self.console_service.print_ascii(f"Exited {current_map.name.capitalize()}")
                 return
 
         # Handle un-traversable terrain.
-        if not self.can_traverse(target_location.coord).traversal_allowed:
+        if not self._can_traverse(target_location.coord).traversal_allowed:
             self._say_blocked()
             return
 
@@ -182,7 +220,7 @@ class PartyController(LoggerMixin):
 
         # Move
         self.party_state.change_coord(target_location.coord)
-        self._on_change_coord(target_location.coord)
+        self.console_service.print_ascii(DIRECTION_NAMES[move_offset])
 
         # map level change checks.
         target_tile_id = current_map.get_tile_id(current_location.level_index, target_location.coord)
@@ -193,9 +231,6 @@ class PartyController(LoggerMixin):
         if target_terrain.entry_point == True:
             new_location: GlobalLocation = self.global_registry.entry_triggers.get(target_location)
             self.party_state.push_location(new_location)
-
-            self._on_change_map_level(new_location.location_index, new_location.level_index)
-            self._on_change_coord(new_location.coord)
 
             new_map: U5Map = self.global_registry.maps.get(new_location.location_index)
             self.console_service.print_ascii(f"Entered {new_map.name.capitalize()}")
@@ -218,31 +253,28 @@ class PartyController(LoggerMixin):
 
         # update level if changed.
         if current_location.level_index != new_level_index:
+            if new_level_index > current_location.level_index:
+                self.console_service.print_ascii("Up !")
+            else:
+                self.console_service.print_ascii("Down !")
             self.party_state.change_level(new_level_index)
-            self._on_change_map_level(target_location.location_index, new_level_index)
-       
 
         # Transport direction, and console message.
         if move_offset.x == 1:
             # east
             self.party_state.last_east_west = 0
             self.party_state.last_nesw_dir = 1
-            msg = "East"
         elif move_offset.x == -1:
             # west
             self.party_state.last_east_west = 1
             self.party_state.last_nesw_dir = 3
-            msg = "West"
         elif move_offset.y == 1:
             # south
             self.party_state.last_nesw_dir = 2
-            msg = "South"
         elif move_offset.y == -1:
             # north
             self.party_state.last_nesw_dir = 0
-            msg = "North"
             
-        self.console_service.print_ascii(msg)
 
     def jimmy(self, direction: Vector2):
 
@@ -262,9 +294,12 @@ class PartyController(LoggerMixin):
         self.party_state.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
 
     def pass_time(self):
-        if self.party_state.get_light_expiry() is None:
-            return
-        if self.world_clock.get_natural_time() > self.party_state.get_light_expiry():
+
+        # Propgate pass_time event (and subsequently all other party-turn-based events.)
+        self.dark_event_service.pass_time(self.party_state.get_current_location())
+
+        # Internal
+        if not self.party_state.get_light_expiry() is None and self.world_clock.get_natural_time() > self.party_state.get_light_expiry():
             self.party_state.set_light(None, None)
 
     #
@@ -279,20 +314,6 @@ class PartyController(LoggerMixin):
             current_location.level_index = 255 # underworld
         else:
             current_location.level_index = 0   # britannia
-        self._on_change_map_level(current_location.location_index, current_location.level_index)
 
     def rotate_transport(self):
         self.party_state.transport_mode = (self.party_state.transport_mode + 1) % len(self.global_registry.transport_modes)
-
-    def enter_combat(self):
-        self.party_state.push_location(
-            GlobalLocation(-666, 0, Coord(5, 10))
-        )
-        self._on_change_map_level(-666, 0)
-        self._on_change_coord(Coord(5, 10))
-
-    def exit_combat(self):
-        self.party_state.pop_location()
-        current_location = self.party_state.get_current_location()
-        self._on_change_map_level(current_location.location_index, current_location.level_index)
-        self._on_change_coord(current_location.coord)

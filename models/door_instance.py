@@ -1,24 +1,26 @@
 import random
 
+from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math        import Coord
 from dark_libraries.service_provider import ServiceProvider
 
 from models.door_type        import DoorType
 from models.enums.door_type_tile_id import DoorTypeTileId
+from models.global_location import GlobalLocation
 from models.magic            import S_MAGIC_UNLOCK
 from models.enums.inventory_offset  import InventoryOffset
 from models.party_inventory  import PartyInventory
 from models.move_into_result import MoveIntoResult
 from models.interactable     import Interactable
 
-from view.interactive_console import InteractiveConsole
+from services.console_service import ConsoleService
 
 class DoorInstance(Interactable):
     def __init__(self, door_type: DoorType, coord: Coord):
         assert not door_type is None, "door_type cannot be None"
         self.door_type: DoorType = door_type
         self.coord: Coord = coord
-        self.interactive_console: InteractiveConsole = ServiceProvider.get_provider().resolve(InteractiveConsole)
+        self.console_service: ConsoleService = ServiceProvider.get_provider().resolve(ConsoleService)
         self.party_inventory: PartyInventory = ServiceProvider.get_provider().resolve(PartyInventory)
 
         # Set Current state
@@ -40,17 +42,17 @@ class DoorInstance(Interactable):
         print(f"Becoming unlocked: original_tile_id={self.door_type.original_tile_id} windowed={self.door_type.original_windowed}")
 
         if self.door_type.original_windowed == True:
-            self.tile_id = DoorType.D_UNLOCKED_WINDOWED
+            self.tile_id = DoorTypeTileId.D_UNLOCKED_WINDOWED.value
         else:
-            self.tile_id = DoorType.D_UNLOCKED_NORMAL
+            self.tile_id = DoorTypeTileId.D_UNLOCKED_NORMAL.value
 
     def _break_key(self):
         self.party_inventory.add(InventoryOffset.KEYS, -1)
-        self.interactive_console.print_ascii("Key broke !")
+        self.console_service.print_ascii("Key broke !")
 
     def _jimmy(self, force_success: bool = False):
         if self.party_inventory.get_quantity(InventoryOffset.KEYS) == 0:
-            self.interactive_console.print_ascii("No Keys !")
+            self.console_service.print_ascii("No Keys !")
             return
         if self.is_open:
             return
@@ -63,7 +65,7 @@ class DoorInstance(Interactable):
         success = force_success or random.choice([True, False])
         if success:
             self._become_unlocked()
-            self.interactive_console.print_ascii("Unlocked !")
+            self.console_service.print_ascii("Unlocked !")
             return
 
         self._break_key()
@@ -90,7 +92,7 @@ class DoorInstance(Interactable):
         return sprite
     '''
 
-    def pass_time(self):
+    def pass_time(self, party_location: GlobalLocation):
         if self.is_open and self.turns_until_close > 0:
             self.turns_until_close -= 1
 
@@ -121,18 +123,4 @@ class DoorInstance(Interactable):
     
     def jimmy(self):
         return self._jimmy(force_success=False)
-    
-    '''
-    def use_item_on(self, item, actor=None) -> Action:
-        raise NotImplementedError()
-        if item != ConsumableItemType.I_SKULL_KEY:
-            return InteractionResult.error()
-        return InteractionResult.result(self._magic_unlock())
-
-    def cast_spell_on(self, spell, actor=None):
-        raise NotImplementedError()
-        if spell != S_MAGIC_UNLOCK:
-            return InteractionResult.error()
-        return InteractionResult.result(self._magic_unlock())
-    '''
     # Interactable implementation: End
