@@ -3,8 +3,6 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.global_location import GlobalLocation
-from services.display_service import DisplayService
-from controllers.party_controller import PartyController
 
 from models.location_metadata import LocationMetadata
 from models.npc_agent import NpcAgent
@@ -12,24 +10,25 @@ from models.party_state import PartyState
 from models.u5_map import U5Map
 
 from services.combat_map_service import CombatMapService
+from services.console_service import ConsoleService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
 
 COMBAT_MAP_LOCATION_INDEX = -666
 
 class CombatController(LoggerMixin):
-    
+
     # Injectable
-    global_registry: GlobalRegistry
-    combat_map_service: CombatMapService
-    map_cache_service: MapCacheService
     party_state: PartyState
     npc_service: NpcService
-
-    display_service: DisplayService
-    party_controller: PartyController
+    combat_map_service: CombatMapService
+    global_registry: GlobalRegistry
+    map_cache_service: MapCacheService
+    console_service: ConsoleService
 
     def enter_combat(self, enemy_npc: NpcAgent):
+
+        self.console_service.print_ascii(f"Entering combat with enemy_tile_id={enemy_npc.tile_id}")
 
         party_transport_mode_index, _ = self.party_state.get_transport_state()
 
@@ -66,6 +65,7 @@ class CombatController(LoggerMixin):
             GlobalLocation(-666, 0, Coord(5, 10))
         )
 
+        enemy_npc.global_location = GlobalLocation(-666,0,Coord(5,2))
 #        self.display_controller.set_active_map(combat_map_wrapper.location_index, 0)
 
         return

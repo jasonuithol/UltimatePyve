@@ -23,18 +23,15 @@ class DarkEventService(LoggerMixin):
 
     def pass_time(self, party_location: GlobalLocation):
 
-        self.log(f"DEBUG: Propogating event 'pass_time' to {len(self._dark_event_listeners)} listeners: {party_location}")
-        print(f"{self._party_location} -> {party_location}")
-
-        for listener in self._dark_event_listeners:
-            listener.pass_time(party_location)
-
         if party_location != self._party_location:
-#        if self._party_location.location_index != party_location.location_index or self._party_location.level_index != party_location.level_index or self._party_location.coord != party_location.coord:
-            print("BILL ODDIE")
             if self._party_location.location_index != party_location.location_index or self._party_location.level_index != party_location.level_index:
                 self._level_changed(party_location)
             self._party_moved(party_location)
+
+        self.log(f"DEBUG: Propogating event 'pass_time' to {len(self._dark_event_listeners)} listeners: {party_location}")
+
+        for listener in self._dark_event_listeners:
+            listener.pass_time(party_location)
 
         self._party_location = party_location
 

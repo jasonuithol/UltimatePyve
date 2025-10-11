@@ -12,13 +12,13 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
     # Injectable
     map_cache_service: MapCacheService
 
-    def _after_inject(self):
-        super()._after_inject()
-
+    def __init__(self):
+        super().__init__()
         self._active_npcs: list[NpcAgent] = []
         self._frozen_npcs: list[NpcAgent] = []
 
         self._party_location: GlobalLocation = None
+        self._attacking_npc: NpcAgent = None
 
     def _freeze_active_npcs(self):
         self.log(f"Freezing {len(self._active_npcs)} NPCs.")
@@ -36,10 +36,8 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
 
     def level_changed(self, party_location: GlobalLocation):
 
-        self._party_location = party_location
-
         # Leaving the over/under world 
-        if self._party_location.location_index == 0 and party_location.level_index != 0:
+        if self._party_location.location_index == 0 and party_location.location_index != 0:
             self._freeze_active_npcs()
         
         # Returning to over/under world 
@@ -49,6 +47,8 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
         #
         # TODO: Changing town/dungeon levels.
         #
+
+        self._party_location = party_location
 
     def party_moved(self, party_location: GlobalLocation):
         self._party_location = party_location
@@ -62,6 +62,12 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
 
     def remove_npc(self, npc_agent: NpcAgent):
         self._active_npcs.remove(npc_agent)
+
+    def get_attacking_npc(self) -> NpcAgent:
+        return self._attacking_npc
+    
+    def set_attacking_npc(self, npc_agent: NpcAgent):
+        self._attacking_npc = npc_agent
 
     def get_occupied_coords(self) -> set[Coord]:
         return {npc.get_coord() for npc in self._active_npcs}.union({self._party_location.coord})

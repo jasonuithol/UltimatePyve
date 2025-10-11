@@ -3,6 +3,7 @@ from typing   import Iterable
 
 import pygame
 
+from controllers.combat_controller import CombatController
 from dark_libraries.dark_events import DarkEventService
 from dark_libraries.dark_math   import Coord, Vector2
 from dark_libraries.logging     import LoggerMixin
@@ -21,12 +22,7 @@ from models.enums.inventory_offset  import InventoryOffset
 from models.party_inventory   import PartyInventory
 from models.party_state       import PartyState
 
-from services.avatar_sprite_factory import AvatarSpriteFactory
-from services.door_instance_factory import DoorInstanceFactory
 from services.main_loop_service import MainLoopService
-from services.sound_track_player    import SoundTrackPlayer
-from services.monster_spawner import MonsterSpawner
-from services.display_service import DisplayService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
 from services.world_clock import WorldClock
@@ -49,6 +45,8 @@ class PartyController(LoggerMixin):
     npc_service:           NpcService
     world_clock:           WorldClock
 
+    combat_controller:     CombatController
+
     '''
     sound_track_player:    SoundTrackPlayer
     avatar_sprite_factory: AvatarSpriteFactory
@@ -69,7 +67,17 @@ class PartyController(LoggerMixin):
             should_pass_time = self.dispatch_input()
             
             if should_pass_time:
+                enemy_npc = self.npc_service.get_attacking_npc()
+                if not enemy_npc is None:
+                    self.combat_controller.enter_combat(enemy_npc)
+
+                # Propgate pass_time event (and subsequently all other party-turn-based events.)
+                self.dark_event_service.pass_time(self.party_state.get_current_location())
+
+                # Internal pass_time (e.g. torches going out)
                 self.pass_time()
+
+                
 
     def dispatch_input(self) -> bool:
         
@@ -294,9 +302,6 @@ class PartyController(LoggerMixin):
         self.party_state.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
 
     def pass_time(self):
-
-        # Propgate pass_time event (and subsequently all other party-turn-based events.)
-        self.dark_event_service.pass_time(self.party_state.get_current_location())
 
         # Internal
         if not self.party_state.get_light_expiry() is None and self.world_clock.get_natural_time() > self.party_state.get_light_expiry():

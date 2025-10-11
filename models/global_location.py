@@ -39,6 +39,9 @@ class GlobalLocation:
     def is_in_town(self) -> bool:
         return 1 <= self.location_index < 27
     
+    def is_combat(self) -> bool:
+        return self.location_index == -666
+
     def move_to_coord(self, coord: Coord) -> Self:
         return GlobalLocation(
             self._location_index,
