@@ -67,15 +67,15 @@ class PartyController(LoggerMixin):
             should_pass_time = self.dispatch_input()
             
             if should_pass_time:
-                enemy_npc = self.npc_service.get_attacking_npc()
-                if not enemy_npc is None:
-                    self.combat_controller.enter_combat(enemy_npc)
-
                 # Propgate pass_time event (and subsequently all other party-turn-based events.)
                 self.dark_event_service.pass_time(self.party_state.get_current_location())
 
                 # Internal pass_time (e.g. torches going out)
                 self.pass_time()
+
+                enemy_npc = self.npc_service.get_attacking_npc()
+                if not enemy_npc is None:
+                    self.combat_controller.enter_combat(enemy_npc)
 
                 
 
