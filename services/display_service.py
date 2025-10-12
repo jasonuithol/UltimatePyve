@@ -6,9 +6,7 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
-from models.global_location import GlobalLocation
 from models.party_state import PartyState
-from models.sprite import Sprite
 from models.tile   import Tile
 from models.u5_map import U5Map
 
@@ -126,9 +124,6 @@ class DisplayService(LoggerMixin):
         #
         # ViewPort
         #
-
-        # Centre the viewport on the player.
-#        self.view_port.centre_view_on(party_location.coord)
 
         # Render current viewport from populated map data.
         map_tiles = self._get_map_tiles()

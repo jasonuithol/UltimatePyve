@@ -1,7 +1,11 @@
+import pygame
+from controllers.move_controller import MoveController
+from dark_libraries.dark_events import DarkEventService
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
+from models.enums.direction_map import DIRECTION_MAP
 from models.global_location import GlobalLocation
 
 from models.location_metadata import LocationMetadata
@@ -11,6 +15,8 @@ from models.u5_map import U5Map
 
 from services.combat_map_service import CombatMapService
 from services.console_service import ConsoleService
+from services.display_service import DisplayService
+from services.main_loop_service import MainLoopService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
 
@@ -25,8 +31,16 @@ class CombatController(LoggerMixin):
     global_registry: GlobalRegistry
     map_cache_service: MapCacheService
     console_service: ConsoleService
+    
+    # Idea #1
+    main_loop_service: MainLoopService
+    dark_event_service: DarkEventService
+    display_service: DisplayService
+    move_controller: MoveController
 
     def enter_combat(self, enemy_npc: NpcAgent):
+
+        self.log(f"Entered combat with enemy_tile_id={enemy_npc.tile_id}")
 
         self.console_service.print_ascii(f"Entering combat with enemy_tile_id={enemy_npc.tile_id}")
 
@@ -58,22 +72,59 @@ class CombatController(LoggerMixin):
 
         # TODO: Remove this
         self.global_registry.maps.register(combat_map_wrapper.location_index, combat_map_wrapper)
-
         self.map_cache_service.cache_u5map(combat_map_wrapper)
 
-        self.party_state.push_location(
-            GlobalLocation(-666, 0, Coord(5, 10))
-        )
+        combat_spawn_location = GlobalLocation(-666, 0, Coord(5, 10))
+        self.party_state.push_location(combat_spawn_location)
+
+        self.npc_service.add_npc(enemy_npc)
 
         enemy_npc.global_location = GlobalLocation(-666,0,Coord(5,2))
-#        self.display_controller.set_active_map(combat_map_wrapper.location_index, 0)
 
-        return
+        in_combat = True
+        current_location = combat_spawn_location
+
+        while in_combat:
+
+            event = self.main_loop_service.get_next_event()
+            if event.type == pygame.QUIT:
+                self.console_service.print_ascii("Cannot quit during combat !")
+                continue
+                
+            move_offset = DIRECTION_MAP.get(event.key, None)
+            if move_offset:
+                move_outcome = self.move_controller.move(
+                    current_location, 
+                    move_offset, 
+                    'walk'
+                )
+                if move_outcome.exit_map:
+                    in_combat = False
+                    break
+
+                elif move_outcome.success:
+                    self.log(f"Combat move received: {move_offset}")
+                    current_location = current_location + move_offset
+                    self.party_state.change_coord(current_location.coord + move_offset)
+                    self.dark_event_service.pass_time(current_location)
+
+                else:
+                    self.log(f"Combat move command failed: {move_outcome}")
+            else:
+                self.log(f"Received non-processable event: {event.key}")    
+
+            self.display_service.render()
+
         self.party_state.pop_location()
+        self.dark_event_service.pass_time(self.party_state.get_current_location())
 
+        self.npc_service.set_attacking_npc(None)
         self.npc_service.remove_npc(enemy_npc)
-
         self.log("Combat Over !")
+
+        self.log(f"Exiting combat with enemy_tile_id={enemy_npc.tile_id}")
+
+
 
 
     

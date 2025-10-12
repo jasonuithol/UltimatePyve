@@ -4,8 +4,9 @@ from typing   import Iterable
 import pygame
 
 from controllers.combat_controller import CombatController
+from controllers.move_controller import MoveController, MoveOutcome
 from dark_libraries.dark_events import DarkEventService
-from dark_libraries.dark_math   import Coord, Vector2
+from dark_libraries.dark_math   import Vector2
 from dark_libraries.logging     import LoggerMixin
 
 from data.global_registry     import GlobalRegistry
@@ -13,8 +14,6 @@ from data.global_registry     import GlobalRegistry
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.global_location     import GlobalLocation
 from models.interactable        import Interactable
-from models.move_into_result    import MoveIntoResult
-from models.terrain             import Terrain
 from models.u5_map              import U5Map
 from models.enums.inventory_offset  import InventoryOffset
 
@@ -46,6 +45,7 @@ class PartyController(LoggerMixin):
     world_clock:           WorldClock
 
     combat_controller:     CombatController
+    move_controller:       MoveController
 
     '''
     sound_track_player:    SoundTrackPlayer
@@ -76,8 +76,6 @@ class PartyController(LoggerMixin):
                 enemy_npc = self.npc_service.get_attacking_npc()
                 if not enemy_npc is None:
                     self.combat_controller.enter_combat(enemy_npc)
-
-                
 
     def dispatch_input(self) -> bool:
         
@@ -165,109 +163,9 @@ class PartyController(LoggerMixin):
             self.party_inventory.add(inventory_offset, additional_quantity)
 
     # TODO: Choose a better name for this method
-    def _can_traverse(self, target: Coord) -> MoveIntoResult:
-
-        transport_mode     = self.global_registry.transport_modes.get(self.party_state.transport_mode)
-        current_location   = self.party_state.get_current_location()
-        current_map: U5Map = self.global_registry.maps.get(current_location.location_index)
-        target_tile_id     = current_map.get_tile_id(current_location.level_index, target)
-
-        interactable: Interactable = self.global_registry.interactables.get(target)      
-
-        if interactable:
-            interactable_moveinto_result = interactable.move_into()
-            if interactable_moveinto_result.traversal_allowed == False and interactable_moveinto_result.alternative_action_taken == False:
-                self._say_blocked()
-            return interactable_moveinto_result
-
-        # It's just regular terrain.
-        terrain: Terrain = self.global_registry.terrains.get(target_tile_id)
-        can_traverse_base_terrain = terrain.can_traverse(transport_mode)
-
-        if not can_traverse_base_terrain:
-            self._say_blocked()
-
-        return MoveIntoResult(
-            traversal_allowed = can_traverse_base_terrain,
-            alternative_action_taken = False
-        )
 
 
-    #
-    # Player driven State transitions
-    #
-
-    def move(self, move_offset: Vector2):
-
-        current_location = self.party_state.get_current_location()
-        current_map: U5Map = self.global_registry.maps.get(current_location.location_index)
-        target_location = current_location + move_offset
-
-        # Handle out-of-bounds.
-        if current_map.location_index == 0:
-            # When in the overworld/underworld, wrap the coord because it's a globe.
-            target_location = target_location.move_to_coord(current_map.get_wrapped_coord(target_location.coord))
-        else:
-            # When in a town/dungeon room/combat map etc, going out-of-bounds means exiting the map
-            if not current_map.get_size().is_in_bounds(target_location.coord):
-                self.party_state.pop_location()
-                new_location = self.party_state.get_current_location()
-                
-                self.console_service.print_ascii(f"Exited {current_map.name.capitalize()}")
-                return
-
-        # Handle un-traversable terrain.
-        if not self._can_traverse(target_location.coord).traversal_allowed:
-            self._say_blocked()
-            return
-
-        # handle bumping into NPCs.
-        if target_location.coord in self.npc_service.get_occupied_coords():
-            self._say_blocked()
-            return
-
-        # Move
-        self.party_state.change_coord(target_location.coord)
-        self.console_service.print_ascii(DIRECTION_NAMES[move_offset])
-
-        # map level change checks.
-        target_tile_id = current_map.get_tile_id(current_location.level_index, target_location.coord)
-        target_terrain: Terrain = self.global_registry.terrains.get(target_tile_id)
-        new_level_index = current_location.level_index
-
-        # entry points
-        if target_terrain.entry_point == True:
-            new_location: GlobalLocation = self.global_registry.entry_triggers.get(target_location)
-            self.party_state.push_location(new_location)
-
-            new_map: U5Map = self.global_registry.maps.get(new_location.location_index)
-            self.console_service.print_ascii(f"Entered {new_map.name.capitalize()}")
-            return
-
-        # ladders                
-        if target_terrain.move_up == True:
-            new_level_index = target_location.level_index + 1
-
-        if target_terrain.move_down == True:
-            new_level_index = target_location.level_index - 1
-
-        # stairs
-        if target_terrain.stairs == True:
-            # NOTE: This is just a guess, but seems to be working out ok.
-            if current_location.level_index == current_map.default_level_index:
-                new_level_index = current_map.default_level_index + 1
-            else:
-                new_level_index = current_map.default_level_index
-
-        # update level if changed.
-        if current_location.level_index != new_level_index:
-            if new_level_index > current_location.level_index:
-                self.console_service.print_ascii("Up !")
-            else:
-                self.console_service.print_ascii("Down !")
-            self.party_state.change_level(new_level_index)
-
-        # Transport direction, and console message.
+    def _update_transport_state(self, move_offset: Vector2):
         if move_offset.x == 1:
             # east
             self.party_state.last_east_west = 0
@@ -282,7 +180,48 @@ class PartyController(LoggerMixin):
         elif move_offset.y == -1:
             # north
             self.party_state.last_nesw_dir = 0
-            
+
+    #
+    # Party driven State transitions
+    #
+    def move(self, move_offset: Vector2):
+
+        party_location = self.party_state.get_current_location()
+        transport_mode_name = self.global_registry.transport_modes.get(self.party_state.transport_mode)
+        move_outcome: MoveOutcome = self.move_controller.move(party_location, move_offset, transport_mode_name)
+
+        if move_outcome.exit_map:
+            current_map = self.global_registry.maps.get(party_location.location_index)
+            self.party_state.pop_location()
+            self.console_service.print_ascii(f"Exited {current_map.name.capitalize()}")
+            return
+
+        if move_outcome.blocked:
+            self._say_blocked()
+            return
+        
+        if move_outcome.success:
+            self._update_transport_state(move_offset)
+            self.party_state.change_coord(party_location.coord + move_offset)
+            self.console_service.print_ascii(DIRECTION_NAMES[move_offset])
+            return
+
+        if not move_outcome.enter_map is None:
+            self.party_state.push_location(move_outcome.enter_map)
+
+            new_map: U5Map = self.global_registry.maps.get(move_outcome.enter_map.location_index)
+            self.console_service.print_ascii(f"Entered {new_map.name.capitalize()}")
+            return
+
+        if move_outcome.move_up:
+            self.party_state.change_level(party_location.level_index + 1)
+            self.console_service.print_ascii("Up !")
+            return
+
+        if move_outcome.move_down:
+            self.party_state.change_level(party_location.level_index - 1)
+            self.console_service.print_ascii("Down !")
+            return
 
     def jimmy(self, direction: Vector2):
 
