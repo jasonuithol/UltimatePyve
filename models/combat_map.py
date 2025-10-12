@@ -1,7 +1,7 @@
 from dark_libraries.dark_math import Coord, Size
 from models.u5_map_level      import U5MapLevel
 
-SpawnCoordinates = tuple[int,...]
+SpawnCoordinates = tuple[Coord,...]
 
 # indexed by 0=North, 1=East, 2=South, 3=West, then by party member index.
 NESWSpawnCoordinateTuple = tuple[

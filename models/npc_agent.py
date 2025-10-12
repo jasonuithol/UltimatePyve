@@ -1,4 +1,5 @@
 from dark_libraries.dark_math import Coord
+from copy import copy
 
 from models.global_location import GlobalLocation
 from models.npc_metadata import NpcMetadata
@@ -17,3 +18,9 @@ class NpcAgent:
     
     def move_to(self, coord: Coord):
         self.global_location = self.global_location.move_to_coord(coord)
+
+    def spawn_clone_at(self, coord: Coord):
+        other = copy(self)
+        other.move_to(coord)
+        return other
+    

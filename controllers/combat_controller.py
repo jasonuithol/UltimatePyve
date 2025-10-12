@@ -1,4 +1,5 @@
 import pygame
+import random
 from controllers.move_controller import MoveController
 from dark_libraries.dark_events import DarkEventService
 from dark_libraries.dark_math import Coord
@@ -76,9 +77,18 @@ class CombatController(LoggerMixin):
 
         combat_spawn_location = GlobalLocation(-666, 0, Coord(5, 9))
         self.party_state.push_location(combat_spawn_location)
+
+        # NPC freezing happens here.
         self.dark_event_service.pass_time(self.party_state.get_current_location())
 
-        self.npc_service.add_npc(enemy_npc)
+        if enemy_npc.npc_metadata.max_party_size <= 1:
+            monster_party_size = 1
+        else:
+            monster_party_size = random.randint(1, enemy_npc.npc_metadata.max_party_size)
+
+        for monster_spawn_slot_index in range(monster_party_size):
+            spawn_coord = combat_map._monster_spawn_coords[monster_spawn_slot_index]
+            self.npc_service.add_npc(enemy_npc.spawn_clone_at(spawn_coord))
 
         enemy_npc.global_location = GlobalLocation(-666,0,Coord(5,2))
 
@@ -93,7 +103,7 @@ class CombatController(LoggerMixin):
                 continue
 
             if event.key == pygame.K_SPACE:
-                self.console_service.print_ascii("Wait command received")
+                self.log("DEBUG: Wait command received")
                 self.dark_event_service.pass_time(current_location)
                 continue
 
@@ -109,19 +119,21 @@ class CombatController(LoggerMixin):
                     break
 
                 elif move_outcome.success:
-                    self.log(f"Combat move received: {move_offset}")
+                    self.log(f"DEBUG: Combat move received: {move_offset}")
                     current_location = current_location + move_offset
                     self.party_state.change_coord(current_location.coord)
                     self.dark_event_service.pass_time(current_location)
 
                 else:
-                    self.log(f"Combat move command failed: {move_outcome}")
+                    self.log(f"DEBUG: Combat move command failed: {move_outcome}")
             else:
-                self.log(f"Received non-processable event: {event.key}")    
+                self.log(f"DEBUG: Received non-processable event: {event.key}")    
 
             self.display_service.render()
 
+
         self.party_state.pop_location()
+        # NPC unfreezing happens here.
         self.dark_event_service.pass_time(self.party_state.get_current_location())
 
         self.npc_service.set_attacking_npc(None)

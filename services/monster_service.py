@@ -5,10 +5,10 @@ from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging   import LoggerMixin
 
+from data.global_registry import GlobalRegistry
 from models.global_location import GlobalLocation
 
 from services.console_service              import ConsoleService
-from services.map_cache.map_level_contents import MapLevelContents
 from services.npc_service                  import NpcService
 from services.map_cache.map_cache_service  import MapCacheService
 
@@ -18,10 +18,18 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
     console_service:   ConsoleService
     map_cache_service: MapCacheService
     npc_service:       NpcService
+    global_registry:   GlobalRegistry
 
     def __init__(self):
         super().__init__()        
-        self._party_location: GlobalLocation = None
+        self._set_party_location(party_location = None)
+
+    def _set_party_location(self, party_location: GlobalLocation):
+        self._party_location = party_location
+        if party_location is None:
+            return
+        self._current_map = self.global_registry.maps.get(party_location.location_index)
+        self._current_boundary_rect = self._current_map.get_size() if self._current_map.location_index != 0 else None
 
     def _move_generator(self, monster_coord: Coord) -> Iterable[Coord]:
 
@@ -34,13 +42,11 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
         yield from alternative_moves
 
     def _find_next_move(self, blocked_coords: set[Coord], monster_coord: Coord) -> Coord:
-
-        map_level_contents: MapLevelContents = self.map_cache_service.get_map_level_contents(self._party_location.location_index, self._party_location.level_index)
-        map_coords = set(map_level_contents._coord_contents_dict.keys())
      
-        for move in self._move_generator(monster_coord):
-            if (not move in blocked_coords) and move in map_coords:
-                return move
+        for target_coord in self._move_generator(monster_coord):
+            out_of_bounds = (not self._current_boundary_rect is None) and self._current_boundary_rect.is_in_bounds(target_coord)
+            if (not target_coord in blocked_coords) and (not out_of_bounds):
+                return target_coord
 
         return None
 
@@ -53,12 +59,12 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
         self.log(f"DEBUG: Moving from {monster_location.coord} to {next_monster_coord}")
         return monster_location.move_to_coord(next_monster_coord)
     
+    # TODO: what do we need this for ?
     def loaded(self, party_location: GlobalLocation):
-        self._party_location = party_location
+        self._set_party_location(party_location)
 
     def pass_time(self, party_location: GlobalLocation):
-
-        self._party_location = party_location
+        self._set_party_location(party_location)
 
         blocked_coords = self.map_cache_service.get_blocked_coords(
             self._party_location.location_index, 

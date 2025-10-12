@@ -73,7 +73,7 @@ class CombatMapLoader(LoggerMixin):
         )
 
         # Monster spawn coords
-        monster_spawn_coords: SpawnCoordinates = (
+        monster_spawn_coords: SpawnCoordinates = tuple(
             Coord(
                 data[_to_row_extra_offset(ROW_INDEX_MONSTER_X) + monster_spawn_index],
                 data[_to_row_extra_offset(ROW_INDEX_MONSTER_Y) + monster_spawn_index],

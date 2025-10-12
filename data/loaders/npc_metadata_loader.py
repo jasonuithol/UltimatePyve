@@ -72,6 +72,20 @@ def _to_npc_tile_id(name: str) -> int:
     assert not tile_id is None, f"Could not lookup NpcTileId for name '{name}'"
     return tile_id.value
 
+def _floatify(s: str) -> float:
+    try:
+        return float(s)
+    except ValueError:
+        return 0
+
+def _intify(s: str) -> int:
+    try:
+        return int(s)
+    except ValueError:
+        return 0
+
+def _intify_iterable(numbers_but_strings: Iterable[str]) -> list[int]:
+    return [_intify(s) for s in numbers_but_strings]
 
 class NpcMetadataLoader(LoggerMixin):
 
@@ -122,12 +136,12 @@ class NpcMetadataLoader(LoggerMixin):
         meta = NpcMetadata(
             name = data[0],
             npc_tile_id = _to_npc_tile_id(data[0]),
-            general_stats = tuple(data[1:4]),  # Str|Dex|Int
-            combat_stats  = tuple(data[4:7]),  # Armor|Damage|HP
+            general_stats = tuple(_intify_iterable(data[1:4])),  # Str|Dex|Int
+            combat_stats  = tuple(_intify_iterable(data[4:7])),  # Armor|Damage|HP
             other_stats   = (                  # Max n.|Treasure %||Exp
-                                data[ 7],
-                                data[ 8],
-                                data[10]
+                                _intify(data[ 7]),
+                                int(_floatify(data[ 8].strip("%")) * 100),
+                                _intify(data[10])
                             )
         )
 
