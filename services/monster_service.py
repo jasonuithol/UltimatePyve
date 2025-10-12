@@ -44,9 +44,13 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
     def _find_next_move(self, blocked_coords: set[Coord], monster_coord: Coord) -> Coord:
      
         for target_coord in self._move_generator(monster_coord):
-            out_of_bounds = (not self._current_boundary_rect is None) and self._current_boundary_rect.is_in_bounds(target_coord)
-            if (not target_coord in blocked_coords) and (not out_of_bounds):
+            blocked = target_coord in blocked_coords
+            in_outer_world = self._current_boundary_rect is None
+            out_of_bounds = (not self._current_boundary_rect is None) and (not self._current_boundary_rect.is_in_bounds(target_coord))
+            if (not blocked) and (in_outer_world or (not out_of_bounds)):
                 return target_coord
+            else:
+                self.log(f"DEBUG: Rejecting proposed target coord: {target_coord} (blocked={blocked}, in_outer_world={in_outer_world}, out_of_bounds={out_of_bounds})")
 
         return None
 

@@ -87,10 +87,14 @@ class CombatController(LoggerMixin):
             monster_party_size = random.randint(1, enemy_npc.npc_metadata.max_party_size)
 
         for monster_spawn_slot_index in range(monster_party_size):
-            spawn_coord = combat_map._monster_spawn_coords[monster_spawn_slot_index]
+            spawn_coord: Coord = combat_map._monster_spawn_coords[monster_spawn_slot_index]
             self.npc_service.add_npc(enemy_npc.spawn_clone_at(spawn_coord))
-
-        enemy_npc.global_location = GlobalLocation(-666,0,Coord(5,2))
+ 
+        #
+        # TODO: Remove this
+        #
+#        enemy_npc.global_location = GlobalLocation(-666,0,Coord(5,2))   
+#        self.npc_service.add_npc(enemy_npc)
 
         in_combat = True
         current_location = combat_spawn_location
