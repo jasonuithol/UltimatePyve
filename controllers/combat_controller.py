@@ -74,8 +74,9 @@ class CombatController(LoggerMixin):
         self.global_registry.maps.register(combat_map_wrapper.location_index, combat_map_wrapper)
         self.map_cache_service.cache_u5map(combat_map_wrapper)
 
-        combat_spawn_location = GlobalLocation(-666, 0, Coord(5, 10))
+        combat_spawn_location = GlobalLocation(-666, 0, Coord(5, 9))
         self.party_state.push_location(combat_spawn_location)
+        self.dark_event_service.pass_time(self.party_state.get_current_location())
 
         self.npc_service.add_npc(enemy_npc)
 
@@ -90,7 +91,12 @@ class CombatController(LoggerMixin):
             if event.type == pygame.QUIT:
                 self.console_service.print_ascii("Cannot quit during combat !")
                 continue
-                
+
+            if event.key == pygame.K_SPACE:
+                self.console_service.print_ascii("Wait command received")
+                self.dark_event_service.pass_time(current_location)
+                continue
+
             move_offset = DIRECTION_MAP.get(event.key, None)
             if move_offset:
                 move_outcome = self.move_controller.move(
@@ -105,7 +111,7 @@ class CombatController(LoggerMixin):
                 elif move_outcome.success:
                     self.log(f"Combat move received: {move_offset}")
                     current_location = current_location + move_offset
-                    self.party_state.change_coord(current_location.coord + move_offset)
+                    self.party_state.change_coord(current_location.coord)
                     self.dark_event_service.pass_time(current_location)
 
                 else:
