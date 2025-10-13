@@ -139,8 +139,8 @@ class NpcMetadataLoader(LoggerMixin):
             general_stats = tuple(_intify_iterable(data[1:4])),  # Str|Dex|Int
             combat_stats  = tuple(_intify_iterable(data[4:7])),  # Armor|Damage|HP
             other_stats   = (                  # Max n.|Treasure %||Exp
-                                _intify(data[ 7]),
-                                int(_floatify(data[ 8].strip("%")) * 100),
+                                _intify(data[7]),
+                                _floatify(data[8].strip("%")) / 100,
                                 _intify(data[10])
                             )
         )

@@ -4,16 +4,16 @@ import random
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.logging   import LoggerMixin
 
+from data.global_registry import GlobalRegistry
 from models.global_location import GlobalLocation
 from models.enums.npc_ids   import NpcTileId
 
+from models.monster_agent import MonsterAgent
 from models.terrain import Terrain
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
 
-from .npc_spawner import NpcSpawner
-
-class MonsterSpawner(NpcSpawner, LoggerMixin, DarkEventListenerMixin):
+class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
 
     def __init__(self):
         super().__init__()
@@ -25,9 +25,17 @@ class MonsterSpawner(NpcSpawner, LoggerMixin, DarkEventListenerMixin):
 
     npc_service: NpcService
     map_cache_service: MapCacheService
+    global_registry: GlobalRegistry
 
     def loaded(self, party_location: GlobalLocation):
         self._party_location = party_location
+
+    def _spawn_monster(self, npc_tile_id: int, global_location: GlobalLocation):
+        sprite = self.global_registry.sprites.get(npc_tile_id)
+        npc_metadata = self.global_registry.npc_metadata.get(npc_tile_id)
+        npc_agent = MonsterAgent(sprite, npc_metadata, global_location)
+
+        self.npc_service.add_npc(npc_agent)
 
     def pass_time(self, party_location: GlobalLocation):
 
@@ -70,5 +78,5 @@ class MonsterSpawner(NpcSpawner, LoggerMixin, DarkEventListenerMixin):
 
 
         # create monster
-        super()._spawn_npc(monster_tile_id_enum.value, monster_global_location)
+        self._spawn_monster(monster_tile_id_enum.value, monster_global_location)
         self.log(f"Spawned {monster_tile_id_enum.name} at {monster_coord}, totalling {len(self.npc_service._active_npcs)} (alternate count={len(self.npc_service.get_npcs())}) active monsters")
