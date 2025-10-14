@@ -3,6 +3,9 @@ from datetime import datetime
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging   import LoggerMixin
 
+from models.agents.party_agent import PartyAgent
+from models.agents.party_member_agent import PartyMemberAgent
+from models.enums.character_class_to_tile_id import CharacterClassToTileId
 from models.global_location         import GlobalLocation
 from models.enums.inventory_offset  import InventoryOffset
 
@@ -22,6 +25,7 @@ class InitialisationController(LoggerMixin):
     # Injectable
     global_registry_loader: GlobalRegistryLoader
     global_registry:        GlobalRegistry
+    party_agent:            PartyAgent
 
     main_display: MainDisplay
     world_clock:  WorldClock
@@ -66,6 +70,21 @@ class InitialisationController(LoggerMixin):
             (InventoryOffset.KEYS,    20),
             (InventoryOffset.TORCHES, 40)        
         ])
+
+        for party_member_index in range(6):
+
+            character_record    = self.global_registry.saved_game.characters[party_member_index]
+            char_tile_id        = CharacterClassToTileId.__dict__[character_record.char_class].value.value
+            party_member_sprite = self.global_registry.sprites.get(char_tile_id)
+
+            assert not party_member_sprite is None, f"Could not find sprite for tile_id={char_tile_id!r}"
+
+            party_member = PartyMemberAgent(
+                sprite           = party_member_sprite,
+                character_record = character_record
+            )
+            party_member.global_registry = self.global_registry
+            self.party_agent.party_members.append(party_member)
 
         self.world_loot_service.register_loot_containers()
         self.map_cache_service.init()

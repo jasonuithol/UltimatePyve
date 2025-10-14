@@ -1,18 +1,18 @@
 import pygame
 import random
+
 from controllers.move_controller import MoveController
+
 from dark_libraries.dark_events import DarkEventService
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
-from models.enums.character_class_to_tile_id import CharacterClassToTileId
 from models.enums.direction_map import DIRECTION_MAP
 from models.global_location import GlobalLocation
 
 from models.location_metadata import LocationMetadata
 from models.agents.monster_agent import MonsterAgent
-from models.agents.party_member_agent import PartyMemberAgent
 from models.agents.party_agent import PartyAgent
 from models.u5_map import U5Map
 
@@ -77,7 +77,7 @@ class CombatController(LoggerMixin):
         self.global_registry.maps.register(combat_map_wrapper.location_index, combat_map_wrapper)
         self.map_cache_service.cache_u5map(combat_map_wrapper)
 
-        self.party_agent.push_location(GlobalLocation(-666, 0, Coord(5, 9)))
+        self.party_agent.push_location(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, Coord(5, 9)))
 
         # NPC freezing happens here.
         self.dark_event_service.pass_time(self.party_agent.get_current_location())
@@ -93,31 +93,17 @@ class CombatController(LoggerMixin):
             self.npc_service.add_npc(enemy_npc.spawn_clone_at(spawn_coord))
 
         # Party member spawning
-        party_members = list[PartyMemberAgent]()
         print(combat_map._party_spawn_coords)
-        for party_member_index in range(6):
-
-            character_record    = self.global_registry.saved_game.characters[party_member_index]
-            char_tile_id        = CharacterClassToTileId.__dict__[character_record.char_class].value.value
-            party_member_sprite = self.global_registry.sprites.get(char_tile_id)
-
-            assert not party_member_sprite is None, f"Could not find sprite for tile_id={char_tile_id!r}"
-
-            party_member = PartyMemberAgent(
-                combat_map._party_spawn_coords[0][party_member_index],
-                party_member_sprite,
-                character_record
-            )
-            party_member.global_registry = self.global_registry
-            party_members.append(party_member)
+        for party_member_index, party_member in enumerate(self.party_agent.get_party_members()):
+            spawn_coord: Coord = combat_map._party_spawn_coords[0][party_member_index]
+            party_member.enter_combat(spawn_coord)
             self.npc_service.add_npc(party_member)
 
-#        self.display_service.set_combat_mode(party_members)
         in_combat = True
 
         while in_combat:
 
-            for party_member in party_members:
+            for party_member in self.party_agent.get_party_members_in_combat():
 
                 current_coord = party_member.coord
 
@@ -130,22 +116,20 @@ class CombatController(LoggerMixin):
 
                 if event.key == pygame.K_SPACE:
                     self.log("DEBUG: Wait command received")
-#                    self.dark_event_service.pass_time(GlobalLocation(-666, 0, party_members[0].coord))
                     continue
 
                 move_offset = DIRECTION_MAP.get(event.key, None)
-                if move_offset:
+                if not move_offset is None:
                     move_outcome = self.move_controller.move(
                         GlobalLocation(-666, 0, current_coord), 
                         move_offset, 
                         'walk'
                     )
                     if move_outcome.exit_map:
-                        party_members.remove(party_member)
+                        party_member.exit_combat()
                         self.npc_service.remove_npc(party_member)
                         self.log(f"Party member {party_member.name} exited !")
-#                        self.display_service.set_combat_mode(party_members)
-                        if len(party_members) == 0:
+                        if not any(self.party_agent.get_party_members_in_combat()):
                             in_combat = False
                             break
                         else:
@@ -160,23 +144,28 @@ class CombatController(LoggerMixin):
                     self.log(f"DEBUG: Received non-processable event: {event.key}")    
 
             # All members moved.
-            if len(party_members) > 0:
-                self.dark_event_service.pass_time(GlobalLocation(-666, 0, party_members[0].coord))
+            if any(self.party_agent.get_party_members_in_combat()):
+                self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, self.party_agent.party_members[0].coord))
 
             #
-            # TODO: This has to change
+            # -- R E N D E R --
             #
             self.display_service.render()
 
 
-#        self.display_service.set_party_mode()
+        self.log(f"Exiting combat with {enemy_npc.name}")
+
+        for party_member in self.party_agent.get_party_members_in_combat():
+            party_member.exit_combat()
+
         self.party_agent.pop_location()
+
         # NPC unfreezing happens here.
         self.dark_event_service.pass_time(self.party_agent.get_current_location())
+
         self.npc_service.set_attacking_npc(None)
         self.npc_service.remove_npc(enemy_npc)
 
-        self.log(f"Exiting combat with {enemy_npc.name}")
 
 
 

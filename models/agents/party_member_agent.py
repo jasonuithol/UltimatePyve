@@ -27,12 +27,21 @@ class PartyMemberAgent(CombatAgent):
     # TODO: This will be None for the moment
     global_registry: GlobalRegistry
 
-    def __init__(self, coord: Coord, sprite: Sprite, character_record: CharacterRecord):
-        super().__init__(coord, sprite)
+    def __init__(self, sprite: Sprite, character_record: CharacterRecord):
+        super().__init__(coord = None, sprite = sprite)
         self._character_record = character_record
         self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value
         self._mana = self._calculate_maximum_mana()
         self._level = self._calculate_potential_level()
+
+    def enter_combat(self, coord: Coord):
+        self.coord = coord
+
+    def exit_combat(self):
+        self.coord = None
+
+    def is_in_combat(self):
+        return not self.coord is None
 
     # NPC_AGENT IMPLEMENTATION (Completion): Start
     #

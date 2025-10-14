@@ -20,8 +20,8 @@ class PartyAgent(NpcAgent):
     def __init__(self):
         super().__init__()
 
-    location_stack: list[GlobalLocation] = []
-    party_members: list[PartyMemberAgent]
+    location_stack = list[GlobalLocation]()
+    party_members  = list[PartyMemberAgent]()
     active_member_index: int = None
 
     # options: walk, horse, carpet, skiff, ship
@@ -33,12 +33,30 @@ class PartyAgent(NpcAgent):
     light_radius: int = None
     light_expiry: datetime = None
 
+    #
+    # Party Members
+    #
+
     @property
     def active_member(self) -> PartyMemberAgent | None:
         if self.active_member_index is None:
             return None
         else:
             return self.party_members[self.active_member_index]
+
+    def add_member(self, party_member_agent: PartyMemberAgent):
+        assert len(self.party_members) < 6, f"Cannot add any more members, already have {len(self.party_members)}"
+        self.party_members.append(party_member_agent)
+
+    def remove_member(self, party_member_agent: PartyMemberAgent):
+        assert len(self.party_members) > 1, f"Cannot remove any more members, only have {len(self.party_members)}"
+        self.party_members.append(party_member_agent)
+
+    def get_party_members(self):
+        return self.party_members
+
+    def get_party_members_in_combat(self):
+        return [party_member for party_member in self.party_members if party_member.is_in_combat()]
 
     # NPC_AGENT IMPLEMENTATION: start
     @property

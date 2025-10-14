@@ -5,6 +5,9 @@ from dark_libraries.dark_math import Coord
 @immutable
 class GlobalLocation:
     def __init__(self, location_index: int, level_index: int, coord: Coord):
+
+        assert not coord is None, "coord cannot be None"
+
         self._location_index = location_index
         self._level_index = level_index
         self._coord = coord

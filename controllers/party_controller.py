@@ -179,6 +179,7 @@ class PartyController(LoggerMixin):
             # north
             self.party_agent.last_nesw_dir = 0
 
+
     #
     # Party driven State transitions
     #
