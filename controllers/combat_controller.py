@@ -43,9 +43,9 @@ class CombatController(LoggerMixin):
 
     def enter_combat(self, enemy_npc: MonsterAgent):
 
-        self.log(f"Entered combat with enemy_tile_id={enemy_npc.tile_id}")
+        self.log(f"Entered combat with {enemy_npc.name}")
 
-        self.console_service.print_ascii(f"Entering combat with enemy_tile_id={enemy_npc.tile_id}")
+        self.console_service.print_ascii(f"{enemy_npc.name}s !")
 
         party_transport_mode_index, _ = self.party_agent.get_transport_state()
 
@@ -175,9 +175,8 @@ class CombatController(LoggerMixin):
         self.dark_event_service.pass_time(self.party_agent.get_current_location())
         self.npc_service.set_attacking_npc(None)
         self.npc_service.remove_npc(enemy_npc)
-        self.log("Combat Over !")
 
-        self.log(f"Exiting combat with enemy_tile_id={enemy_npc.tile_id}")
+        self.log(f"Exiting combat with {enemy_npc.name}")
 
 
 
