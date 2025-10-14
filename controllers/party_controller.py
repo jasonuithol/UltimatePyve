@@ -15,11 +15,11 @@ from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.global_location     import GlobalLocation
 from models.interactable        import Interactable
 from models.u5_map              import U5Map
-from models.enums.inventory_offset  import InventoryOffset
+from models.enums.inventory_offset import InventoryOffset
 
 # singletons
-from models.party_inventory   import PartyInventory
-from models.party_state       import PartyState
+from models.party_inventory    import PartyInventory
+from models.agents.party_agent import PartyAgent
 
 from services.main_loop_service import MainLoopService
 from services.console_service import ConsoleService
@@ -34,47 +34,45 @@ DONT_PASS_TIME = False
 class PartyController(LoggerMixin):
 
     # Injectable
-    party_state:     PartyState
-    global_registry: GlobalRegistry
-    party_inventory: PartyInventory
+    party_agent:        PartyAgent
+    global_registry:    GlobalRegistry
+    party_inventory:    PartyInventory
 
-    dark_event_service:    DarkEventService
-    main_loop_service:     MainLoopService
-    console_service:       ConsoleService
-    npc_service:           NpcService
-    world_clock:           WorldClock
+    dark_event_service: DarkEventService
+    main_loop_service:  MainLoopService
+    console_service:    ConsoleService
+    npc_service:        NpcService
+    world_clock:        WorldClock
 
-    combat_controller:     CombatController
-    move_controller:       MoveController
+    combat_controller:  CombatController
+    move_controller:    MoveController
 
-    '''
-    sound_track_player:    SoundTrackPlayer
-    avatar_sprite_factory: AvatarSpriteFactory
-    door_instance_factory: DoorInstanceFactory
-    monster_spawner:       MonsterSpawner
-    display_service:       DisplayService
-    '''
 
     def _after_inject(self):
         self._is_running = True
 
     def run(self):
 
+        self.npc_service.add_npc(self.party_agent)
+
         # Propogate the 'loaded' event to listeners.
-        self.dark_event_service.loaded(self.party_state.get_current_location())
+        self.dark_event_service.loaded(self.party_agent.get_current_location())
 
         while self._is_running:
             should_pass_time = self.dispatch_input()
             
             if should_pass_time:
                 # Propgate pass_time event (and subsequently all other party-turn-based events.)
-                self.dark_event_service.pass_time(self.party_state.get_current_location())
+                self.dark_event_service.pass_time(self.party_agent.get_current_location())
 
                 # Internal pass_time (e.g. torches going out)
                 self.pass_time()
 
                 enemy_npc = self.npc_service.get_attacking_npc()
                 if not enemy_npc is None:
+                    #
+                    # C O M B A T
+                    #
                     self.combat_controller.enter_combat(enemy_npc)
 
     def dispatch_input(self) -> bool:
@@ -137,25 +135,25 @@ class PartyController(LoggerMixin):
         
         assert not outer_location is None, f"Could not load overworld location for {inner_location}"
 
-        self.party_state.clear_locations()
-        self.party_state.push_location(outer_location)
-        self.party_state.push_location(inner_location)
+        self.party_agent.clear_locations()
+        self.party_agent.push_location(outer_location)
+        self.party_agent.push_location(inner_location)
 
         self.log(f"Set party location to outer={outer_location}, inner={inner_location}")
 
     def load_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
-        self.party_state.set_transport_state(
+        self.party_agent.set_transport_state(
             transport_mode = transport_mode,
             last_east_west = last_east_west,
             last_nesw_dir = last_nesw_dir
         )
 
         self.log(
-            f"Set party transport state to transport_mode={self.party_state.transport_mode}" 
+            f"Set party transport state to transport_mode={self.party_agent.transport_mode}" 
             + 
-            f", last_east_west={self.party_state.last_east_west}"
+            f", last_east_west={self.party_agent.last_east_west}"
             +
-            f", last_nesw_dir={self.party_state.last_nesw_dir}"
+            f", last_nesw_dir={self.party_agent.last_nesw_dir}"
         )
 
     def load_party_inventory(self, inventory: Iterable[tuple[InventoryOffset, int]]):
@@ -168,31 +166,31 @@ class PartyController(LoggerMixin):
     def _update_transport_state(self, move_offset: Vector2):
         if move_offset.x == 1:
             # east
-            self.party_state.last_east_west = 0
-            self.party_state.last_nesw_dir = 1
+            self.party_agent.last_east_west = 0
+            self.party_agent.last_nesw_dir = 1
         elif move_offset.x == -1:
             # west
-            self.party_state.last_east_west = 1
-            self.party_state.last_nesw_dir = 3
+            self.party_agent.last_east_west = 1
+            self.party_agent.last_nesw_dir = 3
         elif move_offset.y == 1:
             # south
-            self.party_state.last_nesw_dir = 2
+            self.party_agent.last_nesw_dir = 2
         elif move_offset.y == -1:
             # north
-            self.party_state.last_nesw_dir = 0
+            self.party_agent.last_nesw_dir = 0
 
     #
     # Party driven State transitions
     #
     def move(self, move_offset: Vector2):
 
-        party_location = self.party_state.get_current_location()
-        transport_mode_name = self.global_registry.transport_modes.get(self.party_state.transport_mode)
+        party_location = self.party_agent.get_current_location()
+        transport_mode_name = self.global_registry.transport_modes.get(self.party_agent.transport_mode)
         move_outcome: MoveOutcome = self.move_controller.move(party_location, move_offset, transport_mode_name)
 
         if move_outcome.exit_map:
             current_map = self.global_registry.maps.get(party_location.location_index)
-            self.party_state.pop_location()
+            self.party_agent.pop_location()
             self.console_service.print_ascii(f"Exited {current_map.name.capitalize()}")
             return
 
@@ -202,30 +200,30 @@ class PartyController(LoggerMixin):
         
         if move_outcome.success:
             self._update_transport_state(move_offset)
-            self.party_state.change_coord(party_location.coord + move_offset)
+            self.party_agent.change_coord(party_location.coord + move_offset)
             self.console_service.print_ascii(DIRECTION_NAMES[move_offset])
             return
 
         if not move_outcome.enter_map is None:
-            self.party_state.push_location(move_outcome.enter_map)
+            self.party_agent.push_location(move_outcome.enter_map)
 
             new_map: U5Map = self.global_registry.maps.get(move_outcome.enter_map.location_index)
             self.console_service.print_ascii(f"Entered {new_map.name.capitalize()}")
             return
 
         if move_outcome.move_up:
-            self.party_state.change_level(party_location.level_index + 1)
+            self.party_agent.change_level(party_location.level_index + 1)
             self.console_service.print_ascii("Up !")
             return
 
         if move_outcome.move_down:
-            self.party_state.change_level(party_location.level_index - 1)
+            self.party_agent.change_level(party_location.level_index - 1)
             self.console_service.print_ascii("Down !")
             return
 
     def jimmy(self, direction: Vector2):
 
-        target_coord = self.party_state.get_current_location().coord.add(direction)
+        target_coord = self.party_agent.get_current_location().coord.add(direction)
         interactable: Interactable = self.global_registry.interactables.get(target_coord)      
         if interactable:
             interactable.jimmy()
@@ -238,20 +236,20 @@ class PartyController(LoggerMixin):
             return
         self.console_service.print_ascii("Ignite torch !")
         self.party_inventory.add(InventoryOffset.TORCHES, -1)
-        self.party_state.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
+        self.party_agent.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
 
     def pass_time(self):
 
         # Internal
-        if not self.party_state.get_light_expiry() is None and self.world_clock.get_natural_time() > self.party_state.get_light_expiry():
-            self.party_state.set_light(None, None)
+        if not self.party_agent.get_light_expiry() is None and self.world_clock.get_natural_time() > self.party_agent.get_light_expiry():
+            self.party_agent.set_light(None, None)
 
     #
     # Testing only
     #
 
     def switch_outer_map(self):
-        current_location = self.party_state.get_current_location()
+        current_location = self.party_agent.get_current_location()
         if current_location.location_index != 0:
             return
         if current_location.level_index == 0:        
@@ -260,4 +258,4 @@ class PartyController(LoggerMixin):
             current_location.level_index = 0   # britannia
 
     def rotate_transport(self):
-        self.party_state.transport_mode = (self.party_state.transport_mode + 1) % len(self.global_registry.transport_modes)
+        self.party_agent.transport_mode = (self.party_agent.transport_mode + 1) % len(self.global_registry.transport_modes)

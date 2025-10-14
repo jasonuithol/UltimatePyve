@@ -1,16 +1,21 @@
-from models.global_location import GlobalLocation
-from models.npc_metadata    import NpcMetadata
-from models.npc_agent       import NpcAgent
-from models.sprite          import Sprite
+from dark_libraries.dark_math import Coord
+from models.agents.combat_agent import CombatAgent
+from models.global_location     import GlobalLocation
+from models.npc_metadata        import NpcMetadata
+from models.sprite              import Sprite
+from models.tile                import Tile
 
-class MonsterAgent(NpcAgent):
+from .combat_agent import CombatAgent
+
+class MonsterAgent(CombatAgent):
     
-    def __init__(self, sprite: Sprite, global_location: GlobalLocation, npc_metadata: NpcMetadata):
-        super().__init__(sprite, global_location)
+    def __init__(self, coord: Coord, sprite: Sprite, npc_metadata: NpcMetadata):
+        super().__init__(coord, sprite)
         self._npc_metadata = npc_metadata
         self._current_hitpoints = self.maximum_hitpoints
 
-    # NPC_AGENT IMPLEMENTATION: Start
+    # NPC_AGENT IMPLEMENTATION (Completion): Start
+    #
     @property
     def tile_id(self) -> int:
         return self._npc_metadata.npc_tile_id
@@ -18,7 +23,11 @@ class MonsterAgent(NpcAgent):
     @property
     def name(self) -> str:
         return self._npc_metadata.name
+    #
+    # NPC_AGENT IMPLEMENTATION (Completion): End
 
+    # COMBAT_AGENT IMPLEMENTATION: Start
+    #
     @property
     def strength(self) -> int:
         return self._npc_metadata.strength
@@ -45,6 +54,7 @@ class MonsterAgent(NpcAgent):
 
     def get_damage(self, attack_type: chr) -> int:
         return self._npc_metadata.damage
-    # NPC_AGENT IMPLEMENTATION: End
+    #
+    # COMBAT_AGENT IMPLEMENTATION: End
 
         

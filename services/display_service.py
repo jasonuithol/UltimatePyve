@@ -6,12 +6,12 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
-from models.party_member_agent import PartyMemberAgent
-from models.party_state import PartyState
+from models.agents.npc_agent import NpcAgent
+from models.agents.party_member_agent import PartyMemberAgent
+from models.agents.party_agent import PartyAgent
 from models.tile   import Tile
 from models.u5_map import U5Map
 
-from services.avatar_sprite_factory import AvatarSpriteFactory
 from view.display_config      import DisplayConfig
 from view.interactive_console import InteractiveConsole
 from view.view_port           import ViewPort
@@ -39,9 +39,8 @@ class DisplayService(LoggerMixin):
     fov_calculator:    FieldOfViewCalculator
     lighting_service:  LightingService
     npc_service:       NpcService
-    avatar_sprite_factory: AvatarSpriteFactory
 
-    party_state: PartyState
+    party_agent: PartyAgent
 
     def init(self):
 
@@ -54,14 +53,14 @@ class DisplayService(LoggerMixin):
         )
         self.clock = pygame.time.Clock()
 
-        self.set_party_mode()
+#        self.set_party_mode()
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
 
     def _get_map_tiles(self) -> dict[Coord, Tile]:
 
-        player_location = self.party_state.get_current_location()
+        player_location = self.party_agent.get_current_location()
 
         map_level_contents: MapLevelContents = self.map_cache_service.get_map_level_contents(
             player_location.location_index,
@@ -84,9 +83,9 @@ class DisplayService(LoggerMixin):
         def get_frame(world_coord: Coord) -> Tile:
             if not world_coord in visible_coords.intersection(lit_coords):
                 return None
-            npc = npcs.get(world_coord, None)
+            npc: NpcAgent = npcs.get(world_coord, None)
             if not npc is None:
-                return npc.sprite.get_current_frame_tile()
+                return npc.current_tile
             interactable = self.global_registry.interactables.get(world_coord)
             if not interactable is None:
                 return self.global_registry.tiles.get(interactable.get_current_tile_id())
@@ -98,6 +97,7 @@ class DisplayService(LoggerMixin):
             for world_coord in self.view_port.view_rect
         }
 
+    '''
     #
     # TODO: party controller's new job is to fetch the correct sprite and then register and update
     #       an adventurer in the place of the party
@@ -113,13 +113,14 @@ class DisplayService(LoggerMixin):
         self.party_mode = False
         self.combat_mode = True
         self.party_member_agents = party_member_agents
+    '''
 
     #
     # TODO: remove player_coord as a parameter and add it to the state
     #
     def render(self):
 
-        party_location = self.party_state.get_current_location()
+        party_location = self.party_agent.get_current_location()
         active_map: U5Map = self.global_registry.maps.get(party_location.location_index)
 
         # Update window title with current location/world of player.
@@ -148,18 +149,6 @@ class DisplayService(LoggerMixin):
         # Render current viewport from populated map data.
         map_tiles = self._get_map_tiles()
         self.view_port.draw_map(map_tiles)
-
-        #
-        # TODO: party controller's new job is to fetch the correct sprite and then register and update
-        #       an adventurer in the place of the party
-        #
-        if self.party_mode:
-            # draw the player over the top of whatever is at it's position.
-            transport_mode, transport_direction = self.party_state.get_transport_state()
-            avatar_sprite = self.avatar_sprite_factory.create_player(transport_mode, transport_direction)
-
-            avatar_tile = avatar_sprite.get_current_frame_tile()
-            self.view_port.draw_tile(party_location.coord, avatar_tile)
 
         vp_scaled_surface = self.view_port.get_output_surface()
         vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)

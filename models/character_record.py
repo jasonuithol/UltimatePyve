@@ -1,8 +1,3 @@
-from typing import Self
-
-from models.npc_agent import NpcAgent
-
-
 class CharacterRecord:
     LENGTH = 32
 

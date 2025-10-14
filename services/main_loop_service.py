@@ -3,9 +3,8 @@ import pygame
 from dark_libraries.dark_math import Vector2
 from dark_libraries.logging import LoggerMixin
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
-from models.party_state import PartyState
+from models.agents.party_agent import PartyAgent
 
-from services.avatar_sprite_factory import AvatarSpriteFactory
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
 
@@ -30,8 +29,7 @@ PROCESSABLE_KEYS = [
 
 class MainLoopService(LoggerMixin):
 
-    party_state: PartyState
-    avatar_sprite_factory: AvatarSpriteFactory
+    party_agent:     PartyAgent
     display_service: DisplayService
     console_service: ConsoleService
 
@@ -41,12 +39,12 @@ class MainLoopService(LoggerMixin):
     '''
     def _update(self):
         # Player sprite
-        transport_mode, direction = self.party_state.get_transport_state()
+        transport_mode, direction = self.party_agent.get_transport_state()
         player_sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
         self.display_service.set_avatar_sprite(player_sprite)
 
         # update display
-        party_location = self.party_state.get_current_location()
+        party_location = self.party_agent.get_current_location()
         self.display_service.render(party_location.coord)
     '''
 

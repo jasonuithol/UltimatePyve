@@ -2,13 +2,14 @@ import math
 import random
 
 from dark_libraries.dark_events import DarkEventListenerMixin
+from dark_libraries.dark_math import Coord
 from dark_libraries.logging   import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 from models.global_location import GlobalLocation
 from models.enums.npc_tile_id   import NpcTileId
 
-from models.monster_agent import MonsterAgent
+from models.agents.monster_agent import MonsterAgent
 from models.terrain import Terrain
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
@@ -30,10 +31,10 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
     def loaded(self, party_location: GlobalLocation):
         self._party_location = party_location
 
-    def _spawn_monster(self, npc_tile_id: int, global_location: GlobalLocation):
+    def _spawn_monster(self, npc_tile_id: int, monster_coord: Coord):
         sprite = self.global_registry.sprites.get(npc_tile_id)
         npc_metadata = self.global_registry.npc_metadata.get(npc_tile_id)
-        npc_agent = MonsterAgent(sprite, global_location, npc_metadata)
+        npc_agent = MonsterAgent(monster_coord, sprite, npc_metadata)
 
         self.npc_service.add_npc(npc_agent)
 
@@ -61,13 +62,13 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
             num_iterations += 1
             assert num_iterations < 100, "Infinite loop detected"
             monster_coord = self._party_location.coord.translate_polar(__class__.MONSTER_SPAWN_RADIUS, random.uniform(-math.pi, math.pi))
-        monster_global_location = GlobalLocation(self._party_location.location_index, self._party_location.level_index, monster_coord)
+#        monster_global_location = GlobalLocation(self._party_location.location_index, self._party_location.level_index, monster_coord)
 
         # randomly choose kind of monster (that can live on monster_global_location)
-        coord_contents = self.map_cache_service.get_location_contents(monster_global_location)
-        u5_map = self.global_registry.maps.get(self._party_location.location_index)
-        terrain_tile_id = u5_map.get_tile_id(self._party_location.level_index, monster_coord)
-        terrain: Terrain = self.global_registry.terrains.get(terrain_tile_id)
+#        coord_contents = self.map_cache_service.get_location_contents(monster_global_location)
+#        u5_map = self.global_registry.maps.get(self._party_location.location_index)
+#        terrain_tile_id = u5_map.get_tile_id(self._party_location.level_index, monster_coord)
+#        terrain: Terrain = self.global_registry.terrains.get(terrain_tile_id)
 
         #
         # TODO: limit the monster selection to those appropriate for the terrain.
@@ -78,5 +79,5 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
 
 
         # create monster
-        self._spawn_monster(monster_tile_id_enum.value, monster_global_location)
+        self._spawn_monster(monster_tile_id_enum.value, monster_coord)
         self.log(f"Spawned {monster_tile_id_enum.name} at {monster_coord}, totalling {len(self.npc_service._active_npcs)} (alternate count={len(self.npc_service.get_npcs())}) active monsters")

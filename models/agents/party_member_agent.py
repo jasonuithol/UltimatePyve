@@ -3,14 +3,17 @@ import random
 
 from enum import Enum
 
+from dark_libraries.dark_math import Coord
 from data.global_registry     import GlobalRegistry
-from models.character_record  import CharacterRecord
+
 from models.enums.character_class_to_tile_id import CharacterClassToTileId
 from models.enums.npc_tile_id import NpcTileId
+
+from models.character_record  import CharacterRecord
 from models.equipable_items   import EquipableItemType
-from models.global_location   import GlobalLocation
-from models.npc_agent         import NpcAgent
 from models.sprite            import Sprite
+
+from .combat_agent import CombatAgent
 
 MAXIMUM_SKILL_LEVEL = 30
 
@@ -19,19 +22,20 @@ class IncreasableSkillNames(Enum):
     DEX = 'dexterity'
     INT = 'intelligence'    
 
-class PartyMemberAgent(NpcAgent):
+class PartyMemberAgent(CombatAgent):
 
     # TODO: This will be None for the moment
     global_registry: GlobalRegistry
 
-    def __init__(self, sprite: Sprite, global_location: GlobalLocation, character_record: CharacterRecord):
-        super().__init__(sprite, global_location)
+    def __init__(self, coord: Coord, sprite: Sprite, character_record: CharacterRecord):
+        super().__init__(coord, sprite)
         self._character_record = character_record
         self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value
         self._mana = self._calculate_maximum_mana()
         self._level = self._calculate_potential_level()
 
-    # NPC_AGENT IMPLEMENTATION: Start
+    # NPC_AGENT IMPLEMENTATION (Completion): Start
+    #
     @property
     def tile_id(self) -> int:
         return self._tile_id
@@ -39,7 +43,11 @@ class PartyMemberAgent(NpcAgent):
     @property
     def name(self) -> str:
         return self._character_record.name
+    #
+    # NPC_AGENT IMPLEMENTATION (Completion): End
 
+    # COMBAT_AGENT IMPLEMENTATION: Start
+    #
     @property
     def strength(self) -> int:
         return self._character_record.strength
@@ -73,7 +81,8 @@ class PartyMemberAgent(NpcAgent):
             item_id = self._character_record.left_hand
         equipable_item_type: EquipableItemType = self.global_registry.item_types.get(item_id)
         return equipable_item_type.attack
-    # NPC_AGENT IMPLEMENTATION: End
+    #
+    # COMBAT_AGENT IMPLEMENTATION: End
 
     def _calculate_potential_level(self) -> int:
         return math.log(self._character_record.experience // 100, 2)

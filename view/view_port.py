@@ -1,7 +1,7 @@
 from dark_libraries.dark_math import Coord, Rect
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
-from models.party_state import PartyState
+from models.agents.party_agent import PartyAgent
 from models.tile import Tile, TILE_ID_BLACK
 
 from .display_config import DisplayConfig
@@ -12,7 +12,7 @@ class ViewPort(ScalableComponent, LoggerMixin):
     # Injectable Properties
     display_config: DisplayConfig
     global_registry: GlobalRegistry
-    party_state: PartyState
+    party_agent: PartyAgent
 
     def __init__(self):
         LoggerMixin.__init__(self)
@@ -34,7 +34,7 @@ class ViewPort(ScalableComponent, LoggerMixin):
 
     @property
     def view_rect(self) -> Rect:
-        party_location = self.party_state.get_current_location()
+        party_location = self.party_agent.get_current_location()
         minimum_corner = party_location.coord - self.display_config.VIEW_PORT_SIZE // 2
         return Rect(minimum_corner, self.display_config.VIEW_PORT_SIZE)
 

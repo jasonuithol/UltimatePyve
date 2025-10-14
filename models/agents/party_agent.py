@@ -5,10 +5,24 @@ from typing   import Tuple
 from dark_libraries.dark_math import Coord
 
 from models.global_location import GlobalLocation
+from models.tile import Tile
 
-class PartyState:
+from services.avatar_sprite_factory import AvatarSpriteFactory
+
+from .npc_agent import NpcAgent
+from .party_member_agent import PartyMemberAgent
+
+class PartyAgent(NpcAgent):
+
+    # Injectable
+    avatar_sprite_factory: AvatarSpriteFactory    
+
+    def __init__(self):
+        super().__init__()
 
     location_stack: list[GlobalLocation] = []
+    party_members: list[PartyMemberAgent]
+    active_member_index: int = None
 
     # options: walk, horse, carpet, skiff, ship
     transport_mode: int = None
@@ -18,6 +32,35 @@ class PartyState:
     # torch, light spell
     light_radius: int = None
     light_expiry: datetime = None
+
+    @property
+    def active_member(self) -> PartyMemberAgent | None:
+        if self.active_member_index is None:
+            return None
+        else:
+            return self.party_members[self.active_member_index]
+
+    # NPC_AGENT IMPLEMENTATION: start
+    @property
+    def tile_id(self) -> int: ...
+
+    @property
+    def name(self) -> str: return "Quote Unquote"
+
+    @property
+    def current_tile(self) -> Tile:
+        transport_mode, direction = self.get_transport_state()
+        sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
+        return sprite.get_current_frame_tile()
+
+    @property
+    def coord(self):
+        return self.get_current_location().coord
+
+    @coord.setter
+    def coord(self, value: Coord):
+        self.location_stack[-1] = self.location_stack[-1].move_to_coord(value)
+    # NPC_AGENT IMPLEMENTATION: end
 
     #
     # Location

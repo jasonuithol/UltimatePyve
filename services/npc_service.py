@@ -2,8 +2,9 @@ from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from dark_libraries.dark_events import DarkEventListenerMixin
 
+from models.agents.party_agent import PartyAgent
 from models.global_location import GlobalLocation
-from models.npc_agent import NpcAgent
+from models.agents.npc_agent import NpcAgent
 
 from services.map_cache.map_cache_service import MapCacheService
 
@@ -11,6 +12,7 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
 
     # Injectable
     map_cache_service: MapCacheService
+    party_agent: PartyAgent
 
     def __init__(self):
         super().__init__()
@@ -55,7 +57,10 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
     # IMPLEMENTATION END: DarkEventListenerMixin
 
     def get_npcs(self) -> dict[Coord, NpcAgent]:
-        return {npc.get_coord(): npc for npc in self._active_npcs}
+        registered = {npc.coord: npc for npc in self._active_npcs}
+        if self._party_location.location_index == 0:
+            registered[self._party_location.coord] = self.party_agent
+        return registered
 
     def add_npc(self, npc_agent: NpcAgent):
         self._active_npcs.append(npc_agent)
@@ -70,5 +75,5 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
         self._attacking_npc = npc_agent
 
     def get_occupied_coords(self) -> set[Coord]:
-        return {npc.get_coord() for npc in self._active_npcs}.union({self._party_location.coord})
+        return {coord for coord in self.get_npcs().keys()}
 

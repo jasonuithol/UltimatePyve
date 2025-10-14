@@ -2,7 +2,7 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry   import GlobalRegistry
 
 from models.global_location import GlobalLocation
-from models.npc_agent       import NpcAgent
+from models.agents.npc_agent       import NpcAgent
 from models.terrain         import Terrain
 from models.u5_map          import U5Map
 
@@ -73,9 +73,9 @@ class CombatMapService(LoggerMixin):
         assert transport_mode_index != 3, "Cannot enter combat in a skiff."
 
         u5_map: U5Map = self.global_registry.maps.get(player_location.location_index)
-        enemy_terrain_tile_id = u5_map.get_tile_id(player_location.level_index, enemy_npc_agent.get_coord())
+        enemy_terrain_tile_id = u5_map.get_tile_id(player_location.level_index, enemy_npc_agent.coord)
 
-        assert not enemy_terrain_tile_id is None, f"Cannot find enemy_terrain_tile_id for player_location.level_index={player_location}, enemy_npc_agent.get_coord()={enemy_npc_agent.get_coord()}"
+        assert not enemy_terrain_tile_id is None, f"Cannot find enemy_terrain_tile_id for player_location.level_index={player_location}, enemy_npc_agent.coord={enemy_npc_agent.coord}"
 
         enemy_terrain: Terrain = self.global_registry.terrains.get(enemy_terrain_tile_id)
 

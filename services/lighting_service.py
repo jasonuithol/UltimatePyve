@@ -2,7 +2,7 @@ from dark_libraries.dark_math import Coord
 
 from data.global_registry import GlobalRegistry
 from models.global_location import GlobalLocation
-from models.party_state import PartyState
+from models.agents.party_agent import PartyAgent
 from services.light_map_level_baker import LightMapLevelBaker
 from services.world_clock import WorldClock
 
@@ -12,7 +12,7 @@ class LightingService:
 
     # Injectable
     world_clock: WorldClock
-    player_state: PartyState
+    player_state: PartyAgent
     global_registry: GlobalRegistry
     light_map_level_baker: LightMapLevelBaker
 

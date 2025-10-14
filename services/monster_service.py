@@ -5,9 +5,9 @@ from dark_libraries.logging     import LoggerMixin
 from data.global_registry   import GlobalRegistry
 
 from models.global_location import GlobalLocation
-from models.monster_agent   import MonsterAgent
+from models.agents.monster_agent   import MonsterAgent
 
-from models.npc_agent import NpcAgent
+from models.agents.npc_agent import NpcAgent
 from services.console_service             import ConsoleService
 from services.npc_service                 import NpcService
 from services.map_cache.map_cache_service import MapCacheService
@@ -40,12 +40,12 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
             if isinstance(npc, MonsterAgent):
                 monster_agent: MonsterAgent = npc
             else:
-                self.log("Skipping turn for non-monster NpcAgent")
+                self.log("DEBUG: Skipping turn for non-monster NpcAgent")
                 continue
 
-            old_coord = monster_agent.get_coord()
+            old_coord = monster_agent.coord
 
-            if monster_agent.get_coord().taxi_distance(party_location.coord) == 1:
+            if monster_agent.coord.taxi_distance(party_location.coord) == 1:
                 # Combat map mode
                 if current_map.location_index == -666:
                     self.console_service.print_ascii("WHAM !")
@@ -60,7 +60,7 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
                     boundary_rect    = current_boundary_rect
                 )
 
-            new_coord = monster_agent.get_coord()
+            new_coord = monster_agent.coord
 
             if old_coord != new_coord:
                 occupied_coords.add(new_coord)
