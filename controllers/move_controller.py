@@ -1,5 +1,6 @@
 from dark_libraries.dark_math import Coord, Vector2
 
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.global_location import GlobalLocation
@@ -32,7 +33,11 @@ class MoveOutcome:
         self.enter_map = enter_map
         self.exit_map  = exit_map
 
-class MoveController:
+    def __str__(self) -> str:
+        return self.__class__.__name__ + ": " + ", ".join([f"{n}={v}" for n,v in vars(self).items()])
+            
+
+class MoveController(LoggerMixin):
 
     global_registry: GlobalRegistry
     npc_service: NpcService
@@ -55,6 +60,8 @@ class MoveController:
         move_into_result: MoveIntoResult = self._try_move_into(current_location, target_location.coord, transport_mode_name)
         got_blocked = (not move_into_result.traversal_allowed) and (not move_into_result.alternative_action_taken)
         if not move_into_result.traversal_allowed:
+            if got_blocked:
+                self.log(f"DEBUG: Blocking move to {target_location.coord}: _try_move_into() failed")
             return MoveOutcome(blocked=got_blocked)
 
         # handle bumping into NPCs.
@@ -62,6 +69,7 @@ class MoveController:
         # TODO: This will need to track every party member
         if target_location.coord in self.npc_service.get_occupied_coords():
         #---------------------------------------------------------------------------------
+            self.log(f"DEBUG: Blocking move to {target_location.coord}: _get_occupied_coords() {self.npc_service.get_occupied_coords()}")
             return MoveOutcome(blocked=True)
 
 
@@ -101,6 +109,7 @@ class MoveController:
         elif new_level_index < current_location.level_index:
             return MoveOutcome(move_down=True)
         else:
+            self.log(f"DEBUG: Move to {target_location} succeeded.")
             return MoveOutcome(success=True)
         
     def _try_move_into(self, current_location: GlobalLocation, target: Coord, transport_mode_name: str) -> MoveIntoResult:

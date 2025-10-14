@@ -8,12 +8,10 @@ from data.global_registry import GlobalRegistry
 
 from models.enums.character_class_to_tile_id import CharacterClassToTileId
 from models.enums.direction_map import DIRECTION_MAP
-from models.enums.npc_tile_id import NpcTileId
 from models.global_location import GlobalLocation
 
 from models.location_metadata import LocationMetadata
 from models.monster_agent import MonsterAgent
-from models.npc_agent import NpcAgent
 from models.party_member_agent import PartyMemberAgent
 from models.party_state import PartyState
 from models.u5_map import U5Map
@@ -79,8 +77,7 @@ class CombatController(LoggerMixin):
         self.global_registry.maps.register(combat_map_wrapper.location_index, combat_map_wrapper)
         self.map_cache_service.cache_u5map(combat_map_wrapper)
 
-        combat_spawn_location = GlobalLocation(-666, 0, Coord(5, 9))
-        self.party_state.push_location(combat_spawn_location)
+        self.party_state.push_location(GlobalLocation(-666, 0, Coord(5, 9)))
 
         # NPC freezing happens here.
         self.dark_event_service.pass_time(self.party_state.get_current_location())
@@ -118,50 +115,68 @@ class CombatController(LoggerMixin):
             party_members.append(party_member)
             self.npc_service.add_npc(party_member)
 
+        self.display_service.set_combat_mode(party_members)
         in_combat = True
-        current_location = combat_spawn_location
 
         while in_combat:
 
-            event = self.main_loop_service.get_next_event()
-            if event.type == pygame.QUIT:
-                self.console_service.print_ascii("Cannot quit during combat !")
-                continue
+            for party_member in party_members:
 
-            if event.key == pygame.K_SPACE:
-                self.log("DEBUG: Wait command received")
-                self.dark_event_service.pass_time(current_location)
-                continue
+                current_location = party_member.global_location
 
-            move_offset = DIRECTION_MAP.get(event.key, None)
-            if move_offset:
-                move_outcome = self.move_controller.move(
-                    current_location, 
-                    move_offset, 
-                    'walk'
-                )
-                if move_outcome.exit_map:
-                    in_combat = False
-                    break
+                self.log(f"{party_member.name}'s turn")
 
-                elif move_outcome.success:
-                    self.log(f"DEBUG: Combat move received: {move_offset}")
-                    current_location = current_location + move_offset
-                    self.party_state.change_coord(current_location.coord)
-                    self.dark_event_service.pass_time(current_location)
+                event = self.main_loop_service.get_next_event()
+                if event.type == pygame.QUIT:
+                    self.console_service.print_ascii("Cannot quit during combat !")
+                    continue
 
+                if event.key == pygame.K_SPACE:
+                    self.log("DEBUG: Wait command received")
+                    self.dark_event_service.pass_time(party_members[0].global_location)
+                    continue
+
+                move_offset = DIRECTION_MAP.get(event.key, None)
+                if move_offset:
+                    move_outcome = self.move_controller.move(
+                        current_location, 
+                        move_offset, 
+                        'walk'
+                    )
+                    if move_outcome.exit_map:
+                        party_members.remove(party_member)
+                        self.log(f"Party member {party_member.name} exited !")
+                        self.display_service.set_combat_mode(party_members)
+                        if len(party_members) == 0:
+                            in_combat = False
+                            break
+                        else:
+                            continue
+
+                    elif move_outcome.success:
+                        self.log(f"DEBUG: Combat move received: {move_offset}")
+                        party_member.move_to(current_location.coord + move_offset)
+
+                        #
+                        # TODO: This has to change
+                        #
+                        self.dark_event_service.pass_time(party_members[0].global_location)
+
+                    else:
+                        self.log(f"DEBUG: Combat move command failed: {move_outcome}")
                 else:
-                    self.log(f"DEBUG: Combat move command failed: {move_outcome}")
-            else:
-                self.log(f"DEBUG: Received non-processable event: {event.key}")    
+                    self.log(f"DEBUG: Received non-processable event: {event.key}")    
 
+            #
+            # TODO: This has to change
+            #
             self.display_service.render()
 
 
+        self.display_service.set_party_mode()
         self.party_state.pop_location()
         # NPC unfreezing happens here.
         self.dark_event_service.pass_time(self.party_state.get_current_location())
-
         self.npc_service.set_attacking_npc(None)
         self.npc_service.remove_npc(enemy_npc)
         self.log("Combat Over !")

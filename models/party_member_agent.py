@@ -25,9 +25,6 @@ class PartyMemberAgent(NpcAgent):
     global_registry: GlobalRegistry
 
     def __init__(self, sprite: Sprite, global_location: GlobalLocation, character_record: CharacterRecord):
-
-                
-
         super().__init__(sprite, global_location)
         self._character_record = character_record
         self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value

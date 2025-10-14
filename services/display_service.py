@@ -6,6 +6,7 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
+from models.party_member_agent import PartyMemberAgent
 from models.party_state import PartyState
 from models.tile   import Tile
 from models.u5_map import U5Map
@@ -53,7 +54,10 @@ class DisplayService(LoggerMixin):
         )
         self.clock = pygame.time.Clock()
 
+        self.set_party_mode()
+
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
+
 
     def _get_map_tiles(self) -> dict[Coord, Tile]:
 
@@ -94,6 +98,16 @@ class DisplayService(LoggerMixin):
             for world_coord in self.view_port.view_rect
         }
 
+    def set_party_mode(self):
+        self.party_mode = True
+        self.combat_mode = False
+        self.party_member_agents: list[PartyMemberAgent] = None
+
+    def set_combat_mode(self, party_member_agents: list[PartyMemberAgent]):
+        self.party_mode = False
+        self.combat_mode = True
+        self.party_member_agents = party_member_agents
+
     #
     # TODO: remove player_coord as a parameter and add it to the state
     #
@@ -129,12 +143,17 @@ class DisplayService(LoggerMixin):
         map_tiles = self._get_map_tiles()
         self.view_port.draw_map(map_tiles)
 
-        # draw the player over the top of whatever is at it's position.
-        transport_mode, transport_direction = self.party_state.get_transport_state()
-        avatar_sprite = self.avatar_sprite_factory.create_player(transport_mode, transport_direction)
+        if self.party_mode:
+            # draw the player over the top of whatever is at it's position.
+            transport_mode, transport_direction = self.party_state.get_transport_state()
+            avatar_sprite = self.avatar_sprite_factory.create_player(transport_mode, transport_direction)
 
-        avatar_tile = avatar_sprite.get_current_frame_tile()
-        self.view_port.draw_tile(party_location.coord, avatar_tile)
+            avatar_tile = avatar_sprite.get_current_frame_tile()
+            self.view_port.draw_tile(party_location.coord, avatar_tile)
+
+        elif self.combat_mode:
+            for party_member_agent in self.party_member_agents:
+                self.view_port.draw_tile(party_member_agent.global_location.coord, party_member_agent.sprite.get_current_frame_tile())
 
         vp_scaled_surface = self.view_port.get_output_surface()
         vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)
