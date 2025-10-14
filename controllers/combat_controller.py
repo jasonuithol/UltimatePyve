@@ -6,11 +6,15 @@ from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
+from models.enums.character_class_to_tile_id import CharacterClassToTileId
 from models.enums.direction_map import DIRECTION_MAP
+from models.enums.npc_tile_id import NpcTileId
 from models.global_location import GlobalLocation
 
 from models.location_metadata import LocationMetadata
+from models.monster_agent import MonsterAgent
 from models.npc_agent import NpcAgent
+from models.party_member_agent import PartyMemberAgent
 from models.party_state import PartyState
 from models.u5_map import U5Map
 
@@ -39,7 +43,7 @@ class CombatController(LoggerMixin):
     display_service: DisplayService
     move_controller: MoveController
 
-    def enter_combat(self, enemy_npc: NpcAgent):
+    def enter_combat(self, enemy_npc: MonsterAgent):
 
         self.log(f"Entered combat with enemy_tile_id={enemy_npc.tile_id}")
 
@@ -81,20 +85,38 @@ class CombatController(LoggerMixin):
         # NPC freezing happens here.
         self.dark_event_service.pass_time(self.party_state.get_current_location())
 
-        if enemy_npc.npc_metadata.max_party_size <= 1:
+        # Monster member spawning
+        if enemy_npc._npc_metadata.max_party_size <= 1:
             monster_party_size = 1
         else:
-            monster_party_size = random.randint(1, enemy_npc.npc_metadata.max_party_size)
+            monster_party_size = random.randint(1, enemy_npc._npc_metadata.max_party_size)
 
         for monster_spawn_slot_index in range(monster_party_size):
             spawn_coord: Coord = combat_map._monster_spawn_coords[monster_spawn_slot_index]
             self.npc_service.add_npc(enemy_npc.spawn_clone_at(spawn_coord))
- 
-        #
-        # TODO: Remove this
-        #
-#        enemy_npc.global_location = GlobalLocation(-666,0,Coord(5,2))   
-#        self.npc_service.add_npc(enemy_npc)
+
+        # Party member spawning
+        party_members = list[PartyMemberAgent]()
+        print(combat_map._party_spawn_coords)
+        for party_member_index in range(6):
+
+            character_record    = self.global_registry.saved_game.characters[party_member_index]
+            char_tile_id        = CharacterClassToTileId.__dict__[character_record.char_class].value.value
+            party_member_sprite = self.global_registry.sprites.get(char_tile_id)
+
+            assert not party_member_sprite is None, f"Could not find sprite for tile_id={char_tile_id!r}"
+
+            party_member = PartyMemberAgent(
+                party_member_sprite,
+                GlobalLocation(
+                    -666, 0, 
+                    combat_map._party_spawn_coords[0][party_member_index]
+                ),
+                character_record
+            )
+            party_member.global_registry = self.global_registry
+            party_members.append(party_member)
+            self.npc_service.add_npc(party_member)
 
         in_combat = True
         current_location = combat_spawn_location

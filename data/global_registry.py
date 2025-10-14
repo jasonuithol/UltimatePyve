@@ -4,6 +4,7 @@ from data.registries.registry_base import Registry
 from models.combat_map import CombatMap, DungeonRoom
 from models.door_type import DoorType
 from models.npc_metadata import NpcMetadata
+from models.saved_game import SavedGame
 from models.u5_font    import U5Font
 from models.tile       import Tile
 from models.sprite     import Sprite
@@ -20,7 +21,7 @@ from models.interactable    import Interactable
 
 class GlobalRegistry:
 
-    def _after_inject(self):
+    def __init__(self):
         
         # map oriented features.
         self.tiles    = Registry[int, Tile]()     # tile_id
@@ -55,3 +56,5 @@ class GlobalRegistry:
         self.combat_maps   = Registry[int, CombatMap]()
         self.dungeon_rooms = Registry[int, DungeonRoom]()
         self.npc_metadata  = Registry[int, NpcMetadata]()
+
+        self.saved_game = SavedGame()

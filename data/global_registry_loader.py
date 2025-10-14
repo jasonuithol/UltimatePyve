@@ -5,6 +5,7 @@ from data.global_registry import GlobalRegistry
 from data.loaders.combat_map_loader import CombatMapLoader
 from data.loaders.entry_trigger_loader import EntryTriggerLoader
 from data.loaders.npc_metadata_loader import NpcMetadataLoader
+from data.loaders.save_game_loader import SavedGameLoader
 from data.loaders.tileset_loader       import TileLoader
 from data.loaders.terrain_loader       import TerrainLoader
 from data.loaders.transport_mode_loader import TransportModeLoader
@@ -55,6 +56,7 @@ class GlobalRegistryLoader(LoggerMixin):
 
     combat_map_loader:           CombatMapLoader
     npc_metadata_loader:         NpcMetadataLoader
+    saved_game_loader:           SavedGameLoader
 
     modding: ModdingService
 
@@ -99,6 +101,7 @@ class GlobalRegistryLoader(LoggerMixin):
         self.transport_mode_loader.load()
         self.npc_metadata_loader.load()
 
+        self.saved_game_loader.load_existing()
 
         #
         # TODO: LOAD REGISTRY SPECIFIC MODS AFTER EACH OG REGISTRY IS LOADED.

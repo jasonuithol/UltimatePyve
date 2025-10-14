@@ -1,0 +1,128 @@
+import math
+import random
+
+from enum import Enum
+
+from data.global_registry     import GlobalRegistry
+from models.character_record  import CharacterRecord
+from models.enums.character_class_to_tile_id import CharacterClassToTileId
+from models.enums.npc_tile_id import NpcTileId
+from models.equipable_items   import EquipableItemType
+from models.global_location   import GlobalLocation
+from models.npc_agent         import NpcAgent
+from models.sprite            import Sprite
+
+MAXIMUM_SKILL_LEVEL = 30
+
+class IncreasableSkillNames(Enum):
+    STR = 'strength'
+    DEX = 'dexterity'
+    INT = 'intelligence'    
+
+class PartyMemberAgent(NpcAgent):
+
+    # TODO: This will be None for the moment
+    global_registry: GlobalRegistry
+
+    def __init__(self, sprite: Sprite, global_location: GlobalLocation, character_record: CharacterRecord):
+
+                
+
+        super().__init__(sprite, global_location)
+        self._character_record = character_record
+        self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value
+        self._mana = self._calculate_maximum_mana()
+        self._level = self._calculate_potential_level()
+
+    # NPC_AGENT IMPLEMENTATION: Start
+    @property
+    def tile_id(self) -> int:
+        return self._tile_id
+
+    @property
+    def name(self) -> str:
+        return self._character_record.name
+
+    @property
+    def strength(self) -> int:
+        return self._character_record.strength
+
+    @property
+    def dexterity(self) -> int:
+        return self._character_record.dexterity
+
+    @property
+    def armour(self) -> int:
+        item_id = self._character_record.armor
+        equipable_item_type: EquipableItemType = self.global_registry.item_types.get(item_id)
+        return equipable_item_type.attack
+
+    @property
+    def maximum_hitpoints(self) -> int:
+        return self._character_record.max_hp
+
+    @property 
+    def hitpoints(self) -> int:
+        return self._character_record.current_hp
+
+    @hitpoints.setter
+    def hitpoints(self, val: int):
+        self._character_record.current_hp = val
+
+    def get_damage(self, attack_type: chr) -> int:
+        if attack_type in ['R','B']:
+            item_id = self._character_record.right_hand
+        else: 
+            item_id = self._character_record.left_hand
+        equipable_item_type: EquipableItemType = self.global_registry.item_types.get(item_id)
+        return equipable_item_type.attack
+    # NPC_AGENT IMPLEMENTATION: End
+
+    def _calculate_potential_level(self) -> int:
+        return math.log(self._character_record.experience // 100, 2)
+
+    def _calculate_maximum_mana(self) -> int:
+        class_multipliers = {
+            NpcTileId.ADVENTURER.value : 1.0,
+            NpcTileId.MAGE.value       : 1.0,
+            NpcTileId.BARD.value       : 0.5
+        }
+        return class_multipliers.get(self.tile_id, 0.0) * self._character_record.intelligence
+        
+    def _increase_skill(self, increased_skill_name: str, amount: int):
+        current_skill_value = getattr(self._character_record, increased_skill_name)
+        setattr(self._character_record, increased_skill_name, max(current_skill_value + amount, MAXIMUM_SKILL_LEVEL))
+
+    def _choose_increasable_skill(self) -> str | None:
+        eligible_skills = [
+            skill_name 
+            for skill_name in IncreasableSkillNames
+            if getattr(self._character_record, skill_name.value) < MAXIMUM_SKILL_LEVEL
+        ]
+
+        random.shuffle(eligible_skills)
+        return next(eligible_skills, None)
+
+    #
+    # Public Methods
+    #     
+
+    def add_experience(self, delta: int):
+        self._character_record.experience = min(self._character_record.experience + delta, 0)
+
+    def update_level(self):
+        while self._level != self._calculate_potential_level():
+            if self._level < self._calculate_potential_level():
+                self._level += 1
+                increased_skill_name = self._choose_increasable_skill()
+                if increased_skill_name:
+                    self._increase_skill(increased_skill_name, amount = 1)
+            else:
+                # Getting killed will result in loss of experience, so a level drop is possible.
+                # This does not affect skill levels tho.
+                # This allows absolute sweatlords to level every skill to 30 for all party members.
+                self._level -= 1
+
+
+
+    

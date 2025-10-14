@@ -1,3 +1,8 @@
+from typing import Self
+
+from models.npc_agent import NpcAgent
+
+
 class CharacterRecord:
     LENGTH = 32
 
@@ -189,4 +194,5 @@ class CharacterRecord:
     @inn_party_flag.setter
     def inn_party_flag(self, val: int):
         self._set_u8(0x1F, val)
+
 

@@ -1,5 +1,5 @@
 from dark_libraries.logging import LoggerMixin
-from models.enums.npc_ids import NpcTileId
+from models.enums.npc_tile_id import NpcTileId
 from models.sprite import Sprite
 
 from data.global_registry import GlobalRegistry

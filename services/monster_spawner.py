@@ -6,7 +6,7 @@ from dark_libraries.logging   import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 from models.global_location import GlobalLocation
-from models.enums.npc_ids   import NpcTileId
+from models.enums.npc_tile_id   import NpcTileId
 
 from models.monster_agent import MonsterAgent
 from models.terrain import Terrain
@@ -33,7 +33,7 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
     def _spawn_monster(self, npc_tile_id: int, global_location: GlobalLocation):
         sprite = self.global_registry.sprites.get(npc_tile_id)
         npc_metadata = self.global_registry.npc_metadata.get(npc_tile_id)
-        npc_agent = MonsterAgent(sprite, npc_metadata, global_location)
+        npc_agent = MonsterAgent(sprite, global_location, npc_metadata)
 
         self.npc_service.add_npc(npc_agent)
 

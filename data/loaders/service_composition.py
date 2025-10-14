@@ -10,6 +10,7 @@ from data.loaders.equipable_item_type_loader  import EquipableItemTypeLoader
 from data.loaders.flame_sprite_loader         import FlameSpriteLoader
 from data.loaders.light_map_builder           import LightMapBuilder
 from data.loaders.npc_metadata_loader import NpcMetadataLoader
+from data.loaders.save_game_loader import SavedGameLoader
 from services.light_map_level_baker       import LightMapLevelBaker
 
 from data.loaders.npc_sprite_builder        import NpcSpriteBuilder
@@ -48,3 +49,4 @@ def compose(provider: ServiceProvider):
     provider.register(LocationMetadataBuilder)
     provider.register(U5MapLoader)
     provider.register(NpcMetadataLoader)
+    provider.register(SavedGameLoader)

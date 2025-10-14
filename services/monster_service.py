@@ -7,6 +7,7 @@ from data.global_registry   import GlobalRegistry
 from models.global_location import GlobalLocation
 from models.monster_agent   import MonsterAgent
 
+from models.npc_agent import NpcAgent
 from services.console_service             import ConsoleService
 from services.npc_service                 import NpcService
 from services.map_cache.map_cache_service import MapCacheService

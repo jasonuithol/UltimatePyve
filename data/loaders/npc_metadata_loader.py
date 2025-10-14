@@ -1,7 +1,7 @@
 from typing import Iterable
 from dark_libraries.logging import LoggerMixin
 from data.global_registry   import GlobalRegistry
-from models.enums.npc_ids   import NpcTileId
+from models.enums.npc_tile_id   import NpcTileId
 from models.npc_metadata    import NpcMetadata
 
 HUMAN_DATA = """
@@ -64,6 +64,9 @@ Name|Str|Dex|Int|Armor|Damage|HP|Max n.|Treasure %|Special Attacks|Exp|Additiona
 Lord British|30|30|30|30|99|99|1|0.00%|--|--|--
 Apparition|--|--|--|--|--|--|--|--|--|--|--
 Mirror reflection|--|--|--|--|--|--|--|--|--|--|--
+"""
+
+PARTY_MEMBER_DATA = """
 """
 
 def _to_npc_tile_id(name: str) -> int:

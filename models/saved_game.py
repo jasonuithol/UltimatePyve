@@ -3,26 +3,6 @@ from typing import Callable, List, Tuple
 
 from models.character_record import CharacterRecord
 
-class SavedGameLoader:
-
-    # Injectable
-    saved_game: 'SavedGame'
-
-    def _load(self, load_name: str, save_name: str):
-        load_path = Path(f'u5/{load_name}.GAM')
-        save_path = Path(f'u5/{save_name}.GAM')
-        bytes = load_path.read_bytes()
-
-        print(f"[game] Loaded {len(bytes)} from {save_path}")
-
-        self.saved_game.init(bytes, save_path)
-
-    def load_new(self, save_name="SAVE"):
-        self._load(save_name, save_name)
-
-    def load_existing(self, save_name="SAVE"):
-        self._load("INIT", save_name)
-
 class SavedGame:
 
     def init(self, raw: bytearray, save_path: Path):
