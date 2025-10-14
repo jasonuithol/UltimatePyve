@@ -145,6 +145,7 @@ class CombatController(LoggerMixin):
                     )
                     if move_outcome.exit_map:
                         party_members.remove(party_member)
+                        self.npc_service.remove_npc(party_member)
                         self.log(f"Party member {party_member.name} exited !")
                         self.display_service.set_combat_mode(party_members)
                         if len(party_members) == 0:
