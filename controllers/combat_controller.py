@@ -145,7 +145,8 @@ class CombatController(LoggerMixin):
 
             # All members moved.
             if any(self.party_agent.get_party_members_in_combat()):
-                self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, self.party_agent.party_members[0].coord))
+                monster_target_coord = self.party_agent.get_party_members_in_combat()[0].coord
+                self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, monster_target_coord))
 
             #
             # -- R E N D E R --

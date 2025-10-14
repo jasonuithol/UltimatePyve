@@ -2,31 +2,33 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
-from data.loaders.combat_map_loader import CombatMapLoader
-from data.loaders.entry_trigger_loader import EntryTriggerLoader
-from data.loaders.npc_metadata_loader import NpcMetadataLoader
-from data.loaders.save_game_loader import SavedGameLoader
-from data.loaders.tileset_loader       import TileLoader
-from data.loaders.terrain_loader       import TerrainLoader
+from data.loaders.combat_map_loader     import CombatMapLoader
+from data.loaders.entry_trigger_loader  import EntryTriggerLoader
+from data.loaders.npc_metadata_loader   import NpcMetadataLoader
+from data.loaders.save_game_loader      import SavedGameLoader
+
+from data.loaders.tileset_loader        import TileLoader
+from data.loaders.terrain_loader        import TerrainLoader
 from data.loaders.transport_mode_loader import TransportModeLoader
 from data.loaders.u5_map_loader         import U5MapLoader
-from data.loaders.animated_tile_loader import AnimatedTileLoader
-from data.loaders.door_type_loader     import DoorTypeLoader
-from data.loaders.flame_sprite_loader  import FlameSpriteLoader
+
+from data.loaders.animated_tile_loader  import AnimatedTileLoader
+from data.loaders.door_type_loader      import DoorTypeLoader
+from data.loaders.flame_sprite_loader   import FlameSpriteLoader
 
 from data.loaders.consumable_item_type_loader import ConsumableItemTypeLoader
 from data.loaders.equipable_item_type_loader  import EquipableItemTypeLoader
 
-from data.registries.registry_base import Registry
-from services.light_map_level_baker import LightMapLevelBaker
-from data.loaders.light_map_builder     import LightMapBuilder
-from data.loaders.npc_sprite_builder    import NpcSpriteBuilder
+from data.registries.registry_base   import Registry
+from data.loaders.light_map_builder  import LightMapBuilder
+from data.loaders.npc_sprite_builder import NpcSpriteBuilder
 
 # TODO: Fix
-from data.loaders.u5_font_loader import U5FontLoader
+from data.loaders.u5_font_loader  import U5FontLoader
 from data.loaders.u5_glyph_loader import U5GlyphLoader
 
 from services.modding_service import ModdingService
+from services.light_map_level_baker  import LightMapLevelBaker
 
 class GlobalRegistryLoader(LoggerMixin):
 
@@ -50,7 +52,6 @@ class GlobalRegistryLoader(LoggerMixin):
     u5_glyph_loader:             U5GlyphLoader
     light_map_builder:           LightMapBuilder
     light_map_level_baker:       LightMapLevelBaker
-#    saved_game_loader: SavedGameLoader
     npc_sprite_builder:          NpcSpriteBuilder
     transport_mode_loader:       TransportModeLoader
 
