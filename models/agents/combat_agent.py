@@ -1,3 +1,4 @@
+from copy import copy
 import random
 from typing import Self
 
@@ -29,9 +30,6 @@ class CombatAgent(NpcAgent):
 
     @property
     def strength(self) -> int: ...
-
-    @property
-    def dexterity(self) -> int: ...
 
     @property
     def armour(self) -> int: ...
@@ -66,4 +64,16 @@ class CombatAgent(NpcAgent):
     def attack(self, other: Self):
         if random.uniform(0, 1) < self.calculate_hit_probability(other):
             damage = self.calculate_damage()
-            other.take_damage(damage)    
+            other.take_damage(damage)
+
+    def spawn_clone_at(self, coord: Coord) -> Self:
+        other = copy(self)
+        other.coord = coord
+        # DO NOT RESET SPENT ACTION POINTS
+        return other
+
+    def enter_combat(self, coord: Coord):
+        self.coord = coord
+        self._spent_action_points = 0
+
+

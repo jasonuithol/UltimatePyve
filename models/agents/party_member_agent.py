@@ -36,6 +36,7 @@ class PartyMemberAgent(CombatAgent):
 
     def enter_combat(self, coord: Coord):
         self.coord = coord
+        self._spent_action_points = 0
 
     def exit_combat(self):
         self.coord = None

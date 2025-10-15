@@ -1,4 +1,3 @@
-from typing import Self
 from models.enums.terrain_category import TerrainCategory
 
 class NpcAbilitiesAttack:
@@ -64,15 +63,4 @@ class NpcMetadata:
         self.abilities_magic     = NpcAbilitiesMagic()
         self.abilities_defence   = NpcAbilitiesDefence()
         self.abilities_terrain   = NpcAbilitiesTerrain()
-    
-    '''
-    def calculate_hit_probability(self, target: Self) -> float:
-        to_hit   = 0.5 + (0.5 * self.dexterity / 30) 
-        to_dodge = 0.1 + (0.5 * (target.dexterity + target.armour) / 60)
-        return to_hit * to_dodge    
-
-    def calculate_damage(self) -> int:
-        damage_penalty = 0.5 + (0.5 * self.strength / 30)
-        return self.damage * damage_penalty
-    '''
 

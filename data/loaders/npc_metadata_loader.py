@@ -66,9 +66,6 @@ Apparition|--|--|--|--|--|--|--|--|--|--|--
 Mirror reflection|--|--|--|--|--|--|--|--|--|--|--
 """
 
-PARTY_MEMBER_DATA = """
-"""
-
 def _to_npc_tile_id(name: str) -> int:
     member_name = name.upper().replace(" ", "_")
     tile_id: NpcTileId = NpcTileId.__dict__.get(member_name, None)

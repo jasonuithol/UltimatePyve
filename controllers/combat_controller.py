@@ -8,6 +8,7 @@ from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
+from models.agents.party_member_agent import PartyMemberAgent
 from models.enums.direction_map import DIRECTION_MAP
 from models.global_location import GlobalLocation
 
@@ -90,7 +91,9 @@ class CombatController(LoggerMixin):
 
         for monster_spawn_slot_index in range(monster_party_size):
             spawn_coord: Coord = combat_map._monster_spawn_coords[monster_spawn_slot_index]
-            self.npc_service.add_npc(enemy_npc.spawn_clone_at(spawn_coord))
+            clone: MonsterAgent = enemy_npc.spawn_clone_at(spawn_coord)
+            clone.enter_combat(spawn_coord)
+            self.npc_service.add_npc(clone)
 
         # Party member spawning
         print(combat_map._party_spawn_coords)
@@ -103,19 +106,31 @@ class CombatController(LoggerMixin):
 
         while in_combat:
 
-            for party_member in self.party_agent.get_party_members_in_combat():
+
+            next_turn_npc = self.npc_service.get_next_moving_npc()
+
+            if isinstance(next_turn_npc, PartyMemberAgent):
+                party_member: PartyMemberAgent = next_turn_npc
+
+                if not party_member.is_in_combat():
+                    continue
 
                 current_coord = party_member.coord
 
                 self.log(f"{party_member.name}'s turn")
 
+                #
+                # -- R E N D E R --
+                #
                 event = self.main_loop_service.get_next_event()
+
                 if event.type == pygame.QUIT:
                     self.console_service.print_ascii("Cannot quit during combat !")
                     continue
 
                 if event.key == pygame.K_SPACE:
                     self.log("DEBUG: Wait command received")
+                    party_member.spend_action_quanta()
                     continue
 
                 move_offset = DIRECTION_MAP.get(event.key, None)
@@ -125,6 +140,9 @@ class CombatController(LoggerMixin):
                         move_offset, 
                         'walk'
                     )
+
+                    party_member.spend_action_quanta()
+
                     if move_outcome.exit_map:
                         party_member.exit_combat()
                         self.npc_service.remove_npc(party_member)
@@ -141,18 +159,14 @@ class CombatController(LoggerMixin):
                     else:
                         self.log(f"DEBUG: Combat move command failed: {move_outcome}")
                 else:
-                    self.log(f"DEBUG: Received non-processable event: {event.key}")    
+                    self.log(f"DEBUG: Received non-processable event: {event.key}")
 
-            # All members moved.
-            if any(self.party_agent.get_party_members_in_combat()):
-                monster_target_coord = self.party_agent.get_party_members_in_combat()[0].coord
-                self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, monster_target_coord))
-
-            #
-            # -- R E N D E R --
-            #
-            self.display_service.render()
-
+            else:
+    
+                # All members moved - give the monsters a turn
+                if any(self.party_agent.get_party_members_in_combat()):
+                    monster_target_coord = self.party_agent.get_party_members_in_combat()[0].coord
+                    self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, monster_target_coord))
 
         self.log(f"Exiting combat with {enemy_npc.name}")
 

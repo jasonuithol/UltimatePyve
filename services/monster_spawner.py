@@ -6,6 +6,7 @@ from dark_libraries.dark_math import Coord
 from dark_libraries.logging   import LoggerMixin
 
 from data.global_registry import GlobalRegistry
+from models.agents.party_agent import PartyAgent
 from models.global_location import GlobalLocation
 from models.enums.npc_tile_id   import NpcTileId
 
@@ -27,6 +28,7 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
     npc_service: NpcService
     map_cache_service: MapCacheService
     global_registry: GlobalRegistry
+    party_agent: PartyAgent
 
     def loaded(self, party_location: GlobalLocation):
         self._party_location = party_location
@@ -35,6 +37,7 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
         sprite = self.global_registry.sprites.get(npc_tile_id)
         npc_metadata = self.global_registry.npc_metadata.get(npc_tile_id)
         npc_agent = MonsterAgent(monster_coord, sprite, npc_metadata)
+        npc_agent._spent_action_points = self.party_agent._spent_action_points
 
         self.npc_service.add_npc(npc_agent)
 

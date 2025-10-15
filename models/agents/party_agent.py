@@ -12,6 +12,15 @@ from services.avatar_sprite_factory import AvatarSpriteFactory
 from .npc_agent import NpcAgent
 from .party_member_agent import PartyMemberAgent
 
+transport_mode_dexterity_map = {
+    0 : 15, # walk
+    1 : 20, # horse
+    2 : 25, # carpet
+    3 : 10, # skiff
+    4 : 15, # ship
+    5 : 20  # sail
+}
+
 class PartyAgent(NpcAgent):
 
     # Injectable
@@ -59,6 +68,7 @@ class PartyAgent(NpcAgent):
         return [party_member for party_member in self.party_members if party_member.is_in_combat()]
 
     # NPC_AGENT IMPLEMENTATION: start
+    #
     @property
     def tile_id(self) -> int: ...
 
@@ -78,6 +88,12 @@ class PartyAgent(NpcAgent):
     @coord.setter
     def coord(self, value: Coord):
         self.location_stack[-1] = self.location_stack[-1].move_to_coord(value)
+
+    @property
+    def dexterity(self) -> int:
+        transport_mode, _ = self.get_transport_state()
+        return transport_mode_dexterity_map[transport_mode]
+    #
     # NPC_AGENT IMPLEMENTATION: end
 
     #
@@ -97,7 +113,10 @@ class PartyAgent(NpcAgent):
         self.location_stack[-1] = self.location_stack[-1].move_to_level(level_index)
 
     def change_coord(self, coord: Coord):
-        self.location_stack[-1] = self.location_stack[-1].move_to_coord(coord)
+        old_location = self.location_stack[-1]
+        new_location = self.location_stack[-1].move_to_coord(coord)
+        self.location_stack[-1] = new_location
+        self.log(f"DEBUG: Moved party {old_location} -> {new_location} with {self.spent_action_points} spent action points.")
 
     def get_current_location(self) -> GlobalLocation:
         return self.location_stack[-1]

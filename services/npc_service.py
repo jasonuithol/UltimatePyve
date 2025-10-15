@@ -1,10 +1,11 @@
-from dark_libraries.dark_math import Coord
-from dark_libraries.logging import LoggerMixin
+import random
+from dark_libraries.dark_math   import Coord
+from dark_libraries.logging     import LoggerMixin
 from dark_libraries.dark_events import DarkEventListenerMixin
 
 from models.agents.party_agent import PartyAgent
-from models.global_location import GlobalLocation
-from models.agents.npc_agent import NpcAgent
+from models.global_location    import GlobalLocation
+from models.agents.npc_agent   import NpcAgent
 
 from services.map_cache.map_cache_service import MapCacheService
 
@@ -77,3 +78,28 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
     def get_occupied_coords(self) -> set[Coord]:
         return {coord for coord in self.get_npcs().keys()}
 
+    def get_next_moving_npc(self) -> NpcAgent | None:
+        if not any(self._active_npcs):
+            return None
+
+        all_candidates = self.get_npcs().values()
+
+        min_spent_action_points = min(npc.spent_action_points for npc in all_candidates)
+        ap_candidates = [npc for npc in all_candidates if npc.spent_action_points == min_spent_action_points]
+
+        if not any(ap_candidates):
+            return None
+        
+        max_dexterity = max(npc.dexterity for npc in ap_candidates)
+        dex_candidates = [npc for npc in ap_candidates if npc.dexterity == max_dexterity]
+
+        if not any(dex_candidates):
+            return None
+        
+        result = random.choice(dex_candidates)
+        self.log(
+            f"Choosing {result.name} at {result.coord} with {result.spent_action_points} spent action points for next turn"
+            +
+            f", out of {len(ap_candidates)} action candidates and {len(dex_candidates)} DEX candidates."
+        )
+        return result

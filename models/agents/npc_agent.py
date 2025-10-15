@@ -13,6 +13,9 @@ class NpcAgent(LoggerMixin):
     def __init__(self):
         super().__init__()
 
+        # for deciding who has the next turn
+        self._spent_action_points = 0
+
     @property
     def tile_id(self) -> int: ...
 
@@ -28,34 +31,22 @@ class NpcAgent(LoggerMixin):
     @coord.setter
     def coord(self, value: Coord): ...
 
-    '''
     @property
-    def coord(self) -> Coord:
-        return self._coord
-    
-    @coord.setter
-    def coord(self, value: Coord):
-        assert isinstance(value, Coord), f"expected Coord got {value.__class__.__name__}"
-        self._coord = value
-    '''
+    def dexterity(self) -> int: ...
 
+    @property 
+    def spent_action_points(self) -> float:
+        return self._spent_action_points
 
     '''
-    def get_coord(self) -> Coord:
-        return self._coord
-    
-    def move_to(self, coord: Coord):
-        self._coord = coord
-
-    def apply_coord_offset(self, offset: Vector2):
-        self._coord = self._coord + offset
+    @spent_action_points.setter
+    def spent_action_points(self, val: float):
+        self._spent_action_points = val
     '''
-
-    def spawn_clone_at(self, coord: Coord) -> Self:
-        other = copy(self)
-        other.coord = coord
-        return other
-    
+    def spend_action_quanta(self, turns: int = 1):
+        one_quanta = ((30 - self.dexterity) / 10 + 1)
+        self._spent_action_points += one_quanta * turns
+        
     #
     # AI Moves
     #
@@ -106,6 +97,6 @@ class NpcAgent(LoggerMixin):
 
         assert self.coord.taxi_distance(next_move_coord) == 1, f"Cannot move directly from {self.coord} to {next_move_coord}"
 
-        self.log(f"DEBUG: Moving from {self.coord} to {next_move_coord}")
+        self.log(f"DEBUG: {self.name} moving from {self.coord} to {next_move_coord} with {self.spent_action_points} spent action points.")
         self.coord = next_move_coord
     

@@ -62,6 +62,9 @@ class PartyController(LoggerMixin):
             should_pass_time = self.dispatch_input()
             
             if should_pass_time:
+                
+                self.party_agent.spend_action_quanta()
+
                 # Propgate pass_time event (and subsequently all other party-turn-based events.)
                 self.dark_event_service.pass_time(self.party_agent.get_current_location())
 

@@ -2,12 +2,12 @@
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.logging     import LoggerMixin
 
-from data.global_registry   import GlobalRegistry
-
-from models.global_location import GlobalLocation
-from models.agents.monster_agent   import MonsterAgent
+from data.global_registry import GlobalRegistry
 
 from models.agents.npc_agent import NpcAgent
+from models.global_location      import GlobalLocation
+from models.agents.monster_agent import MonsterAgent
+
 from services.console_service             import ConsoleService
 from services.npc_service                 import NpcService
 from services.map_cache.map_cache_service import MapCacheService
@@ -34,14 +34,11 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
 
         occupied_coords = self.npc_service.get_occupied_coords()
 
-        # Find all the monsters, and give them a turn.
-        for npc in self.npc_service._active_npcs:
+        # Find all the monsters up for a turn, and give them a turn.
+        next_npc_agent: NpcAgent = self.npc_service.get_next_moving_npc()
+        while isinstance(next_npc_agent, MonsterAgent):
 
-            if isinstance(npc, MonsterAgent):
-                monster_agent: MonsterAgent = npc
-            else:
-                self.log("DEBUG: Skipping turn for non-monster NpcAgent")
-                continue
+            monster_agent: MonsterAgent = next_npc_agent
 
             old_coord = monster_agent.coord
 
@@ -65,4 +62,9 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
             if old_coord != new_coord:
                 occupied_coords.add(new_coord)
                 occupied_coords.remove(old_coord)
+
+            monster_agent.spend_action_quanta()
+
+            next_npc_agent: NpcAgent = self.npc_service.get_next_moving_npc()
+
 

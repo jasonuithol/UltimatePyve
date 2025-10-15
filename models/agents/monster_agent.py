@@ -23,6 +23,10 @@ class MonsterAgent(CombatAgent):
     @property
     def name(self) -> str:
         return self._npc_metadata.name
+
+    @property
+    def dexterity(self) -> int:
+        return self._npc_metadata.dexterity
     #
     # NPC_AGENT IMPLEMENTATION (Completion): End
 
@@ -31,10 +35,6 @@ class MonsterAgent(CombatAgent):
     @property
     def strength(self) -> int:
         return self._npc_metadata.strength
-
-    @property
-    def dexterity(self) -> int:
-        return self._npc_metadata.dexterity
 
     @property
     def armour(self) -> int:
