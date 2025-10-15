@@ -3,18 +3,20 @@ import pygame
 from dark_libraries.logging   import LoggerMixin
 from data.global_registry     import GlobalRegistry
 from models.enums.cursor_type import CursorType
-from models.sprite import DEFAULT_FRAME_TIME, Sprite
-from models.tile import Tile
+from models.sprite            import Sprite
+from models.tile              import Tile
 
 BLACK = (0,0,0)
-WHITE = (255,255,255)
+WHITE = (200,200,200)
 TRANSPARENT = (1,2,3)
 
 TILE_SIZE = 16
 
+CURSOR_FRAME_DURATION_SECONDS = 0.25
+
 # cursor: outline
 BORDER_THICCNESS = 3
-BORDER_OFFSET = 1
+BORDER_OFFSET = 0
 
 # cursor: crosshair
 OUTER_BORDER = 2
@@ -70,8 +72,8 @@ def create_sprite(surf: pygame.Surface) -> Sprite:
     )
 
     return Sprite(
-        frames     = [on_tile, BLANK_TILE],
-        frame_time = DEFAULT_FRAME_TIME / 2
+        [on_tile, BLANK_TILE],
+        CURSOR_FRAME_DURATION_SECONDS
     )
 
 class CursorLoader(LoggerMixin):
@@ -80,6 +82,6 @@ class CursorLoader(LoggerMixin):
     global_registry: GlobalRegistry
 
     def load(self):
-        self.global_registry.cursors.register(CursorType.OUTLINE.value, create_sprite(draw_cursor_outline()))
+        self.global_registry.cursors.register(CursorType.OUTLINE.value,   create_sprite(draw_cursor_outline()))
         self.global_registry.cursors.register(CursorType.CROSSHAIR.value, create_sprite(draw_cursor_crosshair()))
         self.log(f"Registered {len(self.global_registry.cursors)} cursors.")

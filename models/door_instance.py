@@ -1,6 +1,5 @@
 import random
 
-from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math        import Coord
 from dark_libraries.service_provider import ServiceProvider
 
@@ -82,15 +81,6 @@ class DoorInstance(Interactable):
     # Interactable implementation: Start
     def get_current_tile_id(self):
         return self.tile_id
-
-    '''
-    def create_sprite(self) -> Sprite:
-        frame = self.door_type.tileset.tiles[self.tile_id]
-        sprite = Sprite(
-            frames=[frame]
-        )
-        return sprite
-    '''
 
     def pass_time(self, party_location: GlobalLocation):
         if self.is_open and self.turns_until_close > 0:

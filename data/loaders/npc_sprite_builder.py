@@ -16,8 +16,8 @@ class NpcSpriteBuilder(LoggerMixin):
         for enum_member in NpcTileId:
             tile_id = enum_member.value
             s = Sprite(
-                frames      = [self.global_registry.tiles.get(i) for i in range(tile_id, tile_id + NUM_FRAMES)],
-                frame_time  = 0.5 if NUM_FRAMES < 3 else 0.3
+                [self.global_registry.tiles.get(i) for i in range(tile_id, tile_id + NUM_FRAMES)],
+                0.5 if NUM_FRAMES < 3 else 0.3
             )
             self.global_registry.sprites.register(tile_id, s)
             self.log(f"DEBUG: Registered animated NPC {enum_member.name} with {NUM_FRAMES} frames.")

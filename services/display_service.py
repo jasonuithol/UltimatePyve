@@ -52,16 +52,19 @@ class DisplayService(LoggerMixin):
             vsync = 1
         )
         self.clock = pygame.time.Clock()
-
-        self._cursor_coord: Coord = None
-        self._cursor_sprite: Sprite = None
+        self._cursors = dict[int, tuple[Coord, Sprite]]()
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
-    def set_cursor(self, cursor_coord: Coord, cursor_sprite: Sprite):
-        self._cursor_coord  = cursor_coord
-        self._cursor_sprite = cursor_sprite
-        self.log(f"Set cursor to {cursor_coord}")
+    def set_cursor(self, cursor_type: int, cursor_coord: Coord, cursor_sprite: Sprite):
+        assert not cursor_coord is None, "cursor_coord cannot be None"
+        assert not cursor_sprite is None, "cursor_sprite cannot be None"
+        self._cursors[cursor_type] = (cursor_coord, cursor_sprite)
+        self.log(f"Set cursor ({cursor_type}) to {cursor_coord}")
+
+    def remove_cursor(self, cursor_type: int):
+        del self._cursors[cursor_type]
+        self.log(f"Removed cursor {cursor_type}")
 
     #
     # TODO: move to ViewPortDataProvider
@@ -138,10 +141,11 @@ class DisplayService(LoggerMixin):
         self.view_port.draw_map(map_tiles)
 
         # draw overlays
-        if not self._cursor_sprite is None:
+        for cursor_coord_sprite_tuple in self._cursors.values():
+            cursor_coord, cursor_sprite = cursor_coord_sprite_tuple
             self.view_port.draw_tile( 
-                self._cursor_coord,
-                self._cursor_sprite.get_current_frame_tile()
+                cursor_coord,
+                cursor_sprite.get_current_frame_tile()
             )
 
         vp_scaled_surface = self.view_port.get_output_surface()

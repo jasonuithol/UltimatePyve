@@ -26,6 +26,9 @@ with the exception of the flames of truth etc - there's a simple formula that ma
 FLAME_OVERLAY_INDEX = NORMAL_TILE_INDEX + 16
 '''
 
+FLAME_FRAME_DURATION = 0.15
+FLAME_FRAME_COUNT    = 23   # Arbitrary prime number
+
 class FlameSpriteLoader(LoggerMixin):
 
     # Injectable
@@ -56,10 +59,8 @@ class FlameSpriteLoader(LoggerMixin):
         original_tile: Tile = self.global_registry.tiles.get(original_tile_id)
         overlay_tile:  Tile = self.global_registry.tiles.get(self._get_flame_overlay_index(original_tile_id))
 
-        cycle_length = 23       # arbitrary prime number
-
         # Apply overlay mask
-        for _ in range(cycle_length):
+        for _ in range(FLAME_FRAME_COUNT):
             composed_surface = original_tile.get_surface().copy()
             for y, row in enumerate(overlay_tile.pixels):
                 for x, mask_val in enumerate(row):
@@ -83,14 +84,10 @@ class FlameSpriteLoader(LoggerMixin):
             yield composed_tile
 
     def _build_sprite(self, tile_id: int) -> Sprite:
-        FRAME_TIME = 0.15
-        frames = list(self._build_frames(tile_id))
-
-        sprite = Sprite(
-            frames=frames,
-            frame_time=FRAME_TIME
+        return Sprite(
+            list(self._build_frames(tile_id)),
+            FLAME_FRAME_DURATION
         )
-        return sprite
 
     def register_sprites(self):
         before = len(self.global_registry.sprites)
@@ -173,8 +170,8 @@ if __name__ == "__main__":
             if frame_time < 0.01:
                 frame_time = 0.01
 
-        current_sprite.set_frame_time(frame_time, 0.0)
-        current_frame = current_sprite.get_current_frame_tile(pygame.time.get_ticks())
+        current_sprite.set_frame_duration(frame_time)
+        current_frame: Tile = current_sprite.get_current_frame_tile(pygame.time.get_ticks())
 
         scaled = pygame.transform.scale(current_frame.surface, display_config.TILE_SIZE.scale(SCALE).to_tuple())
         screen.blit(scaled, (0, 0))

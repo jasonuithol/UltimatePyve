@@ -10,6 +10,7 @@ from data.global_registry import GlobalRegistry
 
 from models.agents.party_member_agent import PartyMemberAgent
 from models.combat_map import CombatMap
+from models.enums.cursor_type import CursorType
 from models.enums.direction_map import DIRECTION_MAP
 from models.enums.hit_point_level import get_hp_level_text
 from models.global_location import GlobalLocation
@@ -199,7 +200,7 @@ class CombatController(LoggerMixin):
 
         in_combat = IN_COMBAT
 
-        while in_combat:
+        while in_combat and (not self.main_loop_service.should_quit_game()):
 
             next_turn_npc = self.npc_service.get_next_moving_npc()
 
@@ -210,7 +211,8 @@ class CombatController(LoggerMixin):
                     continue
 
                 self.log(f"{party_member.name}'s turn")
-
+                cursor_sprite = self.global_registry.cursors.get(CursorType.OUTLINE.value)
+                self.display_service.set_cursor(CursorType.OUTLINE, party_member.coord, cursor_sprite)
                 #
                 # -- R E N D E R --
                 #

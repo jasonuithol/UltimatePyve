@@ -3,25 +3,11 @@
 from typing import Protocol
 
 from dark_libraries.dark_math import Coord
-from models.move_into_result import MoveIntoResult
+from models.move_into_result  import MoveIntoResult
 
 class Interactable(Protocol):
     coord: Coord
     tile_id: int
-
-    '''
-    def create_sprite(self) -> Sprite:
-        ...
-    '''
-
-
-    '''
-    # Please do not override this function unless you know what you're doing.
-    def receive_action(self, action: Action, actor=None) -> Action:
-        func = getattr(self, action.action_name)
-        resultant_action = func(self, **action.action_parameters)
-        return resultant_action
-    '''
 
     # For Viewport.draw_map
     def get_current_tile_id(self) -> int:

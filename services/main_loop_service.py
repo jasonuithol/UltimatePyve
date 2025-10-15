@@ -40,6 +40,9 @@ class MainLoopService(LoggerMixin):
     def _after_inject(self):
         self._is_running = True
 
+    def should_quit_game(self) -> bool:
+        return self._is_running == False
+
     def obtain_action_direction(self) -> Vector2:
 
         self.console_service.print_ascii("Direction ? ", include_carriage_return = False)
@@ -71,17 +74,19 @@ class MainLoopService(LoggerMixin):
             
     def obtain_cursor_position(self, starting_coord: Coord, boundary_rect: Rect) -> Coord:
 
+        assert not starting_coord is None, "starting_coord cannot be None"
+
         self.console_service.print_ascii("Where ? ")
         cursor = starting_coord
 
         crosshair_cursor_sprite = self.global_registry.cursors.get(CursorType.CROSSHAIR.value)
-        self.display_service.set_cursor(cursor, crosshair_cursor_sprite)
+        self.display_service.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
 
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     # Clicking on the X will break out of the loop and exit the game.
-                    self.display_service.set_cursor(None, None)
+                    self.display_service.remove_cursor(CursorType.CROSSHAIR.value)
                     self._is_running = False
                     return None
 
@@ -90,12 +95,12 @@ class MainLoopService(LoggerMixin):
 
                 if event.key == pygame.K_ESCAPE:
                     # Pressing escape will just cancel the action.
-                    self.display_service.set_cursor(None, None)
+                    self.display_service.remove_cursor(CursorType.CROSSHAIR.value)
                     return None
 
                 if event.key == pygame.K_RETURN:
                     # Pressing enter will return the current cursor position.
-                    self.display_service.set_cursor(None, None)
+                    self.display_service.remove_cursor(CursorType.CROSSHAIR.value)
                     return cursor
 
                 direction: Vector2 = DIRECTION_MAP.get(event.key, None)
@@ -103,7 +108,7 @@ class MainLoopService(LoggerMixin):
                     target = cursor + direction
                     if boundary_rect.is_in_bounds(target):
                         cursor = target
-                        self.display_service.set_cursor(cursor, crosshair_cursor_sprite)
+                        self.display_service.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
                         self.log(f"DEBUG: Moved attack cursor to {target}")
 
             #
