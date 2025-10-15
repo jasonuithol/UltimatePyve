@@ -105,7 +105,6 @@ if __name__ == "__main__":
     tile_loader = TileLoader()
     tile_loader.display_config = DisplayConfig()
     tile_loader.global_registry = GlobalRegistry()
-    tile_loader.global_registry._after_inject()
     tile_loader.load_tiles()
 
     # Override scale factor

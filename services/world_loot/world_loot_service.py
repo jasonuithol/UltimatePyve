@@ -96,7 +96,6 @@ if __name__ == "__main__":
     dataOvl = DataOVL.load()
 
     global_registry = GlobalRegistry()
-    global_registry._after_inject()
 
     item_type_factory = EquipableItemTypeLoader()
     item_type_factory.global_registry = global_registry

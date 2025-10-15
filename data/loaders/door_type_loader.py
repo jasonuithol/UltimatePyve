@@ -34,7 +34,6 @@ if __name__ == "__main__":
     from models.door_instance import DoorInstance
 
     registry = GlobalRegistry()
-    registry._after_inject()
 
     loader = DoorTypeLoader()
     loader.global_registry = registry

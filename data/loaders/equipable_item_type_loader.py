@@ -151,7 +151,6 @@ class EquipableItemTypeLoader(LoggerMixin):
 if __name__ == "__main__":
 
     registry = GlobalRegistry()
-    registry._after_inject()
 
     loader = EquipableItemTypeLoader()
     loader.dataOvl = DataOVL.load()

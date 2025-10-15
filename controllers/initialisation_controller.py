@@ -13,6 +13,7 @@ from data.global_registry           import GlobalRegistry
 from data.global_registry_loader    import GlobalRegistryLoader
 
 from controllers.party_controller   import PartyController
+from services.console_service import ConsoleService
 from services.display_service import DisplayService
 from services.light_map_level_baker import LightMapLevelBaker
 from services.map_cache.map_cache_service import MapCacheService
@@ -34,6 +35,7 @@ class InitialisationController(LoggerMixin):
 
     party_controller: PartyController
     display_service:  DisplayService
+    console_service: ConsoleService
 
     light_map_level_baker: LightMapLevelBaker
 
@@ -89,6 +91,16 @@ class InitialisationController(LoggerMixin):
         self.world_loot_service.register_loot_containers()
         self.map_cache_service.init()
         self.light_map_level_baker.bake_level_light_maps()
+
+
+        #
+        # TODO: Remove once done
+        #
+
+        self.console_service.print_ascii("Returned to the world !")
+
+        self.console_service.print_ascii(list(range(128)))
+        self.console_service.print_runes(list(range(128)))
 
         self.log("Initialisation completed.")
 

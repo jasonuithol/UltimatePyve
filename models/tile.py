@@ -9,11 +9,12 @@ TILE_ID_BLACK = 255
 
 type TileData = list[list[int]]
 
-@auto_init
 class Tile:
-    tile_id: int
-    pixels: TileData | None = None
-    surface: pygame.Surface | None = None
+
+    def __init__(self, tile_id: int, pixels: TileData = None, surface: pygame.Surface = None):
+        self.tile_id = tile_id
+        self.pixels  = pixels
+        self.surface = surface
 
     # WARNING: Not the fastest ever.
     def _get_size(self):

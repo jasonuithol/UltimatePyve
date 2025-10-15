@@ -3,8 +3,10 @@ import pygame
 
 from models.tile import Tile
 
+DEFAULT_FRAME_TIME = 0.5
+
 class Sprite:
-    def __init__(self, frames: list[Tile] | None = None, frame_time: float = 0.5, frame_time_offset: float = 0.0):
+    def __init__(self, frames: list[Tile] | None = None, frame_time: float = DEFAULT_FRAME_TIME, frame_time_offset: float = 0.0):
         """
         frames: list of raw tile pixel arrays (palette indices), not Surfaces
         """

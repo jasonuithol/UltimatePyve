@@ -7,8 +7,8 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.agents.npc_agent import NpcAgent
-from models.agents.party_member_agent import PartyMemberAgent
 from models.agents.party_agent import PartyAgent
+from models.sprite import Sprite
 from models.tile   import Tile
 from models.u5_map import U5Map
 
@@ -53,11 +53,19 @@ class DisplayService(LoggerMixin):
         )
         self.clock = pygame.time.Clock()
 
-#        self.set_party_mode()
+        self._cursor_coord: Coord = None
+        self._cursor_sprite: Sprite = None
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
+    def set_cursor(self, cursor_coord: Coord, cursor_sprite: Sprite):
+        self._cursor_coord  = cursor_coord
+        self._cursor_sprite = cursor_sprite
+        self.log(f"Set cursor to {cursor_coord}")
 
+    #
+    # TODO: move to ViewPortDataProvider
+    #
     def _get_map_tiles(self) -> dict[Coord, Tile]:
 
         player_location = self.party_agent.get_current_location()
@@ -97,27 +105,6 @@ class DisplayService(LoggerMixin):
             for world_coord in self.view_port.view_rect
         }
 
-    '''
-    #
-    # TODO: party controller's new job is to fetch the correct sprite and then register and update
-    #       an adventurer in the place of the party
-    #
-    def set_party_mode(self): #, party_agent: PartyAgent):
-        self.log(f"Setting PARTY mode on")
-        self.party_mode = True
-        self.combat_mode = False
-        self.party_member_agents: list[PartyMemberAgent] = None
-
-    def set_combat_mode(self, party_member_agents: list[PartyMemberAgent]):
-        self.log(f"Setting COMBAT mode ON with {len(party_member_agents)}")
-        self.party_mode = False
-        self.combat_mode = True
-        self.party_member_agents = party_member_agents
-    '''
-
-    #
-    # TODO: remove player_coord as a parameter and add it to the state
-    #
     def render(self):
 
         party_location = self.party_agent.get_current_location()
@@ -149,6 +136,13 @@ class DisplayService(LoggerMixin):
         # Render current viewport from populated map data.
         map_tiles = self._get_map_tiles()
         self.view_port.draw_map(map_tiles)
+
+        # draw overlays
+        if not self._cursor_sprite is None:
+            self.view_port.draw_tile( 
+                self._cursor_coord,
+                self._cursor_sprite.get_current_frame_tile()
+            )
 
         vp_scaled_surface = self.view_port.get_output_surface()
         vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)

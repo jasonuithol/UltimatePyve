@@ -159,7 +159,6 @@ if __name__ == "__main__":
     builder.dataOvl = dataOvl
 
     registry = GlobalRegistry()
-    registry._after_inject()
 
     loader = U5MapLoader()
     loader.builder = builder

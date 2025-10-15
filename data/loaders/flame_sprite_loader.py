@@ -109,7 +109,6 @@ if __name__ == "__main__":
 
     display_config = DisplayConfig()
     global_registry = GlobalRegistry()
-    global_registry._after_inject()
 
     tile_factory = TileLoader()
     tile_factory.display_config = display_config

@@ -3,6 +3,7 @@ from dark_libraries.service_provider import ServiceProvider
 from data.loaders.animated_tile_loader        import AnimatedTileLoader
 from data.loaders.combat_map_loader import CombatMapLoader
 from data.loaders.consumable_item_type_loader import ConsumableItemTypeLoader
+from data.loaders.cursor_loader import CursorLoader
 from data.loaders.door_type_loader            import DoorTypeLoader
 from data.loaders.entry_trigger_loader        import EntryTriggerLoader
 
@@ -37,6 +38,7 @@ def compose(provider: ServiceProvider):
     provider.register(FlameSpriteLoader)
     provider.register(LightMapLevelBaker)
     provider.register(LightMapBuilder)
+    provider.register(CursorLoader)
 
     provider.register(NpcSpriteBuilder)
     provider.register(TerrainLoader)

@@ -2,6 +2,10 @@ from typing import Iterable
 
 from dark_libraries.logging import LoggerMixin
 
+#
+# It's like a dictionary, but a tiny bit smarter.
+#
+
 class Registry[TKey, TValue](LoggerMixin):
 
     def __init__(self, can_be_empty = False):

@@ -32,7 +32,6 @@ class U5MapLevel:
         pygame.init()
 
         global_registry = GlobalRegistry()
-        global_registry._after_inject()
 
         tile_loader = TileLoader()
         tile_loader.global_registry = global_registry

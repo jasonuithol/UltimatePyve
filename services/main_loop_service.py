@@ -2,6 +2,8 @@ import pygame
 
 from dark_libraries.dark_math import Coord, Rect, Vector2
 from dark_libraries.logging import LoggerMixin
+from data.global_registry import GlobalRegistry
+from models.enums.cursor_type import CursorType
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.agents.party_agent import PartyAgent
 
@@ -33,21 +35,10 @@ class MainLoopService(LoggerMixin):
     party_agent:     PartyAgent
     display_service: DisplayService
     console_service: ConsoleService
+    global_registry: GlobalRegistry
 
     def _after_inject(self):
         self._is_running = True
-
-    '''
-    def _update(self):
-        # Player sprite
-        transport_mode, direction = self.party_agent.get_transport_state()
-        player_sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
-        self.display_service.set_avatar_sprite(player_sprite)
-
-        # update display
-        party_location = self.party_agent.get_current_location()
-        self.display_service.render(party_location.coord)
-    '''
 
     def obtain_action_direction(self) -> Vector2:
 
@@ -83,10 +74,14 @@ class MainLoopService(LoggerMixin):
         self.console_service.print_ascii("Where ? ")
         cursor = starting_coord
 
+        crosshair_cursor_sprite = self.global_registry.cursors.get(CursorType.CROSSHAIR.value)
+        self.display_service.set_cursor(cursor, crosshair_cursor_sprite)
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     # Clicking on the X will break out of the loop and exit the game.
+                    self.display_service.set_cursor(None, None)
                     self._is_running = False
                     return None
 
@@ -95,10 +90,12 @@ class MainLoopService(LoggerMixin):
 
                 if event.key == pygame.K_ESCAPE:
                     # Pressing escape will just cancel the action.
+                    self.display_service.set_cursor(None, None)
                     return None
 
                 if event.key == pygame.K_RETURN:
                     # Pressing enter will return the current cursor position.
+                    self.display_service.set_cursor(None, None)
                     return cursor
 
                 direction: Vector2 = DIRECTION_MAP.get(event.key, None)
@@ -106,7 +103,8 @@ class MainLoopService(LoggerMixin):
                     target = cursor + direction
                     if boundary_rect.is_in_bounds(target):
                         cursor = target
-                        self.log(f"DEBUG: Moving attack cursor to {target}")
+                        self.display_service.set_cursor(cursor, crosshair_cursor_sprite)
+                        self.log(f"DEBUG: Moved attack cursor to {target}")
 
             #
             # Waiting for input ? Render frames, ensuring that animations happen etc.

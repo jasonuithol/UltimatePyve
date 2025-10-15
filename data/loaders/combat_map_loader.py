@@ -2,7 +2,7 @@ from pathlib import Path
 from dark_libraries.dark_math import Coord, Size
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
-from data.registries.registry_base import Registry
+from dark_libraries.registry import Registry
 from models.combat_map import CombatMap, DungeonRoom, DungeonRoomTileTrigger, NESWSpawnCoordinateTuple, SpawnCoordinates
 
 ROW_BYTES_PADDED = 32
