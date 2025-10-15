@@ -51,7 +51,7 @@ class CombatAgent(NpcAgent):
         return to_hit * to_dodge    
 
     # Attack Type = L, R or B for handedness
-    def calculate_damage(self, attack_type: chr) -> int:
+    def calculate_damage(self, attack_type: str) -> int:
         damage_penalty = 0.5 + (0.5 * self.strength / 30)
         return self.get_damage(attack_type) * damage_penalty
         
@@ -63,7 +63,10 @@ class CombatAgent(NpcAgent):
 
     def attack(self, other: Self):
         if random.uniform(0, 1) < self.calculate_hit_probability(other):
-            damage = self.calculate_damage()
+            #
+            # TODO: Get both hands involved.
+            #
+            damage = self.calculate_damage(attack_type="R")
             other.take_damage(damage)
 
     def spawn_clone_at(self, coord: Coord) -> Self:

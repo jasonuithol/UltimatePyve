@@ -11,6 +11,7 @@ from data.global_registry import GlobalRegistry
 from models.agents.party_member_agent import PartyMemberAgent
 from models.combat_map import CombatMap
 from models.enums.direction_map import DIRECTION_MAP
+from models.enums.hit_point_level import get_hp_level_text
 from models.global_location import GlobalLocation
 
 from models.location_metadata import LocationMetadata
@@ -45,6 +46,9 @@ def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
             sound_track   = None     # an absolute path to the soundtrack                
         )
     )    
+
+IN_COMBAT = True
+COMBAT_OVER = False
 
 class CombatController(LoggerMixin):
 
@@ -101,18 +105,37 @@ class CombatController(LoggerMixin):
             party_member.enter_combat(spawn_coord)
             self.npc_service.add_npc(party_member)
 
-    def _dispatch_player_event(self, party_member: PartyMemberAgent, event: pygame.event.Event) -> bool:
+    def _dispatch_player_event(self, combat_map: CombatMap, party_member: PartyMemberAgent, event: pygame.event.Event) -> bool:
 
         current_coord = party_member.coord
 
         if event.type == pygame.QUIT:
             self.console_service.print_ascii("Cannot quit during combat !")
-            return True
+            return IN_COMBAT
 
         if event.key == pygame.K_SPACE:
             self.log("DEBUG: Wait command received")
             party_member.spend_action_quanta()
-            return True
+            return IN_COMBAT
+
+        if event.key == pygame.K_a:
+            target_coord = self.main_loop_service.obtain_cursor_position(
+                starting_coord = party_member.coord,
+                boundary_rect = combat_map.get_size().to_rect(Coord(0,0))
+            )
+            target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
+
+            # Cursor positioning over.  Do we have an enemy ?
+
+            if not target_enemy is None:
+                self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
+                party_member.attack(target_enemy)
+
+                enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
+
+                self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + "!")
+                if target_enemy.hitpoints <= 0:
+                    self.npc_service.remove_npc(target_enemy)
 
         move_offset = DIRECTION_MAP.get(event.key, None)
         if not move_offset is None:
@@ -130,9 +153,9 @@ class CombatController(LoggerMixin):
                 self.log(f"Party member {party_member.name} exited !")
                 if not any(self.party_agent.get_party_members_in_combat()):
                     # Exit combat
-                    return False
+                    return COMBAT_OVER
                 else:
-                    return True
+                    return IN_COMBAT
 
             elif move_outcome.success:
                 self.log(f"DEBUG: Combat move received: {move_offset}")
@@ -141,7 +164,7 @@ class CombatController(LoggerMixin):
                 self.log(f"DEBUG: Combat move command failed: {move_outcome}")
         else:
             self.log(f"DEBUG: Received non-processable event: {event.key}")
-        return True
+        return IN_COMBAT
 
     def _exit_combat_arena(self, enemy_party: MonsterAgent):
 
@@ -174,7 +197,7 @@ class CombatController(LoggerMixin):
         # Party member spawning
         self._spawn_party_members(combat_map)
 
-        in_combat = True
+        in_combat = IN_COMBAT
 
         while in_combat:
 
@@ -193,7 +216,7 @@ class CombatController(LoggerMixin):
                 #
                 event = self.main_loop_service.get_next_event()
 
-                in_combat = self._dispatch_player_event(party_member, event)
+                in_combat = self._dispatch_player_event(combat_map, party_member, event)
 
             else:
     

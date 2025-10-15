@@ -1,6 +1,6 @@
 import pygame
 
-from dark_libraries.dark_math import Vector2
+from dark_libraries.dark_math import Coord, Rect, Vector2
 from dark_libraries.logging import LoggerMixin
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.agents.party_agent import PartyAgent
@@ -72,6 +72,41 @@ class MainLoopService(LoggerMixin):
                 if not direction is None:
                     self.console_service.print_ascii(DIRECTION_NAMES[direction] + " !")
                     return direction
+
+            #
+            # Waiting for input ? Render frames, ensuring that animations happen etc.
+            #  
+            self.display_service.render()
+            
+    def obtain_cursor_position(self, starting_coord: Coord, boundary_rect: Rect) -> Coord:
+
+        self.console_service.print_ascii("Where ? ")
+        cursor = starting_coord
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    # Clicking on the X will break out of the loop and exit the game.
+                    self._is_running = False
+                    return None
+
+                if event.type != pygame.KEYDOWN:
+                    continue
+
+                if event.key == pygame.K_ESCAPE:
+                    # Pressing escape will just cancel the action.
+                    return None
+
+                if event.key == pygame.K_RETURN:
+                    # Pressing enter will return the current cursor position.
+                    return cursor
+
+                direction: Vector2 = DIRECTION_MAP.get(event.key, None)
+                if not direction is None:
+                    target = cursor + direction
+                    if boundary_rect.is_in_bounds(target):
+                        cursor = target
+                        self.log(f"DEBUG: Moving attack cursor to {target}")
 
             #
             # Waiting for input ? Render frames, ensuring that animations happen etc.
