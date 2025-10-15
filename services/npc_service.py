@@ -75,6 +75,9 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
     def set_attacking_npc(self, npc_agent: NpcAgent):
         self._attacking_npc = npc_agent
 
+    def get_npc_at(self, coord: Coord) -> NpcAgent | None:
+        return self.get_npcs().get(coord, None)
+
     def get_occupied_coords(self) -> set[Coord]:
         return {coord for coord in self.get_npcs().keys()}
 

@@ -62,7 +62,7 @@ class PartyController(LoggerMixin):
             should_pass_time = self.dispatch_input()
             
             if should_pass_time:
-                
+
                 self.party_agent.spend_action_quanta()
 
                 # Propgate pass_time event (and subsequently all other party-turn-based events.)
@@ -102,6 +102,7 @@ class PartyController(LoggerMixin):
             return PASS_TIME
 
         elif event.key == pygame.K_j:
+            self.console_service.print_ascii("Jimmy - ",include_carriage_return=False)
             action_direction = self.main_loop_service.obtain_action_direction()
             if not action_direction is None:
                 self.jimmy(action_direction)
@@ -110,6 +111,13 @@ class PartyController(LoggerMixin):
         elif event.key == pygame.K_i:
             self.ignite_torch()
             return PASS_TIME
+
+        elif event.key == pygame.K_a:
+            self.console_service.print_ascii("Attack - ",include_carriage_return=False)
+            action_direction = self.main_loop_service.obtain_action_direction()
+            if not action_direction is None:
+                self.attack(action_direction)
+                return PASS_TIME
 
         #
         # NOTE: For development and testing only
@@ -187,7 +195,6 @@ class PartyController(LoggerMixin):
     # Party driven State transitions
     #
     def move(self, move_offset: Vector2):
-
         party_location = self.party_agent.get_current_location()
         transport_mode_name = self.global_registry.transport_modes.get(self.party_agent.transport_mode)
         move_outcome: MoveOutcome = self.move_controller.move(party_location, move_offset, transport_mode_name)
@@ -226,7 +233,6 @@ class PartyController(LoggerMixin):
             return
 
     def jimmy(self, direction: Vector2):
-
         target_coord = self.party_agent.get_current_location().coord.add(direction)
         interactable: Interactable = self.global_registry.interactables.get(target_coord)      
         if interactable:
@@ -241,6 +247,13 @@ class PartyController(LoggerMixin):
         self.console_service.print_ascii("Ignite torch !")
         self.party_inventory.add(InventoryOffset.TORCHES, -1)
         self.party_agent.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
+
+    def attack(self, direction: Vector2):
+        target_coord = self.party_agent.get_current_location().coord.add(direction)
+        enemy_party = self.npc_service.get_npc_at(target_coord)
+        if enemy_party is None:
+            return
+        self.combat_controller.enter_combat(enemy_party)
 
     def pass_time(self):
 

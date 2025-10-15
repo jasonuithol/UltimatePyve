@@ -1,9 +1,8 @@
 from dark_libraries.dark_math import Coord
+
 from models.agents.combat_agent import CombatAgent
-from models.global_location     import GlobalLocation
 from models.npc_metadata        import NpcMetadata
 from models.sprite              import Sprite
-from models.tile                import Tile
 
 from .combat_agent import CombatAgent
 

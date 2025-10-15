@@ -25,6 +25,7 @@ PROCESSABLE_KEYS = [
     pygame.K_SPACE, # pass time
     pygame.K_j, # jimmy
     pygame.K_i, # ignite torch
+    pygame.K_a
 ]
 
 class MainLoopService(LoggerMixin):

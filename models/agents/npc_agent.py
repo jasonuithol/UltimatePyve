@@ -1,7 +1,6 @@
 import random
 
-from typing import Iterable, Self
-from copy import copy
+from typing import Iterable
 
 from dark_libraries.dark_math import Coord, Rect
 from dark_libraries.logging import LoggerMixin
