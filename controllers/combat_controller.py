@@ -9,6 +9,7 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.agents.party_member_agent import PartyMemberAgent
+from models.combat_map import CombatMap
 from models.enums.direction_map import DIRECTION_MAP
 from models.global_location import GlobalLocation
 
@@ -26,6 +27,25 @@ from services.npc_service import NpcService
 
 COMBAT_MAP_LOCATION_INDEX = -666
 
+def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
+    return U5Map(
+        {0:combat_map},
+        LocationMetadata(
+            location_index = COMBAT_MAP_LOCATION_INDEX, # index of the location for things like WorldLootLoader, and GlobalLocation references.
+            name = "COMBAT",                            # name of the location
+
+            name_index       = None, # which name the location takes.
+            files_index      = None, # which file the location is in
+            group_index      = None, # order of appearance of the town in the file. Use for indexing into DATA.OVL properties.
+            map_index_offset = None, # how many levels to skip to start reading the first level of the location.
+
+            num_levels    = 0,       # how many levels the location contains
+            default_level = 0,       # which level the player spawns in when entering the location.
+            trigger_index = None,    # the index the entry triggers for this location are at.
+            sound_track   = None     # an absolute path to the soundtrack                
+        )
+    )    
+
 class CombatController(LoggerMixin):
 
     # Injectable
@@ -42,37 +62,16 @@ class CombatController(LoggerMixin):
     display_service: DisplayService
     move_controller: MoveController
 
-    def enter_combat(self, enemy_npc: MonsterAgent):
-
-        self.log(f"Entered combat with {enemy_npc.name}")
-
-        self.console_service.print_ascii(f"{enemy_npc.name}s !")
-
+    def _enter_combat_arena(self, enemy_party: MonsterAgent) -> CombatMap:
         party_transport_mode_index, _ = self.party_agent.get_transport_state()
 
         combat_map = self.combat_map_service.get_combat_map(
             self.party_agent.get_current_location(),
             party_transport_mode_index,
-            enemy_npc
+            enemy_party
         )
 
-        combat_map_wrapper = U5Map(
-            {0:combat_map},
-            LocationMetadata(
-                location_index = COMBAT_MAP_LOCATION_INDEX, # index of the location for things like WorldLootLoader, and GlobalLocation references.
-                name = "COMBAT",                            # name of the location
-
-                name_index       = None, # which name the location takes.
-                files_index      = None, # which file the location is in
-                group_index      = None, # order of appearance of the town in the file. Use for indexing into DATA.OVL properties.
-                map_index_offset = None, # how many levels to skip to start reading the first level of the location.
-
-                num_levels    = 0,       # how many levels the location contains
-                default_level = 0,       # which level the player spawns in when entering the location.
-                trigger_index = None,    # the index the entry triggers for this location are at.
-                sound_track   = None     # an absolute path to the soundtrack                
-            )
-        )
+        combat_map_wrapper = wrap_combat_map_in_u5map(combat_map)
 
         # TODO: Remove this
         self.global_registry.maps.register(combat_map_wrapper.location_index, combat_map_wrapper)
@@ -82,93 +81,71 @@ class CombatController(LoggerMixin):
 
         # NPC freezing happens here.
         self.dark_event_service.pass_time(self.party_agent.get_current_location())
+        return combat_map
 
-        # Monster member spawning
-        if enemy_npc._npc_metadata.max_party_size <= 1:
+    def _spawn_monsters(self, combat_map: CombatMap, enemy_party: MonsterAgent):
+        if enemy_party._npc_metadata.max_party_size <= 1:
             monster_party_size = 1
         else:
-            monster_party_size = random.randint(1, enemy_npc._npc_metadata.max_party_size)
+            monster_party_size = random.randint(1, enemy_party._npc_metadata.max_party_size)
 
         for monster_spawn_slot_index in range(monster_party_size):
             spawn_coord: Coord = combat_map._monster_spawn_coords[monster_spawn_slot_index]
-            clone: MonsterAgent = enemy_npc.spawn_clone_at(spawn_coord)
+            clone: MonsterAgent = enemy_party.spawn_clone_at(spawn_coord)
             clone.enter_combat(spawn_coord)
             self.npc_service.add_npc(clone)
 
-        # Party member spawning
-        print(combat_map._party_spawn_coords)
+    def _spawn_party_members(self, combat_map: CombatMap):
         for party_member_index, party_member in enumerate(self.party_agent.get_party_members()):
             spawn_coord: Coord = combat_map._party_spawn_coords[0][party_member_index]
             party_member.enter_combat(spawn_coord)
             self.npc_service.add_npc(party_member)
 
-        in_combat = True
+    def _dispatch_player_event(self, party_member: PartyMemberAgent, event: pygame.event.Event) -> bool:
 
-        while in_combat:
+        current_coord = party_member.coord
 
+        if event.type == pygame.QUIT:
+            self.console_service.print_ascii("Cannot quit during combat !")
+            return True
 
-            next_turn_npc = self.npc_service.get_next_moving_npc()
+        if event.key == pygame.K_SPACE:
+            self.log("DEBUG: Wait command received")
+            party_member.spend_action_quanta()
+            return True
 
-            if isinstance(next_turn_npc, PartyMemberAgent):
-                party_member: PartyMemberAgent = next_turn_npc
+        move_offset = DIRECTION_MAP.get(event.key, None)
+        if not move_offset is None:
+            move_outcome = self.move_controller.move(
+                GlobalLocation(-666, 0, current_coord), 
+                move_offset, 
+                'walk'
+            )
 
-                if not party_member.is_in_combat():
-                    continue
+            party_member.spend_action_quanta()
 
-                current_coord = party_member.coord
-
-                self.log(f"{party_member.name}'s turn")
-
-                #
-                # -- R E N D E R --
-                #
-                event = self.main_loop_service.get_next_event()
-
-                if event.type == pygame.QUIT:
-                    self.console_service.print_ascii("Cannot quit during combat !")
-                    continue
-
-                if event.key == pygame.K_SPACE:
-                    self.log("DEBUG: Wait command received")
-                    party_member.spend_action_quanta()
-                    continue
-
-                move_offset = DIRECTION_MAP.get(event.key, None)
-                if not move_offset is None:
-                    move_outcome = self.move_controller.move(
-                        GlobalLocation(-666, 0, current_coord), 
-                        move_offset, 
-                        'walk'
-                    )
-
-                    party_member.spend_action_quanta()
-
-                    if move_outcome.exit_map:
-                        party_member.exit_combat()
-                        self.npc_service.remove_npc(party_member)
-                        self.log(f"Party member {party_member.name} exited !")
-                        if not any(self.party_agent.get_party_members_in_combat()):
-                            in_combat = False
-                            break
-                        else:
-                            continue
-
-                    elif move_outcome.success:
-                        self.log(f"DEBUG: Combat move received: {move_offset}")
-                        party_member.coord = party_member.coord + move_offset
-                    else:
-                        self.log(f"DEBUG: Combat move command failed: {move_outcome}")
+            if move_outcome.exit_map:
+                party_member.exit_combat()
+                self.npc_service.remove_npc(party_member)
+                self.log(f"Party member {party_member.name} exited !")
+                if not any(self.party_agent.get_party_members_in_combat()):
+                    # Exit combat
+                    return False
                 else:
-                    self.log(f"DEBUG: Received non-processable event: {event.key}")
+                    return True
 
+            elif move_outcome.success:
+                self.log(f"DEBUG: Combat move received: {move_offset}")
+                party_member.coord = party_member.coord + move_offset
             else:
-    
-                # All members moved - give the monsters a turn
-                if any(self.party_agent.get_party_members_in_combat()):
-                    monster_target_coord = self.party_agent.get_party_members_in_combat()[0].coord
-                    self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, monster_target_coord))
+                self.log(f"DEBUG: Combat move command failed: {move_outcome}")
+        else:
+            self.log(f"DEBUG: Received non-processable event: {event.key}")
+        return True
 
-        self.log(f"Exiting combat with {enemy_npc.name}")
+    def _exit_combat_arena(self, enemy_party: MonsterAgent):
+
+        self.log(f"Exiting combat with {enemy_party.name}")
 
         for party_member in self.party_agent.get_party_members_in_combat():
             party_member.exit_combat()
@@ -179,10 +156,57 @@ class CombatController(LoggerMixin):
         self.dark_event_service.pass_time(self.party_agent.get_current_location())
 
         self.npc_service.set_attacking_npc(None)
-        self.npc_service.remove_npc(enemy_npc)
+        self.npc_service.remove_npc(enemy_party)
 
+    #
+    # PUBLIC METHODS
+    #     
+    def enter_combat(self, enemy_party: MonsterAgent):
 
+        self.log(f"Entered combat with {enemy_party.name}")
+        self.console_service.print_ascii(f"{enemy_party.name}s !")
 
+        combat_map = self._enter_combat_arena(enemy_party)
 
+        # Monster member spawning
+        self._spawn_monsters(combat_map, enemy_party)
+
+        # Party member spawning
+        self._spawn_party_members(combat_map)
+
+        in_combat = True
+
+        while in_combat:
+
+            next_turn_npc = self.npc_service.get_next_moving_npc()
+
+            if isinstance(next_turn_npc, PartyMemberAgent):
+                party_member: PartyMemberAgent = next_turn_npc
+
+                if not party_member.is_in_combat():
+                    continue
+
+                self.log(f"{party_member.name}'s turn")
+
+                #
+                # -- R E N D E R --
+                #
+                event = self.main_loop_service.get_next_event()
+
+                in_combat = self._dispatch_player_event(party_member, event)
+
+            else:
+    
+                # All members moved - give the monsters a turn
+                if any(self.party_agent.get_party_members_in_combat()):
+
+                    #
+                    # TODO: More sophisticated AI can come later.
+                    #
+                    monster_target_coord = self.party_agent.get_party_members_in_combat()[0].coord
+
+                    self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, monster_target_coord))
+
+        self._exit_combat_arena(enemy_party)
 
     
