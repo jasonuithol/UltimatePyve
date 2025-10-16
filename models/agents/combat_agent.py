@@ -59,16 +59,26 @@ class CombatAgent(NpcAgent):
     def take_damage(self, damage: int) -> bool:
         self.hitpoints = self.hitpoints - damage
 
-        self.hitpoints = min(self.hitpoints, 0)
-        self.hitpoints = max(self.hitpoints, self.maximum_hitpoints)
+        self.hitpoints = max(self.hitpoints, 0)
+        self.hitpoints = min(self.hitpoints, self.maximum_hitpoints)
 
-    def attack(self, other: Self):
-        if random.uniform(0, 1) < self.calculate_hit_probability(other):
+        self.log(f"{self.name} took damage={damage} to change hitpoints {self.hitpoints} -> {self.hitpoints}")
+
+    def attack(self, other: Self) -> bool:
+        if random.uniform(0.0, 1.0) < self.calculate_hit_probability(other):
             #
             # TODO: Get both hands involved.
             #
             damage = self.calculate_damage(attack_type="R")
             other.take_damage(damage)
+
+            # Attack succeeded
+            self.log(f"DEBUG: Attack succeeded with to_hit probability={self.calculate_hit_probability(other)}, damage={damage}") 
+            return True
+        else:
+            # Attack failed (missed)
+            self.log(f"DEBUG: Attack missed with to_hit probability={self.calculate_hit_probability(other)}") 
+            return False
 
     def spawn_clone_at(self, coord: Coord) -> Self:
         other = copy(self)

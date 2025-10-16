@@ -90,7 +90,15 @@ class PartyMemberAgent(CombatAgent):
         else: 
             item_id = self._character_record.left_hand
         equipable_item_type: EquipableItemType = self.global_registry.item_types.get(item_id)
-        return equipable_item_type.attack
+        if equipable_item_type is None:
+            self.log(f"WARNING: Could not obtain equipable_item_type for item_id={item_id}")
+            return 1
+        else:
+            damage = equipable_item_type.attack
+            if damage == 0:
+                self.log(f"ERROR: equipable_item_type={equipable_item_type.name} for item_id={item_id} has zero damage.")
+            return damage
+
     #
     # COMBAT_AGENT IMPLEMENTATION: End
 

@@ -52,6 +52,8 @@ class MonsterAgent(CombatAgent):
         self._current_hitpoints = val
 
     def get_damage(self, attack_type: chr) -> int:
+        if self._npc_metadata.damage == 0:
+            self.log(f"ERROR: monster {self.name} has zero damage")
         return self._npc_metadata.damage
     #
     # COMBAT_AGENT IMPLEMENTATION: End

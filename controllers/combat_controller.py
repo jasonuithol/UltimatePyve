@@ -109,34 +109,47 @@ class CombatController(LoggerMixin):
 
         current_coord = party_member.coord
 
+        # Quit dispatch handler
         if event.type == pygame.QUIT:
             self.console_service.print_ascii("Cannot quit during combat !")
             return IN_COMBAT
 
+        # Wait dispatch handler
         if event.key == pygame.K_SPACE:
             self.log("DEBUG: Wait command received")
             party_member.spend_action_quanta()
             return IN_COMBAT
 
+        # Attack dispatch handler
         if event.key == pygame.K_a:
             target_coord = self.main_loop_service.obtain_cursor_position(
                 starting_coord = party_member.coord,
                 boundary_rect = combat_map.get_size().to_rect(Coord(0,0))
             )
+            if target_coord is None:
+                return IN_COMBAT
+
             target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
 
             # Cursor positioning over.  Do we have an enemy ?
 
-            if not target_enemy is None:
+            if target_enemy is None:
+                self.log(f"DEBUG: No enemy found at {target_coord}")
+            else:
                 self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
-                party_member.attack(target_enemy)
+                did_attack_hit = party_member.attack(target_enemy)
+                if did_attack_hit:
+                    enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
 
-                enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
+                    self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + f"!")
+                    if target_enemy.hitpoints <= 0:
+                        self.npc_service.remove_npc(target_enemy)
+                else:
+                    self.console_service.print_ascii("Missed !")
+            party_member.spend_action_quanta()
+            return IN_COMBAT
 
-                self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + "!")
-                if target_enemy.hitpoints <= 0:
-                    self.npc_service.remove_npc(target_enemy)
-
+        # Move dispatch handler
         move_offset = DIRECTION_MAP.get(event.key, None)
         if not move_offset is None:
             move_outcome = self.move_controller.move(
@@ -162,8 +175,10 @@ class CombatController(LoggerMixin):
                 party_member.coord = party_member.coord + move_offset
             else:
                 self.log(f"DEBUG: Combat move command failed: {move_outcome}")
-        else:
-            self.log(f"DEBUG: Received non-processable event: {event.key}")
+            return IN_COMBAT
+
+        # No more dispatchers.            
+        self.log(f"DEBUG: Received non-processable event: {event.key}")
         return IN_COMBAT
 
     def _exit_combat_arena(self, enemy_party: MonsterAgent):
@@ -211,7 +226,7 @@ class CombatController(LoggerMixin):
                 if not party_member.is_in_combat():
                     continue
 
-                self.log(f"{party_member.name}'s turn")
+                self.console_service.print_ascii(f"{party_member.name}'s turn")
                 cursor_sprite = self.global_registry.cursors.get(CursorType.OUTLINE.value)
                 self.display_service.set_cursor(CursorType.OUTLINE, party_member.coord, cursor_sprite)
                 #
