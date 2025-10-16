@@ -26,7 +26,9 @@ class AvatarSpriteFactory:
         return Sprite(frames)
 
     def create_player_walk(self,  _: int) -> Sprite:
-        return self._create_player_any(332, 4)
+        sprite = self._create_player_any(332, 4)
+        sprite.set_randomized_frame_durations()
+        return sprite
 
     def create_player_horse(self, direction: int) -> Sprite:
         return self._create_player_any(274 + direction, 1)

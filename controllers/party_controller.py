@@ -126,7 +126,7 @@ class PartyController(LoggerMixin):
             self.switch_outer_map()
 
         elif event.key == pygame.K_BACKQUOTE:
-            self.switch_outer_map()
+            self.rotate_transport()
 
         return DONT_PASS_TIME
 
@@ -270,9 +270,11 @@ class PartyController(LoggerMixin):
         if current_location.location_index != 0:
             return
         if current_location.level_index == 0:        
-            current_location.level_index = 255 # underworld
+            new_level_index = 255 # underworld
         else:
-            current_location.level_index = 0   # britannia
+            new_level_index = 0   # britannia
+        self.party_agent.change_level(new_level_index)
 
     def rotate_transport(self):
-        self.party_agent.transport_mode = (self.party_agent.transport_mode + 1) % len(self.global_registry.transport_modes)
+        transport_mode = (self.party_agent.transport_mode + 1) % len(self.global_registry.transport_modes)
+        self.party_agent.set_transport_state(transport_mode, self.party_agent.last_east_west, self.party_agent.last_nesw_dir)

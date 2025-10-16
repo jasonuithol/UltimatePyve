@@ -44,7 +44,7 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
             self._freeze_active_npcs()
         
         # Returning to over/under world 
-        if self._party_location.location_index != 0 and party_location.level_index == 0:
+        if self._party_location.location_index != 0 and party_location.location_index == 0:
             self._unfreeze_active_npcs()
         
         #
@@ -59,7 +59,7 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
 
     def get_npcs(self) -> dict[Coord, NpcAgent]:
         registered = {npc.coord: npc for npc in self._active_npcs}
-        if self._party_location.location_index == 0:
+        if self._party_location.location_index != -666:
             registered[self._party_location.coord] = self.party_agent
         return registered
 

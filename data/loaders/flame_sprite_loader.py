@@ -171,7 +171,7 @@ if __name__ == "__main__":
                 frame_time = 0.01
 
         current_sprite.set_frame_duration(frame_time)
-        current_frame: Tile = current_sprite.get_current_frame_tile(pygame.time.get_ticks())
+        current_frame: Tile = current_sprite.get_current_frame_tile(pygame.time.get_ticks(), 0.0)
 
         scaled = pygame.transform.scale(current_frame.surface, display_config.TILE_SIZE.scale(SCALE).to_tuple())
         screen.blit(scaled, (0, 0))

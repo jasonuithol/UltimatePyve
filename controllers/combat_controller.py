@@ -171,6 +171,8 @@ class CombatController(LoggerMixin):
 
         self.log(f"Exiting combat with {enemy_party.name}")
 
+        self.display_service.remove_cursor(CursorType.OUTLINE)
+
         for party_member in self.party_agent.get_party_members_in_combat():
             party_member.exit_combat()
 

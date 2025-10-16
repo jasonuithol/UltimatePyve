@@ -13,6 +13,8 @@ class CoordContents:
         self.tile = tile
         self.terrain = terrain
         self.terrain_sprite = sprite
+        if not sprite is None:
+            self.terrain_sprite_time_offset = sprite.create_random_time_offset()
         self.terrain_interactable: Interactable = None
 
         self.global_registry: GlobalRegistry = ServiceProvider.get_provider().resolve(GlobalRegistry)
@@ -38,6 +40,6 @@ class CoordContents:
             return self.terrain_interactable.get_current_tile_id()
 
         if not self.terrain_sprite is None:
-            return self.terrain_sprite.get_current_frame_tile()
+            return self.terrain_sprite.get_current_frame_tile(self.terrain_sprite_time_offset)
 
         return self.tile

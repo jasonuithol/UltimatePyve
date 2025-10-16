@@ -5,6 +5,7 @@ from typing   import Tuple
 from dark_libraries.dark_math import Coord
 
 from models.global_location import GlobalLocation
+from models.sprite import Sprite
 from models.tile import Tile
 
 from services.avatar_sprite_factory import AvatarSpriteFactory
@@ -37,6 +38,8 @@ class PartyAgent(NpcAgent):
     transport_mode: int = None
     last_east_west: int = None
     last_nesw_dir: int = None
+    sprite: Sprite = None
+    sprite_time_offset: float = 0.0
 
     # torch, light spell
     light_radius: int = None
@@ -77,9 +80,7 @@ class PartyAgent(NpcAgent):
 
     @property
     def current_tile(self) -> Tile:
-        transport_mode, direction = self.get_transport_state()
-        sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
-        return sprite.get_current_frame_tile()
+        return self.sprite.get_current_frame_tile(self.sprite_time_offset)
 
     @property
     def coord(self):
@@ -134,6 +135,10 @@ class PartyAgent(NpcAgent):
         self.transport_mode = transport_mode
         self.last_east_west = last_east_west
         self.last_nesw_dir = last_nesw_dir
+
+        _, direction = self.get_transport_state()
+        self.sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
+        self.sprite_time_offset = self.sprite.create_random_time_offset()
 
     def get_transport_state(self) -> Tuple[int, int]:
         assert not self.transport_mode is None, "Must call set_transport_state first."

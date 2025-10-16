@@ -90,6 +90,7 @@ class DisplayService(LoggerMixin):
         )
 
         npcs = self.npc_service.get_npcs()
+        assert len(npcs) > 0, "Must have at least 1 NPC (the player) to draw"
 
         def get_frame(world_coord: Coord) -> Tile:
             if not world_coord in visible_coords.intersection(lit_coords):
@@ -140,12 +141,12 @@ class DisplayService(LoggerMixin):
         map_tiles = self._get_map_tiles()
         self.view_port.draw_map(map_tiles)
 
-        # draw overlays
+        # draw overlays e.g. cursors
         for cursor_coord_sprite_tuple in self._cursors.values():
             cursor_coord, cursor_sprite = cursor_coord_sprite_tuple
             self.view_port.draw_tile( 
                 cursor_coord,
-                cursor_sprite.get_current_frame_tile()
+                cursor_sprite.get_current_frame_tile(0.0)
             )
 
         vp_scaled_surface = self.view_port.get_output_surface()

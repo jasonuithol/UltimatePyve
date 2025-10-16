@@ -13,11 +13,12 @@ class CombatAgent(NpcAgent):
         super().__init__()
         self._coord = coord
         self._sprite = sprite
+        self._sprite_time_offset = sprite.create_random_time_offset()
 
     # NPC_AGENT IMPLEMENTATION (Partial): Start
     @property
     def current_tile(self):
-        return self._sprite.get_current_frame_tile()
+        return self._sprite.get_current_frame_tile(self._sprite_time_offset)
 
     @property
     def coord(self) -> Coord:
@@ -72,6 +73,7 @@ class CombatAgent(NpcAgent):
     def spawn_clone_at(self, coord: Coord) -> Self:
         other = copy(self)
         other.coord = coord
+        other._sprite_time_offset = self._sprite.create_random_time_offset()
         # DO NOT RESET SPENT ACTION POINTS
         return other
 
