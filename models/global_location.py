@@ -1,6 +1,7 @@
 from typing import Self
 from dark_libraries.custom_decorators import immutable
 from dark_libraries.dark_math import Coord
+from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 
 @immutable
 class GlobalLocation:
@@ -43,7 +44,7 @@ class GlobalLocation:
         return 1 <= self.location_index < 27
     
     def is_combat(self) -> bool:
-        return self.location_index == -666
+        return self.location_index == COMBAT_MAP_LOCATION_INDEX
 
     def move_to_coord(self, coord: Coord) -> Self:
         return GlobalLocation(

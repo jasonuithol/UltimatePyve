@@ -4,6 +4,7 @@ from dark_libraries.logging     import LoggerMixin
 from dark_libraries.dark_events import DarkEventListenerMixin
 
 from models.agents.party_agent import PartyAgent
+from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 from models.global_location    import GlobalLocation
 from models.agents.npc_agent   import NpcAgent
 
@@ -59,7 +60,7 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
 
     def get_npcs(self) -> dict[Coord, NpcAgent]:
         registered = {npc.coord: npc for npc in self._active_npcs}
-        if self._party_location.location_index != -666:
+        if self._party_location.location_index != COMBAT_MAP_LOCATION_INDEX:
             registered[self._party_location.coord] = self.party_agent
         return registered
 

@@ -10,6 +10,7 @@ from data.global_registry import GlobalRegistry
 
 from models.agents.party_member_agent import PartyMemberAgent
 from models.combat_map import CombatMap
+from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 from models.enums.cursor_type import CursorType
 from models.enums.direction_map import DIRECTION_MAP
 from models.enums.hit_point_level import get_hp_level_text
@@ -26,8 +27,6 @@ from services.display_service import DisplayService
 from services.main_loop_service import MainLoopService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
-
-COMBAT_MAP_LOCATION_INDEX = -666
 
 def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
     return U5Map(
@@ -141,7 +140,7 @@ class CombatController(LoggerMixin):
         move_offset = DIRECTION_MAP.get(event.key, None)
         if not move_offset is None:
             move_outcome = self.move_controller.move(
-                GlobalLocation(-666, 0, current_coord), 
+                GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, current_coord), 
                 move_offset, 
                 'walk'
             )

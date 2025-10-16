@@ -5,6 +5,7 @@ from dark_libraries.logging     import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.agents.npc_agent import NpcAgent
+from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 from models.global_location      import GlobalLocation
 from models.agents.monster_agent import MonsterAgent
 
@@ -44,7 +45,7 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
 
             if monster_agent.coord.taxi_distance(party_location.coord) == 1:
                 # Combat map mode
-                if current_map.location_index == -666:
+                if current_map.location_index == COMBAT_MAP_LOCATION_INDEX:
                     self.console_service.print_ascii("WHAM !")
 
                 # Overworld mode
