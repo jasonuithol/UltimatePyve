@@ -3,6 +3,7 @@ import pygame
 from dark_libraries.dark_math import Coord, Rect, Vector2
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
+
 from models.enums.cursor_type import CursorType
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.agents.party_agent import PartyAgent
@@ -25,9 +26,9 @@ PROCESSABLE_KEYS = [
 
     # party/member actions
     pygame.K_SPACE, # pass time
-    pygame.K_j, # jimmy
-    pygame.K_i, # ignite torch
-    pygame.K_a
+    pygame.K_j,     # jimmy
+    pygame.K_i,     # ignite torch
+    pygame.K_a      # attack
 ]
 
 class MainLoopService(LoggerMixin):

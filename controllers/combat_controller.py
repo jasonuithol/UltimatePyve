@@ -66,6 +66,8 @@ class CombatController(LoggerMixin):
     display_service: DisplayService
     move_controller: MoveController
 
+    _last_attacked_monster = dict[str, MonsterAgent]()
+
     def _enter_combat_arena(self, enemy_party: MonsterAgent) -> CombatMap:
         party_transport_mode_index, _ = self.party_agent.get_transport_state()
 
@@ -122,8 +124,15 @@ class CombatController(LoggerMixin):
 
         # Attack dispatch handler
         if event.key == pygame.K_a:
+
+            target_enemy = self._last_attacked_monster.get(party_member.name, None)
+            if target_enemy is None:
+                starting_coord = party_member.coord
+            else:
+                starting_coord = target_enemy.coord
+
             target_coord = self.main_loop_service.obtain_cursor_position(
-                starting_coord = party_member.coord,
+                starting_coord = starting_coord,
                 boundary_rect = combat_map.get_size().to_rect(Coord(0,0))
             )
             if target_coord is None:
@@ -136,6 +145,8 @@ class CombatController(LoggerMixin):
             if target_enemy is None:
                 self.log(f"DEBUG: No enemy found at {target_coord}")
             else:
+                self._last_attacked_monster[party_member.name] = target_enemy
+                
                 self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
                 did_attack_hit = party_member.attack(target_enemy)
                 if did_attack_hit:
@@ -221,6 +232,9 @@ class CombatController(LoggerMixin):
             next_turn_npc = self.npc_service.get_next_moving_npc()
 
             if isinstance(next_turn_npc, PartyMemberAgent):
+                #
+                # -- PLAYER MEMBER TURN --
+                #
                 party_member: PartyMemberAgent = next_turn_npc
 
                 if not party_member.is_in_combat():
