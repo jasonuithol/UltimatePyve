@@ -77,7 +77,7 @@ class MainLoopService(LoggerMixin):
 
         assert not starting_coord is None, "starting_coord cannot be None"
 
-        self.console_service.print_ascii("Where ? ")
+        self.console_service.print_ascii("Aim !")
         cursor = starting_coord
 
         crosshair_cursor_sprite = self.global_registry.cursors.get(CursorType.CROSSHAIR.value)

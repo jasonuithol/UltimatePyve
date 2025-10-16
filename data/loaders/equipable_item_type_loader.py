@@ -60,7 +60,7 @@ class EquipableItemTypeLoader(LoggerMixin):
                 rune_id = rune_id
             )
             self.global_registry.item_types.register(dra_values_index, item_type)
-            self.log(f"DEBUG: Registered equippable item type: name={item_type.name}")
+            self.log(f"DEBUG: Registered equippable item type: name={item_type.name}, range={item_type.range_}, defence={item_type.defence}, attack={item_type.attack}")
         
         def build_helm(description_index: tuple[int,int], short_index: int, dra_values_index: int):
             build_item(description_index, short_index, dra_values_index, EquipableItemSlot.HEAD, EquipableItemTileId.HELM, EquipableItemRuneId.HELM)

@@ -12,10 +12,24 @@ from models.enums.npc_tile_id import NpcTileId
 from models.character_record  import CharacterRecord
 from models.equipable_items   import EquipableItemType
 from models.sprite            import Sprite
+from models.enums.equipable_item_slot import EquipableItemSlot
 
 from .combat_agent import CombatAgent
 
 MAXIMUM_SKILL_LEVEL = 30
+
+BARE_HANDS = EquipableItemType(
+    item_id          = -1,
+    inventory_offset = None,
+    tile_id          = -1,
+    name             = "Bare Hands",
+    short_name       = "Bare Hands",
+    range_           = 1,
+    defence          = 0,
+    attack           = 1,
+    slot             = EquipableItemSlot.TWO_HAND,
+    rune_id          = None
+)
 
 class IncreasableSkillNames(Enum):
     STR = 'strength'
@@ -43,16 +57,20 @@ class PartyMemberAgent(CombatAgent):
 
     def is_in_combat(self):
         return not self.coord is None
-    
-    def armed_with_description(self) -> str:
+
+    def get_weapons(self):
         lh_item = self.global_registry.item_types.get(self._character_record.left_hand)
         rh_item = self.global_registry.item_types.get(self._character_record.right_hand)
         helmet  = self.global_registry.item_types.get(self._character_record.helmet)
 
         equipped = [lh_item, rh_item, helmet]
-        weapons  = [item.name for item in equipped if not item is None and item.attack > 0]
-        if not any(weapons): weapons = ["Bare hands"]
-        return "armed with " + ", ".join(weapons)
+        weapons  = [item for item in equipped if not item is None and item.attack > 0]
+        if not any(weapons): 
+            weapons = [BARE_HANDS]
+        return weapons
+
+    def armed_with_description(self) -> str:
+        return "armed with " + ", ".join([weapon.name for weapon in self.get_weapons()])
 
     # NPC_AGENT IMPLEMENTATION (Completion): Start
     #

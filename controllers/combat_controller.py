@@ -125,39 +125,43 @@ class CombatController(LoggerMixin):
         # Attack dispatch handler
         if event.key == pygame.K_a:
 
-            target_enemy = self._last_attacked_monster.get(party_member.name, None)
-            if target_enemy is None:
-                starting_coord = party_member.coord
-            else:
-                starting_coord = target_enemy.coord
+            for weapon in party_member.get_weapons():
 
-            target_coord = self.main_loop_service.obtain_cursor_position(
-                starting_coord = starting_coord,
-                boundary_rect = combat_map.get_size().to_rect(Coord(0,0))
-            )
-            if target_coord is None:
-                return IN_COMBAT
+                self.console_service.print_ascii(weapon.name + " - ", include_carriage_return = False)
 
-            target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
-
-            # Cursor positioning over.  Do we have an enemy ?
-
-            if target_enemy is None:
-                self.log(f"DEBUG: No enemy found at {target_coord}")
-            else:
-                self._last_attacked_monster[party_member.name] = target_enemy
-                
-                self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
-                did_attack_hit = party_member.attack(target_enemy)
-                if did_attack_hit:
-                    enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
-
-                    self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + f"!")
-                    if target_enemy.hitpoints <= 0:
-                        self.npc_service.remove_npc(target_enemy)
+                target_enemy = self._last_attacked_monster.get(party_member.name, None)
+                if target_enemy is None:
+                    starting_coord = party_member.coord
                 else:
-                    self.console_service.print_ascii("Missed !")
-            party_member.spend_action_quanta()
+                    starting_coord = target_enemy.coord
+
+                target_coord = self.main_loop_service.obtain_cursor_position(
+                    starting_coord = starting_coord,
+                    boundary_rect = combat_map.get_size().to_rect(Coord(0,0))
+                )
+                if target_coord is None:
+                    continue
+
+                target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
+
+                # Cursor positioning over.  Do we have an enemy ?
+
+                if target_enemy is None:
+                    self.log(f"DEBUG: No enemy found at {target_coord}")
+                else:
+                    self._last_attacked_monster[party_member.name] = target_enemy
+
+                    self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
+                    did_attack_hit = party_member.attack(target_enemy)
+                    if did_attack_hit:
+                        enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
+
+                        self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + f"!")
+                        if target_enemy.hitpoints <= 0:
+                            self.npc_service.remove_npc(target_enemy)
+                    else:
+                        self.console_service.print_ascii("Missed !")
+                party_member.spend_action_quanta()
             return IN_COMBAT
 
         # Move dispatch handler
@@ -230,7 +234,6 @@ class CombatController(LoggerMixin):
         while in_combat and (not self.main_loop_service.should_quit_game()):
 
             next_turn_npc = self.npc_service.get_next_moving_npc()
-
             if isinstance(next_turn_npc, PartyMemberAgent):
                 #
                 # -- PLAYER MEMBER TURN --
@@ -241,6 +244,7 @@ class CombatController(LoggerMixin):
                     continue
 
                 self.console_service.print_ascii(f"{party_member.name}'s turn, armed with {party_member.armed_with_description()}")
+
                 cursor_sprite = self.global_registry.cursors.get(CursorType.OUTLINE.value)
                 self.display_service.set_cursor(CursorType.OUTLINE, party_member.coord, cursor_sprite)
                 #
