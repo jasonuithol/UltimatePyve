@@ -43,6 +43,16 @@ class PartyMemberAgent(CombatAgent):
 
     def is_in_combat(self):
         return not self.coord is None
+    
+    def armed_with_description(self) -> str:
+        lh_item = self.global_registry.item_types.get(self._character_record.left_hand)
+        rh_item = self.global_registry.item_types.get(self._character_record.right_hand)
+        helmet  = self.global_registry.item_types.get(self._character_record.helmet)
+
+        equipped = [lh_item, rh_item, helmet]
+        weapons  = [item.name for item in equipped if not item is None and item.attack > 0]
+        if not any(weapons): weapons = ["Bare hands"]
+        return "armed with " + ", ".join(weapons)
 
     # NPC_AGENT IMPLEMENTATION (Completion): Start
     #
