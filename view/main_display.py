@@ -23,11 +23,11 @@ class BorderGlyphCodes(Enum):
 class MainDisplay(ScalableComponent):
 
     # Injectable
-    display_config: DisplayConfig
-    world_clock: WorldClock
-    view_port: ViewPort
+    display_config:  DisplayConfig
+    world_clock:     WorldClock
+    view_port:       ViewPort
     global_registry: GlobalRegistry
-    font_mapper: FontMapper
+    font_mapper:     FontMapper
 
     def __init__(self):
         pass 
@@ -167,16 +167,19 @@ class MainDisplay(ScalableComponent):
         char_x_middle = self.viewport_width_in_glyphs + 1
         char_x_right  = self.size_in_glyphs.w - 1
 
+        char_y_info_panel = 8
         char_y_bottom = self.size_in_glyphs.h - 1
 
         # Blue borders
         for char_y in range(self.size_in_glyphs.h):
-            self.left_block_glyph.blit_to_surface( Coord(            0, char_y), surf)
-            self.horizontal_block.blit_to_surface( Coord(char_x_middle, char_y), surf)
-            self.right_block_glyph.blit_to_surface(Coord(char_x_right , char_y), surf)
+            self.left_block_glyph.blit_to_surface(  Coord(            0, char_y), surf)
+            self.horizontal_block.blit_to_surface(  Coord(char_x_middle, char_y), surf)
+            self.right_block_glyph.blit_to_surface( Coord(char_x_right , char_y), surf)
         for char_x in range(self.size_in_glyphs.x):
             self.top_block_glyph.blit_to_surface(   Coord(char_x,             0), surf)
             self.bottom_block_glyph.blit_to_surface(Coord(char_x, char_y_bottom), surf)
+        for char_x in range(char_x_middle, char_x_right):
+            self.vertical_block.blit_to_surface(    Coord(char_x, char_y_info_panel), surf)
 
         # corners
         self.top_left_cnr_glyph.blit_to_surface(Coord(0, 0), surf)
@@ -187,6 +190,9 @@ class MainDisplay(ScalableComponent):
         # junctions
         self.junction_glyph.blit_to_surface(Coord(char_x_middle,             0), surf)
         self.junction_glyph.blit_to_surface(Coord(char_x_middle, char_y_bottom), surf)
+
+        self.right_block_glyph.blit_to_surface(Coord(char_x_middle, char_y_info_panel), surf)
+        self.junction_glyph.blit_to_surface(Coord(char_x_right , char_y_info_panel), surf)
 
         # prompts - celestial
         self.right_prompt.blit_to_surface(Coord(self.celestial_char_offset, 0), surf)
