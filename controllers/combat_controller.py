@@ -20,6 +20,7 @@ from models.location_metadata import LocationMetadata
 from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
 from models.u5_map import U5Map
+from models.equipable_items import EquipableItemType # for syntax highlighting
 
 from services.combat_map_service import CombatMapService
 from services.console_service import ConsoleService
@@ -27,6 +28,7 @@ from services.display_service import DisplayService
 from services.main_loop_service import MainLoopService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
+
 
 def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
     return U5Map(
@@ -137,7 +139,8 @@ class CombatController(LoggerMixin):
 
                 target_coord = self.main_loop_service.obtain_cursor_position(
                     starting_coord = starting_coord,
-                    boundary_rect = combat_map.get_size().to_rect(Coord(0,0))
+                    boundary_rect  = combat_map.get_size().to_rect(Coord(0,0)),
+                    range_         = max(weapon.range_, 1)
                 )
                 if target_coord is None:
                     continue

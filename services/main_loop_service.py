@@ -11,6 +11,7 @@ from models.agents.party_agent import PartyAgent
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
 
+BIBLICALLY_ACCURATE_RANGE_TWEAK = 0.5
 
 PROCESSABLE_KEYS = [
 
@@ -73,9 +74,10 @@ class MainLoopService(LoggerMixin):
             #  
             self.display_service.render()
             
-    def obtain_cursor_position(self, starting_coord: Coord, boundary_rect: Rect) -> Coord:
+    def obtain_cursor_position(self, starting_coord: Coord, boundary_rect: Rect, range_: int) -> Coord:
 
         assert not starting_coord is None, "starting_coord cannot be None"
+        assert range_ > 0, "range_ cannot be zero"
 
         self.console_service.print_ascii("Aim !")
         cursor = starting_coord
@@ -107,7 +109,7 @@ class MainLoopService(LoggerMixin):
                 direction: Vector2 = DIRECTION_MAP.get(event.key, None)
                 if not direction is None:
                     target = cursor + direction
-                    if boundary_rect.is_in_bounds(target):
+                    if boundary_rect.is_in_bounds(target) and starting_coord.pythagorean_distance(target) <= range_ + BIBLICALLY_ACCURATE_RANGE_TWEAK:
                         cursor = target
                         self.display_service.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
                         self.log(f"DEBUG: Moved attack cursor to {target}")

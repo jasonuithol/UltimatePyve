@@ -58,7 +58,7 @@ class PartyMemberAgent(CombatAgent):
     def is_in_combat(self):
         return not self.coord is None
 
-    def get_weapons(self):
+    def get_weapons(self) -> list[EquipableItemType]:
         lh_item = self.global_registry.item_types.get(self._character_record.left_hand)
         rh_item = self.global_registry.item_types.get(self._character_record.right_hand)
         helmet  = self.global_registry.item_types.get(self._character_record.helmet)
