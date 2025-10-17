@@ -70,7 +70,7 @@ class PartyMemberAgent(CombatAgent):
         return weapons
 
     def armed_with_description(self) -> str:
-        return "armed with " + ", ".join([weapon.name for weapon in self.get_weapons()])
+        return ", ".join([weapon.name for weapon in self.get_weapons()])
 
     # NPC_AGENT IMPLEMENTATION (Completion): Start
     #

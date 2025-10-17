@@ -246,7 +246,7 @@ class CombatController(LoggerMixin):
                 if not party_member.is_in_combat():
                     continue
 
-                self.console_service.print_ascii(f"{party_member.name}'s turn, armed with {party_member.armed_with_description()}")
+                self.console_service.print_ascii(f"{party_member.name}, armed with {party_member.armed_with_description()}")
 
                 cursor_sprite = self.global_registry.cursors.get(CursorType.OUTLINE.value)
                 self.display_service.set_cursor(CursorType.OUTLINE, party_member.coord, cursor_sprite)
