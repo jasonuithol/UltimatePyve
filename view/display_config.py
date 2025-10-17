@@ -1,4 +1,5 @@
 from dark_libraries.dark_math import Size
+from models.enums.ega_palette_values import EgaPaletteValues
 
 class EgaPalette(tuple[tuple[int,int,int]]):
     pass
@@ -22,8 +23,11 @@ class DisplayConfig:
     # =============== Section 2: Change these to whatever you like ===================
     # ================================================================================
 
-    VIEW_PORT_SIZE = Size(17, 17) # In tiles       (which are themselves 16x16 by default, unless changed in TILE_SIZE)
-    CONSOLE_SIZE   = Size(32, 13) # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
+    VIEW_PORT_SIZE  = Size(17, 17) # In tiles       (which are themselves 16x16 by default, unless changed in TILE_SIZE)
+    INFO_PANEL_SIZE = Size(32,  6)   # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
+    
+    # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
+    CONSOLE_SIZE = Size(INFO_PANEL_SIZE.w, VIEW_PORT_SIZE.h * 2 - INFO_PANEL_SIZE.h - 3) 
 
     #
     # TODO: Right now we do NOT take advantage of the fact we can create 8-bit (or other) surfaces and then provide them a palette, or frankly
@@ -32,24 +36,7 @@ class DisplayConfig:
     #       Currently, we call pygame.Surface.map_rgb(tuple[int,int,int]) each time we need to paint an actual pixel color.
     #       We need a SurfaceFactory, which can produce surfaces guaranteed to be compatable with eachother, have, or not have, palettes, etc.
     #
-    EGA_PALETTE = EgaPalette((
-        (0, 0, 0),         # 0000: Black
-        (0, 0, 170),       # 0001: Blue
-        (0, 170, 0),       # 0010: Green
-        (0, 170, 170),     # 0011: Cyan
-
-        (170, 0, 0),       # 0100: Red
-        (170, 0, 170),     # 0101: Magenta
-        (170, 85, 0),      # 0110: Brown (dark yellow)
-        (170, 170, 170),   # 0111: Light Gray
-
-        (85, 85, 85),      # 1000: Dark Gray
-        (85, 85, 255),     # 1001: Light Blue
-        (85, 255, 85),     # 1010: Light Green
-        (85, 255, 255),    # 1011: Light Cyan
-
-        (255, 85, 85),     # 1100: Light Red
-        (255, 85, 255),    # 1101: Light Magenta
-        (255, 255, 85),    # 1110: Yellow
-        (255, 255, 255),   # 1111: White
-    ))
+    EGA_PALETTE = {
+        index : color.value 
+        for index, color in enumerate(EgaPaletteValues)
+    }

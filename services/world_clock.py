@@ -11,6 +11,7 @@ from models.global_location import GlobalLocation
 # rune font values for the celestial objects.
 #
 class CelestialGlyphCodes(Enum):
+    BLANK           = 0
     SUN             = 42
 
     NEW_MOON        = 48

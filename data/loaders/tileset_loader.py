@@ -2,9 +2,11 @@
 import pygame, struct
 from pathlib import Path
 
+from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from models.tile import Tile, TileData
+from services.surface_factory import SurfaceFactory
 from view.display_config import DisplayConfig
 
 # --- LZW decompression ---
@@ -61,6 +63,7 @@ class TileLoader(LoggerMixin):
 
     display_config: DisplayConfig
     global_registry: GlobalRegistry
+    surface_factory: SurfaceFactory
  
     def tile_from_bytes(self, tile_id: int, data:bytes) -> Tile:
 
@@ -80,8 +83,32 @@ class TileLoader(LoggerMixin):
             pixels.append(pixel_row)
 
         tile = Tile(tile_id, pixels)
-        tile.create_surface(self.display_config.EGA_PALETTE)
+        surf = self._create_surface(tile)
+        tile.set_surface(surf)
         return tile
+
+    def _create_surface(self, tile: Tile) -> pygame.Surface:
+        assert tile.surface is None, "Surface already created !"
+
+        #
+        # TODO: use SurfaceFactory
+        #
+        surface = self.surface_factory.create_surface(tile._get_size())
+        surface_pixels = pygame.PixelArray(surface)
+        self._draw_onto_pixel_array(tile, surface_pixels)
+        del surface_pixels
+        return surface
+
+    def _draw_onto_pixel_array(self, tile: Tile, surface_pixels : pygame.PixelArray, target_pixel_offset: Coord = Coord(0,0)):
+
+        for pixel_coord in tile._get_size():
+
+            # Get the pixel color from the tile
+            u5_color = tile.pixels[pixel_coord.y][pixel_coord.x]
+            rgb_color = self.surface_factory.get_rgb_mapped_color(u5_color)
+            
+            # Set the pixel color on the rendered surface
+            surface_pixels[pixel_coord.add(target_pixel_offset).to_tuple()] = rgb_color
 
     def load_tiles(self):
         path = Path("u5/TILES.16")

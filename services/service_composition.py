@@ -19,6 +19,7 @@ from services.npc_service import NpcService
 from services.modding_service     import ModdingService
 from services.sound_track_player  import SoundTrackPlayer
 
+from services.surface_factory import SurfaceFactory
 from services.world_clock import WorldClock
 
 from .map_cache.service_composition  import compose as compose_map_cache
@@ -26,6 +27,7 @@ from .world_loot.service_composition import compose as compose_world_loot
 
 def compose(provider: ServiceProvider):
 
+    provider.register(SurfaceFactory)
     provider.register(AvatarSpriteFactory)
     provider.register(ConsoleService)
     provider.register(DoorInstanceFactory)

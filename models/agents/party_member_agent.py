@@ -44,7 +44,7 @@ class PartyMemberAgent(CombatAgent):
     def __init__(self, sprite: Sprite, character_record: CharacterRecord):
         super().__init__(coord = None, sprite = sprite)
         self._character_record = character_record
-        self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value
+        self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value.value
         self._mana = self._calculate_maximum_mana()
         self._level = self._calculate_potential_level()
 
@@ -80,7 +80,11 @@ class PartyMemberAgent(CombatAgent):
 
     @property
     def name(self) -> str:
-        return self._character_record.name
+        n = self._character_record.name
+        if len(n.strip()) == 0:
+            return "oroborus"
+        else:
+            return n
     #
     # NPC_AGENT IMPLEMENTATION (Completion): End
 
@@ -111,6 +115,18 @@ class PartyMemberAgent(CombatAgent):
     @hitpoints.setter
     def hitpoints(self, val: int):
         self._character_record.current_hp = val
+
+    @property
+    def maximum_mana(self) -> int:
+        return self._calculate_maximum_mana()
+
+    @property 
+    def mana(self) -> int:
+        return self._character_record.current_mp
+
+    @mana.setter
+    def mana(self, val: int):
+        self._character_record.current_mp = val
 
     def get_damage(self, attack_type: chr) -> int:
         if attack_type in ['R','B']:

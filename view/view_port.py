@@ -23,6 +23,7 @@ class ViewPort(ScalableComponent, LoggerMixin):
             unscaled_size_in_pixels = self.display_config.VIEW_PORT_SIZE.scale(self.display_config.TILE_SIZE),
             scale_factor            = self.display_config.SCALE_FACTOR
         )
+        super()._after_inject()
 
     # TODO: We have returned to view_port coords now
     def draw_map(self, tiles: dict[Coord, Tile]) -> None:

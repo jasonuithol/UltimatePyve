@@ -3,22 +3,13 @@ import pygame
 from typing import Self
 
 from dark_libraries.custom_decorators import immutable
-from dark_libraries.dark_math import Coord, Size
+from dark_libraries.dark_math import Coord
 
 @immutable
 class U5Glyph:
-    
-    def __init__(self, data: bytearray, glyph_size: Size, foreground_color_mapped_rgb: int, background_color_mapped_rgb: int):
-        self._surface = pygame.Surface(glyph_size.to_tuple())
-        target = pygame.PixelArray(self._surface)
-        for y in range(glyph_size.h):
-            for x in range(glyph_size.w):
-                bit_index = x + (y * glyph_size.h)
-                byte_index = bit_index // 8
-                bit_offset = bit_index % 8
-                bit_value = data[byte_index] & (1 << (8 - bit_offset))
-                target[x, y] = foreground_color_mapped_rgb if bit_value else background_color_mapped_rgb        
-        del target
+
+    def __init__(self, surface: pygame.Surface):
+        self._surface = surface
 
     def blit_to_surface(self, char_coord: Coord, target: pygame.Surface):
         origin_x, origin_y = char_coord.x * self._surface.get_width(), char_coord.y * self._surface.get_height()

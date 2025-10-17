@@ -64,3 +64,10 @@ class LoggerMixin:
         self._logger = Logger(self)
         self.log = self._logger.log
         super().__init__()
+
+    # ---------------------------------------------------------------------------------------
+    #
+    # WARNING: Adding an _after_inject handler here will break the _after_inject handler of
+    #          every class that has multiple inheritence that includes this as an ancestor.
+    #
+    # ---------------------------------------------------------------------------------------

@@ -39,6 +39,7 @@ class U5MapLevel:
         tile_loader.load_tiles()
 
         surf = pygame.Surface(self._size.scale(tile_loader.display_config.TILE_SIZE).to_tuple())
+
         for x in range(self._size.x):
             for y in range(self._size.y):
 

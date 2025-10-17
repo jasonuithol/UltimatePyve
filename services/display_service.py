@@ -13,6 +13,7 @@ from models.tile   import Tile
 from models.u5_map import U5Map
 
 from view.display_config      import DisplayConfig
+from view.info_panel import InfoPanel
 from view.interactive_console import InteractiveConsole
 from view.view_port           import ViewPort
 from view.main_display        import MainDisplay
@@ -30,6 +31,7 @@ class DisplayService(LoggerMixin):
     display_config:      DisplayConfig
     main_display:        MainDisplay
     view_port:           ViewPort
+    info_panel:          InfoPanel
     interactive_console: InteractiveConsole
 
     # Map generation
@@ -153,12 +155,29 @@ class DisplayService(LoggerMixin):
         vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)
         self.screen.blit(vp_scaled_surface, vp_scaled_pixel_offset)
 
+
+
+        right_hand_element_x = vp_scaled_surface.get_width() + scaled_border_thiccness * 2
+
+        #
+        # InfoPanel
+        #
+        self.info_panel.draw()
+
+        ip_scaled_surface = self.info_panel.get_output_surface()
+        ip_scaled_pixel_offset = (
+            right_hand_element_x, 
+            scaled_border_thiccness
+        )
+        self.screen.blit(ip_scaled_surface, ip_scaled_pixel_offset)
+
+
         #
         # InteractiveConsole
         #
         ic_scaled_surface = self.interactive_console.get_output_surface()
         ic_scaled_pixel_offset = (
-            vp_scaled_surface.get_width() + scaled_border_thiccness * 2, 
+            right_hand_element_x, 
             vp_scaled_surface.get_height() - ic_scaled_surface.get_height()
         )
         self.screen.blit(ic_scaled_surface, ic_scaled_pixel_offset)
