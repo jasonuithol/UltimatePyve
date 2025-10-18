@@ -5,17 +5,25 @@ from dark_libraries.dark_math import Size
 
 from data.global_registry import GlobalRegistry
 from data.loaders.tileset_loader import TileLoader
+from data.loaders.u5_font_loader import U5FontLoader
+from data.loaders.u5_glyph_loader import U5GlyphLoader
 from models.tile import Tile
+from models.u5_glyph import U5Glyph
 from services.surface_factory import SurfaceFactory
 from view.display_config import DisplayConfig
 
 display_config = DisplayConfig()
+
+surface_factory = SurfaceFactory()
+surface_factory.display_config = display_config
+surface_factory._after_inject()
+
 MARGIN = 10  # padding around grid
 
 class ViewerProfile[TKey, TValue]:
 
-    def __init__(self):
-        self.dropdown_label: str = None
+    def __init__(self, dropdown_label):
+        self.dropdown_label = dropdown_label
         self.active_row: int = 0
         self.active_col: int = 0
         self.current_scale_factor = self.default_scale_factor()
@@ -31,6 +39,9 @@ class ViewerProfile[TKey, TValue]:
     # in un-scaled pixels
     def object_size(self) -> Size:
         ...
+
+    def object_scaled_size(self) -> Size:
+        return self.object_size().scale(self.current_scale_factor)
 
     # size is in objects, not pixels.
     def viewer_size(self) -> Size:
@@ -66,7 +77,7 @@ class ViewerProfile[TKey, TValue]:
 
         self.window_size = Size(
             self.viewer_size().w * display_config.TILE_SIZE.w * display_config.SCALE_FACTOR + MARGIN * 2,
-            self.viewer_size().h * display_config.TILE_SIZE.h * display_config.SCALE_FACTOR + MARGIN * 2 + 30
+            self.viewer_size().h * display_config.TILE_SIZE.h * display_config.SCALE_FACTOR + MARGIN * 2 + 200
         )
 
         for profile in profiles:
@@ -76,11 +87,16 @@ class ViewerProfile[TKey, TValue]:
         self.screen = pygame.display.set_mode(self.window_size.to_tuple())
         pygame.display.set_caption(f"Object Viewer: {self.dropdown_label}")
 
+        margin_bottom_y = MARGIN + active_profile.viewer_size().h * active_profile.object_scaled_size().h + 5
+
+        # Key text label geometry
+        self.key_text_coord = (MARGIN, margin_bottom_y)
+
         # Button geometry
         button_size = Size(100, 24)
         self.button_rect = pygame.Rect(
             self.window_size.w - button_size.w - MARGIN, 
-            self.window_size.h - button_size.h - MARGIN, 
+            margin_bottom_y, 
             button_size.w, 
             button_size.h
         )
@@ -88,8 +104,8 @@ class ViewerProfile[TKey, TValue]:
         # Dropdown geometry
         dropdown_size = Size(120, 24)
         self.dropdown_rect = pygame.Rect(
-            MARGIN, 
-            self.window_size.h - dropdown_size.h - MARGIN, 
+            MARGIN + 100, 
+            margin_bottom_y, 
             dropdown_size.w, 
             dropdown_size.h
         )
@@ -97,19 +113,20 @@ class ViewerProfile[TKey, TValue]:
 
 class TileViewerProfile(ViewerProfile[int, Tile]):
     def __init__(self):
-        super().__init__()
-        self.dropdown_label = "TILES.16"
+        super().__init__("TILES.16")
         self.global_registry = GlobalRegistry()
 
         tile_loader = TileLoader()
         tile_loader.display_config  = display_config
         tile_loader.global_registry = self.global_registry
-        tile_loader.surface_factory = SurfaceFactory()
-        tile_loader.surface_factory.display_config = display_config
-        tile_loader.surface_factory._after_inject()
+        tile_loader.surface_factory = surface_factory
+
         tile_loader.load_tiles()
 
         print(f"Loaded {__class__.__name__} as {self.dropdown_label}")
+
+    def default_scale_factor(self) -> int:
+        return 2
 
     # in un-scaled pixels
     def object_size(self) -> Size:
@@ -139,12 +156,68 @@ class TileViewerProfile(ViewerProfile[int, Tile]):
         else:
             return ""
 
+class FontViewerProfile(ViewerProfile[tuple[str,int], U5Glyph]):
+    def __init__(self, font_name):
+        super().__init__(font_name)
+        self.font_name = font_name
+        self.global_registry = GlobalRegistry()
+
+        f_loader = U5FontLoader()
+        f_loader.global_registry = self.global_registry
+        f_loader.register_fonts()
+
+        g_loader = U5GlyphLoader()
+        g_loader.display_config = display_config
+        g_loader.global_registry = self.global_registry
+        g_loader.surface_factory = surface_factory
+        g_loader.register_glyphs()
+
+        print(f"Loaded {__class__.__name__} as {self.dropdown_label}")
+
+    def default_scale_factor(self) -> int:
+        return 4
+
+    # in un-scaled pixels
+    def object_size(self) -> Size:
+        return display_config.FONT_SIZE
+
+    # size is in objects, not pixels.
+    def viewer_size(self) -> Size:
+        width = 32
+        return Size(width, math.ceil(self.object_count() / width))
+    
+    def object_count(self) -> int:
+        return 128
+
+    def get_unscaled_object_surface(self, object_index: int) -> pygame.Surface:
+        glyph: U5Glyph = self.global_registry.font_glyphs.get((self.font_name, object_index))
+        if glyph:
+            return glyph.get_surface()
+        else:
+            return None
+    
+    # Returns ASCII string
+    def base64(self, object_index: int) -> str:
+
+        font = self.global_registry.fonts.get(self.font_name)
+        if not font:
+            return ""
+
+        if not object_index < self.object_count():
+            return ""
+
+        data = font[object_index]
+        flat_bytes = bytes([pix for row in data[object_index] for pix in row])
+        return base64.b64encode(flat_bytes).decode("ascii")
+        
 pygame.init()
 pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
 
-profiles = [
-    TileViewerProfile()
-]
+profiles = list[ViewerProfile]([
+    TileViewerProfile(),
+    FontViewerProfile("IBM.CH"),
+    FontViewerProfile("RUNES.CH")
+])
 
 active_profile = profiles[0]
 active_profile.initialise_components()
@@ -204,14 +277,13 @@ while running:
 
 
     active_profile.screen.fill((30, 30, 30))
-    scaled_size = active_profile.object_size().scale(active_profile.current_scale_factor)
 
     # Draw objects in grid
     for row in range(active_profile.viewer_size().h):
         for col in range(active_profile.viewer_size().w):
 
-            x = MARGIN + col * scaled_size.w
-            y = MARGIN + row * scaled_size.h
+            x = MARGIN + col * active_profile.object_scaled_size().w
+            y = MARGIN + row * active_profile.object_scaled_size().h
 
             object_index = row * active_profile.viewer_size().w + col
 
@@ -221,21 +293,43 @@ while running:
                 active_profile.screen.blit(object_surface, (x, y))
 
     # Cursor rectangle
-    cursor_x = MARGIN + active_profile.active_col * scaled_size.w
-    cursor_y = MARGIN + active_profile.active_row * scaled_size.h
+    cursor_x = MARGIN + active_profile.active_col * active_profile.object_scaled_size().w
+    cursor_y = MARGIN + active_profile.active_row * active_profile.object_scaled_size().h
     cursor_rect = pygame.Rect(
-        cursor_x, cursor_y, scaled_size.w, scaled_size.h
+        cursor_x, cursor_y, active_profile.object_scaled_size().w, active_profile.object_scaled_size().h
     )
     pygame.draw.rect(active_profile.screen, (255, 0, 0), cursor_rect, width=3)
 
-    # Show active object key just below the grid
-    label_y = MARGIN + active_profile.viewer_size().h * scaled_size.h + 5
     text_surf = font.render(
         f"Key: {active_profile.object_label(active_index)}", 
         True, # antialias
         (255, 255, 255)
     )
-    active_profile.screen.blit(text_surf, (MARGIN, label_y))
+    active_profile.screen.blit(text_surf, active_profile.key_text_coord)
+
+    # --- Draw dropdown ---
+    # Draw the closed dropdown box
+    pygame.draw.rect(active_profile.screen, (50, 50, 50), active_profile.dropdown_rect)
+    pygame.draw.rect(active_profile.screen, (200, 200, 200), active_profile.dropdown_rect, 2)
+
+    # Label for the currently active profile
+    label = font.render(active_profile.dropdown_label, True, (255, 255, 255))
+    active_profile.screen.blit(label, (active_profile.dropdown_rect.x + 5,
+                                    active_profile.dropdown_rect.y + 5))
+
+    # If dropdown is open, draw the options
+    if dropdown_open:
+        for i, profile in enumerate(profiles):
+            option_rect = pygame.Rect(
+                active_profile.dropdown_rect.x,
+                active_profile.dropdown_rect.y + (i + 1) * active_profile.dropdown_rect.h,
+                active_profile.dropdown_rect.w,
+                active_profile.dropdown_rect.h
+            )
+            pygame.draw.rect(active_profile.screen, (70, 70, 70), option_rect)
+            pygame.draw.rect(active_profile.screen, (200, 200, 200), option_rect, 1)
+            opt_label = font.render(profile.dropdown_label, True, (255, 255, 255))
+            active_profile.screen.blit(opt_label, (option_rect.x + 5, option_rect.y + 5))
 
     # Draw copy button
     pygame.draw.rect(active_profile.screen, (0, 0, 0), active_profile.button_rect)

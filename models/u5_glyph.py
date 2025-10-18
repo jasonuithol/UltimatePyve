@@ -11,6 +11,9 @@ class U5Glyph:
     def __init__(self, surface: pygame.Surface):
         self._surface = surface
 
+    def get_surface(self) -> pygame.Surface:
+        return self._surface
+
     def blit_to_surface(self, char_coord: Coord, target: pygame.Surface):
         origin_x, origin_y = char_coord.x * self._surface.get_width(), char_coord.y * self._surface.get_height()
         target.blit(
