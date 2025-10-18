@@ -2,6 +2,7 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
+from data.loaders.blue_border_glyph_factory import BlueBorderGlyphFactory
 from data.loaders.combat_map_loader     import CombatMapLoader
 from data.loaders.cursor_loader import CursorLoader
 from data.loaders.entry_trigger_loader  import EntryTriggerLoader
@@ -61,6 +62,8 @@ class GlobalRegistryLoader(LoggerMixin):
     npc_metadata_loader:         NpcMetadataLoader
     saved_game_loader:           SavedGameLoader
 
+    blue_border_glyph_factory:   BlueBorderGlyphFactory
+
     modding: ModdingService
 
     def _post_load_check(self) -> bool:
@@ -69,9 +72,13 @@ class GlobalRegistryLoader(LoggerMixin):
             if isinstance(registry, Registry):
                 if len(registry) == 0:
                     if registry._can_be_empty == False:
-                        self.log(f"ERROR: {name} registry is empty.")
+                        self.log(f"ERROR: {name} registry is empty (len == 0).")
                         all_registries_loaded = False
                     continue
+            else:
+                if registry is None:
+                        self.log(f"ERROR: {name} property is unassigned (None).")
+
         return all_registries_loaded
 
     def load(self):
@@ -90,6 +97,7 @@ class GlobalRegistryLoader(LoggerMixin):
         # font
         self.u5_font_loader.register_fonts()
         self.u5_glyph_loader.register_glyphs()
+        self.blue_border_glyph_factory.load()
 
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
         #       one day maybe even the avatar's transports could be these ?

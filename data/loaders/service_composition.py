@@ -1,6 +1,7 @@
 from dark_libraries.service_provider import ServiceProvider
 
 from data.loaders.animated_tile_loader        import AnimatedTileLoader
+from data.loaders.blue_border_glyph_factory import BlueBorderGlyphFactory
 from data.loaders.combat_map_loader import CombatMapLoader
 from data.loaders.consumable_item_type_loader import ConsumableItemTypeLoader
 from data.loaders.cursor_loader import CursorLoader
@@ -47,6 +48,7 @@ def compose(provider: ServiceProvider):
     provider.register(TransportModeLoader)
     provider.register(U5FontLoader)
     provider.register(U5GlyphLoader)
+    provider.register(BlueBorderGlyphFactory)
 
     provider.register(LocationMetadataBuilder)
     provider.register(U5MapLoader)

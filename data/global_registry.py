@@ -18,6 +18,7 @@ from models.light_map       import LightMap
 from models.u5_glyph        import U5Glyph
 from models.global_location import GlobalLocation
 from models.interactable    import Interactable
+from models.border_glyphs import BorderGlyphs
 
 class GlobalRegistry:
 
@@ -46,6 +47,8 @@ class GlobalRegistry:
         self.cursors  = Registry[int, Sprite]()   # CursorType.value
         self.fonts    = Registry[str, U5Font]()   # font_name
         self.font_glyphs = Registry[tuple[str, int], U5Glyph]()  # (font_name, glyph_code)
+        self.blue_border_glyphs = BorderGlyphs
+        self.scroll_border_glyphs = BorderGlyphs
 
         self.unbaked_light_maps     = Registry[int,             LightMap]()               # radius
         self.baked_light_level_maps = Registry[tuple[int,int],  dict[Coord, LightMap]]()  # location, level -> coord, lightmap

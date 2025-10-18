@@ -1,21 +1,22 @@
 from dark_libraries.dark_math import Coord, Size
 
+from data.global_registry import GlobalRegistry
 from models.enums.ega_palette_values import EgaPaletteValues
 
 from services.font_mapper import FontMapper
 from services.world_clock import CelestialGlyphCodes, WorldClock
 
-from .border_drawer_factory import BorderDrawerFactory
+from .border_drawer import BorderDrawer
 from .display_config import DisplayConfig
 from .scalable_component import ScalableComponent
 
 class MainDisplay(ScalableComponent):
 
     # Injectable
+    global_registry: GlobalRegistry
     display_config:  DisplayConfig
     world_clock:     WorldClock
     font_mapper:     FontMapper
-    border_drawer_factory: BorderDrawerFactory
 
     def __init__(self):
         pass 
@@ -71,8 +72,8 @@ class MainDisplay(ScalableComponent):
         self.draw_borders()
 
     def draw_borders(self):
-#        surf = self.get_input_surface()
-        drawer = self.border_drawer_factory.create_border_drawer(self.get_input_surface())
+        
+        drawer = BorderDrawer(self.global_registry.blue_border_glyphs, self.get_input_surface())
 
         char_x_middle = self.viewport_width_in_glyphs + 1
         char_x_right  = self.size_in_glyphs.w - 1

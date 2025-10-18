@@ -1,16 +1,18 @@
 from typing import Iterable
 from dark_libraries.dark_math import Coord, Vector2
 
+from data.global_registry import GlobalRegistry
 from models.u5_glyph import U5Glyph
-from view.border_drawer_factory import BorderDrawer, BorderDrawerFactory
-from view.display_config import DisplayConfig
-from view.scalable_component import ScalableComponent
+
+from .scalable_component import ScalableComponent
+from .display_config     import DisplayConfig
+from .border_drawer      import BorderDrawer
 
 class InteractiveConsole(ScalableComponent):
 
     # Injectable
     display_config: DisplayConfig
-    border_drawer_factory: BorderDrawerFactory
+    global_registry: GlobalRegistry
 
     def __init__(self):
         self._cursor: int = 0
@@ -32,7 +34,7 @@ class InteractiveConsole(ScalableComponent):
 
     def _prompt(self):
         if self._border_drawer is None: 
-            self._border_drawer = self.border_drawer_factory.create_border_drawer(self.get_input_surface())
+            self._border_drawer = BorderDrawer(self.global_registry.blue_border_glyphs, self.get_input_surface())
 
         self._border_drawer.right_prompt(self._cursor, self._cursor_y)
         self._advance()
