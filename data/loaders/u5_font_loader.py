@@ -17,7 +17,9 @@ class U5FontLoader(LoggerMixin):
         char_length_in_bytes = (char_size.w * char_size.h) // 8
         data = []
         for index in range(len(ba) // char_length_in_bytes):
-            data.append(ba[(index * 8):(index * 8) + char_length_in_bytes])
+            start = index * char_length_in_bytes
+            end   = start + char_length_in_bytes
+            data.append(ba[start:end])
 
         self.log(f"Loaded {len(data)} font data blobs from {name}")
 

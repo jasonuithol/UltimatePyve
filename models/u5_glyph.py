@@ -26,6 +26,11 @@ class U5Glyph:
         rotated._surface = pygame.transform.rotate(self._surface, 90)
         return rotated
 
+    def flip(self, flip_x: bool = False, flip_y: bool = False) -> Self:
+        bird_recipient = object.__new__(self.__class__)
+        bird_recipient._surface = pygame.transform.flip(self._surface, flip_x, flip_y)
+        return bird_recipient
+
     def copy(self) -> Self:
         clone = object.__new__(self.__class__)
         clone._surface = self._surface.copy()

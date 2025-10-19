@@ -35,10 +35,10 @@ class U5GlyphLoader(LoggerMixin):
         target = pygame.PixelArray(surf)
         for y in range(self.display_config.FONT_SIZE.h):
             for x in range(self.display_config.FONT_SIZE.w):
-                bit_index = x + (y * self.display_config.FONT_SIZE.h)
+                bit_index = x + (y * self.display_config.FONT_SIZE.w)
                 byte_index = bit_index // 8
                 bit_offset = bit_index % 8
-                bit_value = data[byte_index] & (1 << (8 - bit_offset))
+                bit_value = data[byte_index] & (1 << (7 - bit_offset))
                 target[x, y] = self.foreground if bit_value else self.background        
         del target
 

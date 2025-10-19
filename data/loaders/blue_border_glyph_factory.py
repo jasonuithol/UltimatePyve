@@ -13,13 +13,12 @@ class BlueBorderGlyphCodes(Enum):
     RIGHT_PROMPT_IBM_FONT_ID = 2
 
     BLOCK_GLYPH_IBM_FONT_ID = 127
+    LINE_GLYPH_IBM_FONT_ID = 95
+
     TOP_LEFT_CNR_GLYPH_IBM_FONT_ID = 123
     TOP_RIGHT_CNR_GLYPH_IBM_FONT_ID = 124
     BOTTOM_LEFT_CNR_GLYPH_IBM_FONT_ID = 125
     BOTTOM_RIGHT_CNR_GLYPH_IBM_FONT_ID = 126
-
-class BlueBorderGlyphs(BorderGlyphs):
-    pass
 
 class BlueBorderGlyphFactory(LoggerMixin):
 
@@ -31,7 +30,7 @@ class BlueBorderGlyphFactory(LoggerMixin):
         self.global_registry.blue_border_glyphs = self._create_border_glyphs()
         self.log("Built blue border glyphs.")
 
-    def _create_border_glyphs(self) -> BlueBorderGlyphs:
+    def _create_border_glyphs(self) -> BorderGlyphs:
 
         # Be careful changing these colors.
         self._color_black      = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
@@ -52,11 +51,22 @@ class BlueBorderGlyphFactory(LoggerMixin):
             # Set foreground to blue (this is the thick blue border)
             old_mapped_rgb = self._color_white, 
             new_mapped_rbg = self._color_dark_blue
-        ).replace_color(
+        ).overlay_with(
+            overlay = self.font_mapper.map_code(
+                "IBM.CH",
+                BlueBorderGlyphCodes.LINE_GLYPH_IBM_FONT_ID.value
+            ).rotate_90().flip(flip_x = True),
+            transparent_mapped_rgb = self._color_black
+        )
+        '''
+        .replace_color(
             # Set background to white (this is the thin white border)
             old_mapped_rgb = self._color_black, 
             new_mapped_rbg = self._color_white
         )
+        '''
+
+
         border_glyphs.top_block_glyph    = border_glyphs.right_block_glyph.rotate_90()
         border_glyphs.left_block_glyph   = border_glyphs.top_block_glyph.rotate_90()
         border_glyphs.bottom_block_glyph = border_glyphs.left_block_glyph.rotate_90()
