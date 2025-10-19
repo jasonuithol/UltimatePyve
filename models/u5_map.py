@@ -37,8 +37,8 @@ class U5Map:
         assert level_index in self._levels.keys(), f"Unknown level_index {level_index} for map {self.name} (known keys={self._levels.keys()})"
         return self._levels[level_index]
 
-    def get_level_indexes(self) -> set[int]:
-        return self._levels.keys()
+    def get_level_indexes(self) -> list[int]:
+        return list(self._levels.keys())
 
     def is_in_bounds(self, coord: Coord) -> bool:
         return self.get_size().is_in_bounds(coord)

@@ -32,13 +32,13 @@ class Vector2(tuple):
     def y(self) -> int: return self[1]
 
     def scale(self, s: int | tuple[int,int]) -> Self:
-        if isinstance(s, int):
-            return self.__class__(self.x * s, self.y * s)
+        if isinstance(s, int) or isinstance(s, float):
+            return self.__class__(int(self.x * s), int(self.y * s))
         elif isinstance(s, tuple) and len(s) >= 2:
             # hope for the best for now.....
             return self.__class__(self.x * s[0], self.y * s[1])
         else:
-            raise NotImplemented(f"Cannot perform Vector2.scale on {s!r}")
+            raise ValueError(f"Cannot perform Vector2.scale on {s!r}")
 
     __mul__ = __rmul__ = scale
 
