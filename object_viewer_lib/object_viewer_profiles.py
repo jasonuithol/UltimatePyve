@@ -2,19 +2,22 @@ import math
 import pygame, base64
 
 from dark_libraries.dark_math import Size
-
 from dark_libraries.registry import Registry
+
 from data.global_registry import GlobalRegistry
 from data.loaders.location_metadata_builder import LocationMetadataBuilder
 from data.loaders.tileset_loader import TileLoader
 from data.loaders.u5_font_loader import U5FontLoader
 from data.loaders.u5_glyph_loader import U5GlyphLoader
 from data.loaders.u5_map_loader import U5MapLoader
+
 from models.data_ovl import DataOVL
 from models.tile import Tile
 from models.u5_glyph import U5Glyph
 from models.u5_map_level import U5MapLevel
+
 from services.surface_factory import SurfaceFactory
+
 from view.display_config import DisplayConfig
 
 display_config = DisplayConfig()
@@ -32,7 +35,7 @@ tile_loader.surface_factory = surface_factory
 
 tile_loader.load_tiles()
 
-MARGIN = 10  # padding around grid
+MARGIN = 20  # padding around grid
 
 
 # Inherit from this to make a custom profile type
@@ -97,35 +100,11 @@ class ViewerProfile[TKey, TValue]:
 
         self.window_size = Size(
             self.viewer_size().w * self.object_scaled_size().w + MARGIN * 2,
-            self.viewer_size().h * self.object_scaled_size().h + MARGIN * 2 + 200
+            self.viewer_size().h * self.object_scaled_size().h + MARGIN * 2
         )
 
         self.screen = pygame.display.set_mode(self.window_size.to_tuple())
-#        pygame.display.set_caption(f"Object Viewer: {self.dropdown_label}")
         pygame.display.set_caption(f"Object Viewer: (initialising)")
-
-        margin_bottom_y = MARGIN + self.viewer_size().h * self.object_scaled_size().h + 5
-
-        # Dropdown geometry
-        dropdown_size = Size(120, 24)
-        self.dropdown_rect = pygame.Rect(
-            MARGIN, 
-            margin_bottom_y, 
-            dropdown_size.w, 
-            dropdown_size.h
-        )
-
-        # Key text label geometry
-        self.key_text_coord = (self.dropdown_rect.right + MARGIN, margin_bottom_y)
-
-        # Button geometry
-        button_size = Size(100, 24)
-        self.button_rect = pygame.Rect(
-            self.window_size.w - button_size.w - MARGIN, 
-            margin_bottom_y, 
-            button_size.w, 
-            button_size.h
-        )
 
 class TileViewerProfile(ViewerProfile[int, Tile]):
     def __init__(self):
@@ -251,7 +230,8 @@ class MapViewerProfile(ViewerProfile[tuple[str,int], U5MapLevel]):
         }
 
         if tile_set:
-            self.current_scale_factor = 0.125
+            # If the maps are too big, make this fraction even smaller (optional: for maximum crispness make the denominator a factor of 2 i.e. 1/16, 1/32)
+            self.current_scale_factor = 1/8
             tile_size = 16
         else:
             self.current_scale_factor = 1
@@ -283,8 +263,8 @@ class MapViewerProfile(ViewerProfile[tuple[str,int], U5MapLevel]):
 
     # size is in objects, not pixels.
     def viewer_size(self) -> Size:
-        width  = max(self.primary_display_size[0] // self.object_scaled_size().w - 1, 1)
-        height = max(self.primary_display_size[1] // self.object_scaled_size().h - 1, 1)
+        width  = max(self.primary_display_size[0] // self.object_scaled_size().w, 1)
+        height = max((self.primary_display_size[1] - 100) // self.object_scaled_size().h, 1)
         return Size(width, height)
     
     def object_count(self) -> int:

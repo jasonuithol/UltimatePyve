@@ -4,8 +4,18 @@ import pygame
 pygame.init()
 pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
 
+def get_object_rect(col: int, row: int) -> pygame.Rect:
+    
+    x = MARGIN + col * active_profile.object_scaled_size().w
+    y = MARGIN + row * active_profile.object_scaled_size().h
+    w,h = active_profile.object_scaled_size().to_tuple()
+
+    return pygame.Rect(x,y,w,h)
+
+
 # Import ViewerProfiles (AFTER pygame.init())
-from object_viewer_profiles import MARGIN, FontViewerProfile, MapViewerProfile, TileViewerProfile, ViewerProfile, tile_loader
+from object_viewer_lib.object_viewer_menu_bar import ObjectViewerMenuBar
+from object_viewer_lib.object_viewer_profiles import MARGIN, FontViewerProfile, MapViewerProfile, TileViewerProfile, ViewerProfile, tile_loader
 
 profiles = list[ViewerProfile]([
     TileViewerProfile(),
@@ -24,69 +34,95 @@ running = True
 pygame.scrap.init()
 font = pygame.font.SysFont(None, 20)
 
+menu_bar = ObjectViewerMenuBar(profiles, font)
+
 while running:
     for event in pygame.event.get():
+
+        go_up = go_down = go_left = go_right = False
+        menu_bar.handle_event(event)
+        active_profile = menu_bar.active
+
         if event.type == pygame.QUIT:
             running = False
+
         elif event.type == pygame.KEYDOWN:
+
             if event.key == pygame.K_ESCAPE:
                 running = False
             elif event.key == pygame.K_RIGHT:
-                active_profile.active_col = (active_profile.active_col + 1) % active_profile.viewer_size().w # GRID_COLS
+                go_right = True
             elif event.key == pygame.K_LEFT:
-                active_profile.active_col = (active_profile.active_col - 1) % active_profile.viewer_size().w # GRID_COLS
+                go_left = True
             elif event.key == pygame.K_DOWN:
-                if active_profile.active_row < active_profile.viewer_size().h - 1:
-                    active_profile.active_row += 1
-                else:
-                    # at bottom of viewport
-                    max_rows = math.ceil(active_profile.object_count() / active_profile.viewer_size().w)
-                    if active_profile.scroll_row + active_profile.viewer_size().h < max_rows:
-                        active_profile.scroll_row += 1
-
+                go_down = True
             elif event.key == pygame.K_UP:
-                if active_profile.active_row > 0:
-                        active_profile.active_row -= 1
-                else:
-                    # at top of viewport
-                    if active_profile.scroll_row > 0:
-                        active_profile.scroll_row -= 1
+                go_up = True
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        elif event.type == pygame.MOUSEWHEEL:
 
-            if active_profile.button_rect.collidepoint(event.pos):
-                base64_ascii = active_profile.base64(active_profile.get_active_index())
-                pygame.scrap.put(pygame.SCRAP_TEXT, base64_ascii.encode("utf-8"))
-                print(f"Copied object {active_profile.get_active_index()} to clipboard (base64)")
-                    
-            elif active_profile.dropdown_rect.collidepoint(event.pos):
-                dropdown_open = not dropdown_open
-            
-            elif dropdown_open:
-                # clicked inside dropdown options
-                clicked_profile: ViewerProfile = None
-                for i, profile in enumerate(profiles):
-                    option_rect = pygame.Rect(
-                        active_profile.dropdown_rect.x, 
-                        active_profile.dropdown_rect.y + (i + 1) * active_profile.dropdown_rect.h, 
-                        active_profile.dropdown_rect.w, 
-                        active_profile.dropdown_rect.h
-                    )
-                    if option_rect.collidepoint(event.pos):
-                        clicked_profile = profile
-                        break
+            mods = pygame.key.get_mods()
+            shift_held = mods & (pygame.KMOD_LSHIFT | pygame.KMOD_RSHIFT)
 
-                if clicked_profile:
-                    for profile in profiles:
-                        # Dispose of old screen surfaces.
-                        profile.screen = None
-                    active_profile = clicked_profile
-                    active_profile.initialise_components()
-                    dropdown_open = False
+            if shift_held:
+                if event.y == 1:
+                    go_left = True
+                elif event.y == -1:
+                    go_right = True
+                
+            else:
+                if event.y == 1:
+                    go_up = True
+                elif event.y == -1:
+                    go_down = True
+
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # left click
+            # convert mouse coords to tile indices
+            mx, my = event.pos
+            col = (mx - MARGIN) // active_profile.object_scaled_size().w
+            row = (my - MARGIN) // active_profile.object_scaled_size().h
+
+            # check that a valid tile was clicked and not like the margin or something else.
+            if 0 <= col < active_profile.viewer_size().w and 0 <= row < active_profile.viewer_size().h:
+                active_profile.active_col = col
+                active_profile.active_row = row
+
+        if go_up:
+            if active_profile.active_row > 0:
+                    active_profile.active_row -= 1
+            else:
+                # at top of viewport
+                if active_profile.scroll_row > 0:
+                    active_profile.scroll_row -= 1
+
+        elif go_down:
+            if active_profile.active_row < active_profile.viewer_size().h - 1:
+                active_profile.active_row += 1
+            else:
+                # at bottom of viewport
+                max_rows = math.ceil(active_profile.object_count() / active_profile.viewer_size().w)
+                if active_profile.scroll_row + active_profile.viewer_size().h < max_rows:
+                    active_profile.scroll_row += 1
+
+        elif go_left:
+            active_profile.active_col = (active_profile.active_col - 1) % active_profile.viewer_size().w # GRID_COLS
+
+        elif go_right:
+            active_profile.active_col = (active_profile.active_col + 1) % active_profile.viewer_size().w # GRID_COLS
+
+
 
         pygame.display.set_caption(f"Object Viewer: {active_profile.dropdown_label} | {active_profile.object_label(active_profile.get_active_index())}")
 
+    # ----------------------
+    #
+    # DRAWING
+    #
+    # ----------------------
+
     active_profile.screen.fill((30, 30, 30))
+
+    menu_bar.draw(active_profile.screen)
 
     # Draw objects in grid
     for row in range(active_profile.viewer_size().h):
@@ -110,43 +146,5 @@ while running:
         cursor_x, cursor_y, active_profile.object_scaled_size().w, active_profile.object_scaled_size().h
     )
     pygame.draw.rect(active_profile.screen, (255, 0, 0), cursor_rect, width=3)
-
-    text_surf = font.render(
-        f"Key: {active_profile.object_label(active_profile.get_active_index())}", 
-        True, # antialias
-        (255, 255, 255)
-    )
-    active_profile.screen.blit(text_surf, active_profile.key_text_coord)
-
-    # --- Draw dropdown ---
-    # Draw the closed dropdown box
-    pygame.draw.rect(active_profile.screen, (50, 50, 50), active_profile.dropdown_rect)
-    pygame.draw.rect(active_profile.screen, (200, 200, 200), active_profile.dropdown_rect, 2)
-
-    # Label for the currently active profile
-    label = font.render(active_profile.dropdown_label, True, (255, 255, 255))
-    active_profile.screen.blit(label, (active_profile.dropdown_rect.x + 5,
-                                    active_profile.dropdown_rect.y + 5))
-
-    # If dropdown is open, draw the options
-    if dropdown_open:
-        for i, profile in enumerate(profiles):
-            option_rect = pygame.Rect(
-                active_profile.dropdown_rect.x,
-                active_profile.dropdown_rect.y + (i + 1) * active_profile.dropdown_rect.h,
-                active_profile.dropdown_rect.w,
-                active_profile.dropdown_rect.h
-            )
-            pygame.draw.rect(active_profile.screen, (70, 70, 70), option_rect)
-            pygame.draw.rect(active_profile.screen, (200, 200, 200), option_rect, 1)
-            opt_label = font.render(profile.dropdown_label, True, (255, 255, 255))
-            active_profile.screen.blit(opt_label, (option_rect.x + 5, option_rect.y + 5))
-
-    # Draw copy button
-    pygame.draw.rect(active_profile.screen, (0, 0, 0), active_profile.button_rect)
-    pygame.draw.rect(active_profile.screen, (255, 0, 0), active_profile.button_rect, width=2)
-    btn_label = font.render("Copy Base64", True, (255, 255, 255))
-    label_rect = btn_label.get_rect(center=active_profile.button_rect.center)
-    active_profile.screen.blit(btn_label, label_rect)
 
     pygame.display.flip()
