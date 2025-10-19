@@ -163,7 +163,7 @@ class FontViewerProfile(ViewerProfile[tuple[str,int], U5Glyph]):
         print(f"Loaded {__class__.__name__} as {self.dropdown_label}")
 
     def default_scale_factor(self) -> int:
-        return 4
+        return 8
 
     # in un-scaled pixels
     def object_size(self) -> Size:
@@ -171,7 +171,7 @@ class FontViewerProfile(ViewerProfile[tuple[str,int], U5Glyph]):
 
     # size is in objects, not pixels.
     def viewer_size(self) -> Size:
-        width = 32
+        width = 16
         return Size(width, math.ceil(self.object_count() / width))
     
     def object_count(self) -> int:
@@ -184,6 +184,30 @@ class FontViewerProfile(ViewerProfile[tuple[str,int], U5Glyph]):
         else:
             return None
     
+    def get_scaled_object_surface(self, object_index: int) -> pygame.Surface:
+        unscaled_surface = self.get_unscaled_object_surface(object_index)
+        if unscaled_surface:
+            scaled_surface = pygame.transform.scale(
+                unscaled_surface,
+                (self.object_size() * self.current_scale_factor).to_tuple()
+            )
+
+            grid_color_major = (0, 255, 0)
+            grid_color_minor = (0, 128, 0)
+
+            for x in range(self.current_scale_factor, self.object_scaled_size().w, self.current_scale_factor):
+                pygame.draw.line(scaled_surface, grid_color_minor, (x, 0), (x, self.object_scaled_size().h))
+
+            for y in range(self.current_scale_factor, self.object_scaled_size().h, self.current_scale_factor):
+                pygame.draw.line(scaled_surface, grid_color_minor, (0, y), (self.object_scaled_size().w, y))
+
+            pygame.draw.line(scaled_surface, grid_color_major, (0, 0), (0, self.object_scaled_size().h))
+            pygame.draw.line(scaled_surface, grid_color_major, (0, 0), (self.object_scaled_size().w, 0))
+
+            return scaled_surface
+        else:
+            return None
+        
     # Returns ASCII string
     def base64(self, object_index: int) -> str:
 

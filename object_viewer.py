@@ -31,7 +31,9 @@ active_profile.initialise_components()
 dropdown_open = False
 running = True
 
+# Clipboard Manager
 pygame.scrap.init()
+
 font = pygame.font.SysFont(None, 20)
 
 menu_bar = ObjectViewerMenuBar(profiles, font)
@@ -86,6 +88,13 @@ while running:
             if 0 <= col < active_profile.viewer_size().w and 0 <= row < active_profile.viewer_size().h:
                 active_profile.active_col = col
                 active_profile.active_row = row
+
+                # Copy the key of the object into the clipboard.
+                clicked_ix = active_profile.get_active_index()
+                if not clicked_ix is None:
+                    clicked_key = active_profile.object_label(clicked_ix)
+                    if not clicked_key is None:
+                        pygame.scrap.put(pygame.SCRAP_TEXT, clicked_key.encode("utf-8"))
 
         if go_up:
             if active_profile.active_row > 0:
