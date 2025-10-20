@@ -32,7 +32,7 @@ class PartyAgent(NpcAgent):
 
     location_stack = list[GlobalLocation]()
     party_members  = list[PartyMemberAgent]()
-    active_member_index: int = None
+    _active_member_index: int = None
 
     # options: walk, horse, carpet, skiff, ship
     transport_mode: int = None
@@ -49,12 +49,17 @@ class PartyAgent(NpcAgent):
     # Party Members
     #
 
-    @property
-    def active_member(self) -> PartyMemberAgent | None:
-        if self.active_member_index is None:
+    def get_active_member_index(self) -> int | None:
+        return self._active_member_index
+
+    def get_active_member(self) -> PartyMemberAgent | None:
+        if self._active_member_index is None:
             return None
         else:
-            return self.party_members[self.active_member_index]
+            return self.party_members[self._active_member_index]
+
+    def set_active_member(self, active_member_index: int):
+        self._active_member_index = active_member_index
 
     def add_member(self, party_member_agent: PartyMemberAgent):
         assert len(self.party_members) < 6, f"Cannot add any more members, already have {len(self.party_members)}"
@@ -64,10 +69,16 @@ class PartyAgent(NpcAgent):
         assert len(self.party_members) > 1, f"Cannot remove any more members, only have {len(self.party_members)}"
         self.party_members.append(party_member_agent)
 
-    def get_party_members(self):
+    def get_party_members(self) -> list[PartyMemberAgent]:
         return self.party_members
 
-    def get_party_members_in_combat(self):
+    def get_party_count(self) -> int:
+        return len(self.party_members)
+
+    def get_party_member(self, party_member_index: int) -> PartyMemberAgent:
+        return self.party_members[party_member_index]
+
+    def get_party_members_in_combat(self) -> list[PartyMemberAgent]:
         return [party_member for party_member in self.party_members if party_member.is_in_combat()]
 
     # NPC_AGENT IMPLEMENTATION: start

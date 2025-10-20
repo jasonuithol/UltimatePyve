@@ -3,8 +3,10 @@ from typing   import Iterable
 
 import pygame
 
+from controllers.active_member_controller import ActiveMemberController
 from controllers.combat_controller import CombatController
 from controllers.move_controller import MoveController, MoveOutcome
+from controllers.ready_controller import ReadyController
 from dark_libraries.dark_events import DarkEventService
 from dark_libraries.dark_math   import Vector2
 from dark_libraries.logging     import LoggerMixin
@@ -46,6 +48,8 @@ class PartyController(LoggerMixin):
 
     combat_controller:  CombatController
     move_controller:    MoveController
+    active_member_controller: ActiveMemberController
+    ready_controller: ReadyController
 
 
     def _after_inject(self):
@@ -81,6 +85,9 @@ class PartyController(LoggerMixin):
     def dispatch_input(self) -> bool:
         
         event = self.main_loop_service.get_next_event()
+
+        self.active_member_controller.handle_event(event)
+        self.ready_controller.handle_event(event)
 
         if event.type == pygame.QUIT:
             self._is_running = False

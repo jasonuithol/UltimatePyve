@@ -5,6 +5,7 @@ from models.enums.ega_palette_values import EgaPaletteValues
 
 from services.font_mapper import FontMapper
 from services.world_clock import CelestialGlyphCodes, WorldClock
+from view.info_panel import InfoPanel
 
 from .border_drawer import BorderDrawer
 from .display_config import DisplayConfig
@@ -17,9 +18,10 @@ class MainDisplay(ScalableComponent):
     display_config:  DisplayConfig
     world_clock:     WorldClock
     font_mapper:     FontMapper
+    info_panel:      InfoPanel
 
     def __init__(self):
-        pass 
+        pass
 
     def _after_inject(self):
         vp_w, vp_h = (self.display_config.VIEW_PORT_SIZE * self.display_config.TILE_SIZE).to_tuple()
@@ -78,7 +80,7 @@ class MainDisplay(ScalableComponent):
         char_x_middle = self.viewport_width_in_glyphs + 1
         char_x_right  = self.size_in_glyphs.w - 1
 
-        char_y_info_panel = self.display_config.INFO_PANEL_SIZE.h + 1
+        char_y_info_panel = self.display_config.INFO_PANEL_SIZE.h
         char_y_bottom = self.size_in_glyphs.h - 1
 
         # Blue borders - vertical
@@ -92,9 +94,8 @@ class MainDisplay(ScalableComponent):
         drawer.top   (x_range_full,             0)
         drawer.bottom(x_range_full, char_y_bottom)
 
-        x_range_middle_to_right = list(range(char_x_middle, char_x_right))
-        drawer.vertical(x_range_middle_to_right, char_y_info_panel) # the glyph is vertical, the line is horizontal
-
+#        x_range_middle_to_right = list(range(char_x_middle, char_x_right))
+#        drawer.vertical(x_range_middle_to_right, char_y_info_panel) # the glyph is vertical, the line is horizontal
 
         # corners
         drawer.top_left    (           0,             0)
@@ -107,6 +108,10 @@ class MainDisplay(ScalableComponent):
         drawer.junction(char_x_middle,      char_y_bottom )
         drawer.right   (char_x_middle, [char_y_info_panel])
         drawer.junction(char_x_right ,  char_y_info_panel )
+
+        if self.info_panel.split_info_panel:
+            drawer.right   (char_x_middle, [char_y_info_panel - 3])
+            drawer.junction(char_x_right ,  char_y_info_panel - 3 )
 
         # prompts - celestial
         drawer.right_prompt(self.celestial_char_offset, 0)

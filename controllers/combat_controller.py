@@ -1,6 +1,7 @@
 import pygame
 import random
 
+from controllers.active_member_controller import ActiveMemberController
 from controllers.move_controller import MoveController
 
 from dark_libraries.dark_events import DarkEventService
@@ -67,6 +68,7 @@ class CombatController(LoggerMixin):
     dark_event_service: DarkEventService
     display_service: DisplayService
     move_controller: MoveController
+    active_member_controller: ActiveMemberController
 
     _last_attacked_monster = dict[str, MonsterAgent]()
 
@@ -123,6 +125,9 @@ class CombatController(LoggerMixin):
             self.log("DEBUG: Wait command received")
             party_member.spend_action_quanta()
             return IN_COMBAT
+
+        # Active member selection
+        self.active_member_controller.handle_event(event)
 
         # Attack dispatch handler
         if event.key == pygame.K_a:

@@ -24,10 +24,10 @@ class DisplayConfig:
     # ================================================================================
 
     VIEW_PORT_SIZE  = Size(17, 17) # In tiles       (which are themselves 16x16 by default, unless changed in TILE_SIZE)
-    INFO_PANEL_SIZE = Size(32,  6)   # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
+    INFO_PANEL_SIZE = Size(32, 10) # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
     
     # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
-    CONSOLE_SIZE = Size(INFO_PANEL_SIZE.w, VIEW_PORT_SIZE.h * 2 - INFO_PANEL_SIZE.h - 3) 
+    CONSOLE_SIZE = Size(INFO_PANEL_SIZE.w, VIEW_PORT_SIZE.h * 2 - INFO_PANEL_SIZE.h) 
 
     #
     # TODO: Right now we do NOT take advantage of the fact we can create 8-bit (or other) surfaces and then provide them a palette, or frankly

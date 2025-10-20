@@ -4,6 +4,7 @@ from typing import Self
 
 from dark_libraries.custom_decorators import immutable
 from dark_libraries.dark_math import Coord
+from models.enums.ega_palette_values import EgaPaletteValues
 
 @immutable
 class U5Glyph:
@@ -48,5 +49,19 @@ class U5Glyph:
         new_glyph = self.copy()
         pa = pygame.PixelArray(new_glyph._surface)
         pa.replace(old_mapped_rgb, new_mapped_rbg)
+        del pa
+        return new_glyph
+    
+    def invert_colors(self) -> Self:
+        new_glyph = self.copy()
+        white = self._surface.map_rgb(EgaPaletteValues.White.value)
+        black = self._surface.map_rgb(EgaPaletteValues.Black.value)
+        pa = pygame.PixelArray(new_glyph._surface)
+        for y in range(self._surface.get_height()):
+            for x in range(self._surface.get_width()):
+                if pa[x,y] == white:
+                    pa[x,y] = black
+                else:
+                    pa[x,y] = white
         del pa
         return new_glyph

@@ -58,14 +58,6 @@ class BlueBorderGlyphFactory(LoggerMixin):
             ).rotate_90().flip(flip_x = True),
             transparent_mapped_rgb = self._color_black
         )
-        '''
-        .replace_color(
-            # Set background to white (this is the thin white border)
-            old_mapped_rgb = self._color_black, 
-            new_mapped_rbg = self._color_white
-        )
-        '''
-
 
         border_glyphs.top_block_glyph    = border_glyphs.right_block_glyph.rotate_90()
         border_glyphs.left_block_glyph   = border_glyphs.top_block_glyph.rotate_90()

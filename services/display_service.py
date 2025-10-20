@@ -68,6 +68,9 @@ class DisplayService(LoggerMixin):
         del self._cursors[cursor_type]
         self.log(f"Removed cursor {cursor_type}")
 
+    def highlight_party_member(self, party_member_index: int):
+        self.info_panel.set_highlighted_member(party_member_index)
+
     #
     # TODO: move to ViewPortDataProvider
     #
@@ -178,7 +181,7 @@ class DisplayService(LoggerMixin):
         ic_scaled_surface = self.interactive_console.get_output_surface()
         ic_scaled_pixel_offset = (
             right_hand_element_x, 
-            vp_scaled_surface.get_height() - ic_scaled_surface.get_height()
+            self.main_display.scaled_size().h - self.interactive_console.scaled_size().h - scaled_border_thiccness
         )
         self.screen.blit(ic_scaled_surface, ic_scaled_pixel_offset)
 
