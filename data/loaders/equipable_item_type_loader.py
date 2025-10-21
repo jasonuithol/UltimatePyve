@@ -104,32 +104,32 @@ class EquipableItemTypeLoader(LoggerMixin):
             slot = EquipableItemSlot.TWO_HAND if two_handed else EquipableItemSlot.ONE_HAND
             build_item(description_index, short_index, dra_values_index, slot, EquipableItemTileId.WEAPON, rune_id)
 
-        build_weapon((2,  4), None, 16) # Dagger	        2	4	None
-        build_weapon((2,  6), None, 17) # Sling	            2 	6	None
-        build_weapon((2,  7), None, 18) # Club	            2	7	None
-        build_weapon((1,  0),   13, 19) # Flaming Oil	    1	0	  13
-        build_weapon((1,  1),   14, 20) # Main Gauche	    1	1	  14
-        build_weapon((2,  9), None, 21) # Spear	            2	9	None
-        build_weapon((1,  2),   15, 22) # Throwing Axe	    1	2	  15
-        build_weapon((1,  3),   16, 23) # Short Sword	    1	3	  16
-        build_weapon((2, 10), None, 24) # Mace	            2	10	None
-        build_weapon((1,  4),   17, 25) # Morning Star	    1	4	  17
-        build_weapon((2, 12), None, 26) # Bow	            2	12	None
+        build_weapon((2,  4), None, 16)                    # Dagger
+        build_weapon((2,  6), None, 17, two_handed = True) # Sling
+        build_weapon((2,  7), None, 18)                    # Club
+        build_weapon((1,  0),   13, 19, two_handed = True) # Flaming Oil
+        build_weapon((1,  1),   14, 20)                    # Main Gauche
+        build_weapon((2,  9), None, 21)                    # Spear
+        build_weapon((1,  2),   15, 22)                    # Throwing Axe
+        build_weapon((1,  3),   16, 23)                    # Short Sword
+        build_weapon((2, 10), None, 24)                    # Mace
+        build_weapon((1,  4),   17, 25)                    # Morning Star
+        build_weapon((2, 12), None, 26, two_handed = True) # Bow
 
-        build_weapon((2, 15), None, 28) # Crossbow	        2	15	None
+        build_weapon((2, 15), None, 28, two_handed = True) # Crossbow
 
-        build_weapon((2, 19), None, 30) # Long Sword	    2	19	None
-        build_weapon((2, 21), None, 31) # 2H Hammer	        2	21	None
-        build_weapon((2, 22), None, 32) # 2H Axe	        2	22	None
-        build_weapon((2, 24), None, 33) # 2H Sword	        2	24	None
-        build_weapon((2, 26), None, 34) # Halberd	        2	26	None
-        build_weapon((1,  5),   18, 35) # Chaos Sword	    1	5	  18
-        build_weapon((2, 27), None, 36) # Magic Bow	        2	27	None
-        build_weapon((1,  6),   19, 37) # Silver Sword	    1	6	  19
-        build_weapon((2, 28), None, 38) # Magic Axe	        2	28	None
-        build_weapon((1,  7),   20, 39) # Glass Sword	    1	7	  20
-        build_weapon((1,  8),   21, 40) # Jewelled Sword	1	8	  21
-        build_weapon((1,  9),   22, 41) # Mystic Sword	    1	9	  22
+        build_weapon((2, 19), None, 30)                    # Long Sword
+        build_weapon((2, 21), None, 31, two_handed = True) # 2H Hammer
+        build_weapon((2, 22), None, 32, two_handed = True) # 2H Axe
+        build_weapon((2, 24), None, 33, two_handed = True) # 2H Sword
+        build_weapon((2, 26), None, 34, two_handed = True) # Halberd
+        build_weapon((1,  5),   18, 35)                    # Chaos Sword
+        build_weapon((2, 27), None, 36, two_handed = True) # Magic Bow
+        build_weapon((1,  6),   19, 37)                    # Silver Sword
+        build_weapon((2, 28), None, 38)                    # Magic Axe
+        build_weapon((1,  7),   20, 39)                    # Glass Sword
+        build_weapon((1,  8),   21, 40)                    # Jewelled Sword
+        build_weapon((1,  9),   22, 41)                    # Mystic Sword
 
         #
         # TODO: RINGS AND AMULETS
@@ -147,7 +147,7 @@ class EquipableItemTypeLoader(LoggerMixin):
 
         build_amulet((3, 3),None,45,EquipableItemRuneId.AMULET) # Amulet of Turning
         build_amulet((3, 4),None,46,EquipableItemRuneId.AMULET) # Spiked Collar
-        build_amulet((2,29),None,47,EquipableItemRuneId.ANKH) # Ankh 
+        build_amulet((2,29),None,47,EquipableItemRuneId.ANKH)   # Ankh 
 
         after = len(self.global_registry.item_types)
         self.log(f"Registered {after - before} equipable item types.")
