@@ -1,10 +1,30 @@
+'''
+from typing import Iterable
 from dark_libraries.logging import LoggerMixin
 from models.enums.inventory_offset import InventoryOffset
+from models.saved_game import SavedGame
 
 class PartyInventory(LoggerMixin):
+
     def __init__(self):
         super().__init__()
         self.inventory: dict[InventoryOffset,int] = {}
+
+    def load(self, saved_game: SavedGame):
+
+        """
+        u16s = [
+            InventoryOffset.FOOD,
+            InventoryOffset.GOLD
+        ]
+        """
+        
+        for inventory_offset in InventoryOffset:
+            property_name = inventory_offset.name.lower()
+            getter, _ = getattr(saved_game, property_name)
+            value = getter()
+            self.inventory[inventory_offset] = value
+            self.log(f"DEBUG: Loaded {value} {property_name}s into the party inventory")
 
     def add(self, inventory_offset: InventoryOffset, additional_qty: int):
         current_qty = self.inventory.get(inventory_offset, 0)
@@ -15,9 +35,19 @@ class PartyInventory(LoggerMixin):
     def get_quantity(self, inventory_offset: InventoryOffset):
         return self.inventory.get(inventory_offset, 0)
     
+    def items(self) -> Iterable[tuple[InventoryOffset,int]]:
+        return self.inventory.items()
+
+    def owned_items(self) -> Iterable[tuple[InventoryOffset,int]]:
+        return [
+            (inventory_offset, count)
+            for inventory_offset, count in self.inventory.items()
+            if count > 0
+        ]
+
     def __iter__(self):
         yield from self.inventory
 
     def __len__(self):
         return len(self.inventory)
-    
+'''

@@ -140,7 +140,7 @@ class InventoryOffset(Enum):
     IN_MANI_CORP_SCROLL = 0x280
     AN_TYM_SCROLL = 0x281
 
-    # blue potion
+    # potion
     BLUE_POTION = 0x282
     YELLOW_POTION = 0x283
     RED_POTION = 0x284

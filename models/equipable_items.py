@@ -14,6 +14,7 @@ class EquipableItemType(ItemType):
     attack:     int
     slot:       EquipableItemSlot
     rune_id:    EquipableItemRuneId
+    
 
 
 

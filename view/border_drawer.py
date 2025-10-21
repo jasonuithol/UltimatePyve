@@ -31,10 +31,9 @@ class BorderDrawer:
             [(x,y) for y in y_range]
         )
 
-    # The glyph is horizontal.  It's drawn in a vertical line.
-    def horizontal(self, x: int, y_range: Iterable[int]):
+    def vertical(self, x: int, y_range: Iterable[int]):
         self._blit(
-            self._glyphs.horizontal_block,
+            self._glyphs.vertical_block,
             [(x,y) for y in y_range]
         )
 
@@ -50,10 +49,9 @@ class BorderDrawer:
             [(x,y) for x in x_range]
         )
 
-    # The glyph is vertical.  It's drawn in a horizontal line.
-    def vertical(self, x_range: range, y: int):
+    def horizontal(self, x_range: range, y: int):
         self._blit(
-            self._glyphs.vertical_block,
+            self._glyphs.horizontal_block,
             [(x,y) for x in x_range]
         )
 
@@ -77,3 +75,6 @@ class BorderDrawer:
 
     def right_prompt(self, x: int, y: int):
         self._blit_at(self._glyphs.right_prompt_glyph, x, y)
+
+    def draw_glyph(self, glyph: U5Glyph, x: int, y: int):
+        self._blit_at(glyph, x, y)

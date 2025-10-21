@@ -17,11 +17,11 @@ class ScrollBorderGlyphFactory(LoggerMixin):
     global_registry: GlobalRegistry
 
     def load(self):
-        self.global_registry.blue_border_glyphs = self._create_border_glyphs()
-        self.log("Built blue border glyphs.")
+        self.global_registry.scroll_border_glyphs = self._create_border_glyphs()
+        self.log("Built scroll border glyphs.")
 
     def _glyph(self, glyph_code: int):
-        return self.global_registry.font_glyphs.get("RUNES.CH", glyph_code)
+        return self.global_registry.font_glyphs.get(("RUNES.CH", glyph_code))
 
     def _create_border_glyphs(self) -> BorderGlyphs:
 
@@ -33,10 +33,10 @@ class ScrollBorderGlyphFactory(LoggerMixin):
         border_glyphs.right_block_glyph  = self._glyph(SIDE)
         border_glyphs.vertical_block     = self._glyph(SIDE)
 
-        border_glyphs.top_left_cnr_glyph    = self._glyph(TOP_LEFT)
-        border_glyphs.top_right_cnr_glyph   = self._glyph(TOP_RIGHT)
-        border_glyphs.bottom_left_cnr_glyph = self._glyph(BOT_LEFT)
-        border_glyphs.bottom_left_cnr_glyph = self._glyph(BOT_RIGHT)
+        border_glyphs.top_left_cnr_glyph     = self._glyph(TOP_LEFT)
+        border_glyphs.top_right_cnr_glyph    = self._glyph(TOP_RIGHT)
+        border_glyphs.bottom_left_cnr_glyph  = self._glyph(BOT_LEFT)
+        border_glyphs.bottom_right_cnr_glyph = self._glyph(BOT_RIGHT)
 
         return border_glyphs
     

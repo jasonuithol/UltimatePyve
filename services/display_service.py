@@ -46,8 +46,6 @@ class DisplayService(LoggerMixin):
 
     def init(self):
 
-        self.main_display.init()
-
         self.screen = pygame.display.set_mode(
             size  = self.main_display.scaled_size().to_tuple(),
             flags = pygame.SCALED | pygame.DOUBLEBUF, 
@@ -67,9 +65,6 @@ class DisplayService(LoggerMixin):
     def remove_cursor(self, cursor_type: int):
         del self._cursors[cursor_type]
         self.log(f"Removed cursor {cursor_type}")
-
-    def highlight_party_member(self, party_member_index: int):
-        self.info_panel.set_highlighted_member(party_member_index)
 
     #
     # TODO: move to ViewPortDataProvider
@@ -170,7 +165,7 @@ class DisplayService(LoggerMixin):
         ip_scaled_surface = self.info_panel.get_output_surface()
         ip_scaled_pixel_offset = (
             right_hand_element_x, 
-            scaled_border_thiccness
+            0
         )
         self.screen.blit(ip_scaled_surface, ip_scaled_pixel_offset)
 

@@ -9,6 +9,7 @@ from data.loaders.entry_trigger_loader  import EntryTriggerLoader
 from data.loaders.npc_metadata_loader   import NpcMetadataLoader
 from data.loaders.save_game_loader      import SavedGameLoader
 
+from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
 from data.loaders.tileset_loader        import TileLoader
 from data.loaders.terrain_loader        import TerrainLoader
 from data.loaders.transport_mode_loader import TransportModeLoader
@@ -63,6 +64,7 @@ class GlobalRegistryLoader(LoggerMixin):
     saved_game_loader:           SavedGameLoader
 
     blue_border_glyph_factory:   BlueBorderGlyphFactory
+    scroll_border_glyph_factory: ScrollBorderGlyphFactory
 
     modding: ModdingService
 
@@ -98,6 +100,7 @@ class GlobalRegistryLoader(LoggerMixin):
         self.u5_font_loader.register_fonts()
         self.u5_glyph_loader.register_glyphs()
         self.blue_border_glyph_factory.load()
+        self.scroll_border_glyph_factory.load()
 
         # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
         #       one day maybe even the avatar's transports could be these ?

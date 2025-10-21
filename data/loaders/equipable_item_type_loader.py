@@ -39,7 +39,14 @@ class EquipableItemTypeLoader(LoggerMixin):
         range_values    = DataOVL.to_ints(self.dataOvl.range_values)
         attack_values   = DataOVL.to_ints(self.dataOvl.attack_values)        
 
-        def build_item(description_index: tuple[int,int], short_index: int, dra_values_index: int, slot: EquipableItemSlot, tile_id: EquipableItemTileId, rune_id: EquipableItemRuneId):
+        def build_item(
+                        description_index: tuple[int,int], 
+                        short_index:       int, 
+                        dra_values_index:  int, 
+                        slot:              EquipableItemSlot, 
+                        tile_id:           EquipableItemTileId, 
+                        rune_id:           EquipableItemRuneId
+                      ):
 
             inventory_offset_value = dra_values_index + InventoryOffset.LEATHER_HELM.value
             inventory_offset = InventoryOffset(inventory_offset_value)

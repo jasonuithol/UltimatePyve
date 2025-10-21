@@ -1,56 +1,91 @@
+from datetime import datetime
 from pathlib import Path
-from typing import Callable, List, Tuple
 
+from dark_libraries.dark_math import Coord
 from models.character_record import CharacterRecord
+from models.enums.inventory_offset import InventoryOffset
+from models.global_location import GlobalLocation
 
 class SavedGame:
 
-    def init(self, raw: bytearray, save_path: Path):
+    def __init__(self, raw: bytearray, save_path: Path):
         self.path = save_path
         self.raw = raw  # mutable buffer
 
-        def field(offset: int, length: int) -> Tuple[Callable[[], bytes], Callable[[bytes], None]]:
-            """Return getter/setter for a fixed-length field in the buffer."""
-            def getter():
-                return self.raw[offset:offset+length]
-            def setter(value: bytes):
-                if len(value) != length:
-                    raise ValueError(f"Expected {length} bytes, got {len(value)}")
-                self.raw[offset:offset+length] = value
-            return getter, setter
+    def read_u8(self, offset: int) -> int:
+        if isinstance(offset, InventoryOffset):
+            offset = offset.value
+        return self.raw[offset]
 
-        def field_u8(offset: int) -> Tuple[Callable[[], int], Callable[[int], None]]:
-            """Return getter/setter for a single byte as int."""
-            def getter():
-                return self.raw[offset]
-            def setter(value: int):
-                if not (0 <= value <= 255):
-                    raise ValueError("Byte value out of range")
-                self.raw[offset] = value
-            return getter, setter
+    def write_u8(self, offset: int, value: int):
+        assert value < 256, f"Cannot write value {value} to u8 storage"
+        if isinstance(offset, InventoryOffset):
+            offset = offset.value
+        self.raw[offset] = value
 
-        def field_u16(offset: int) -> Tuple[Callable[[], int], Callable[[int], None]]:
-            """Return getter/setter for a 2-byte little-endian int."""
-            def getter():
-                return int.from_bytes(self.raw[offset:offset+2], 'little')
-            def setter(value: int):
-                self.raw[offset:offset+2] = value.to_bytes(2, 'little')
-            return getter, setter
+    def read_u16(self, offset: int) -> int:
+        return int.from_bytes(self.raw[offset : offset + 2], 'little')
 
-        # Character records
-        self.characters: list[CharacterRecord] = []
-        base = 0x0002
-        for i in range(16):
-            self.characters.append(CharacterRecord(self.raw, base + i * CharacterRecord.LENGTH))
+    def write_u16(self, offset: int, value: int):
+        assert value < 65536, f"Cannot write value {value} to u16 storage"
+        self.raw[offset:offset+2] = value.to_bytes(2, 'little')
 
-        '''
-        # --- Character records (16 × 32 bytes) ---
-        self.character_records: List[Tuple[Callable[[], bytes], Callable[[bytes], None]]] = []
-        base = 0x0002
-        for i in range(16):
-            self.character_records.append(field(base + i*32, 32))
-        '''    
+    def create_character_record(self, character_record_index: int) -> CharacterRecord:
+        assert character_record_index < 16, f"Expected index < 16, got {character_record_index}"
+        offset = 0x0002 + character_record_index * 32
+        return CharacterRecord(self.raw, offset)
 
+    def read_party_member_count(self) -> int:
+        return self.read_u8(0x02B5)
+
+    def write_party_member_count(self, value: int) -> int:
+        return self.write_u8(0x02B5, value)
+
+    def read_party_location(self) -> GlobalLocation:
+        return GlobalLocation(
+            location_index = self.read_u8(0x02ED),
+            level_index    = self.read_u8(0x02EF),
+            coord          = Coord(self.read_u8(0x02F0), self.read_u8(0x02F1))
+        )
+
+    def write_party_location(self, party_location: GlobalLocation):
+        self.write_u8(0x02ED ,party_location.location_index)
+        self.write_u8(0x02EF ,party_location.level_index)
+        x, y = party_location.coord
+        self.write_u8(0x02F0, x)
+        self.write_u8(0x02F1, y)
+
+    def read_current_datetime(self) -> datetime:
+        return datetime(
+            year   = self.read_u8(0x02CE), 
+            month  = self.read_u8(0x02D7), 
+            day    = self.read_u8(0x02D8), 
+            hour   = self.read_u8(0x02D9), 
+            minute = self.read_u8(0x02DB)
+        )
+        
+    def write_current_datetime(self, value: datetime):
+        self.write_u8(0x02CE, value.year  ) 
+        self.write_u8(0x02D7, value.month ) 
+        self.write_u8(0x02D8, value.day   ) 
+        self.write_u8(0x02D9, value.hour  ) 
+        self.write_u8(0x02DB, value.minute)
+
+    def read_equipable_item_quantity(self, dra_index: int) -> int:
+        assert dra_index < 112, f"Expected index < 112, got {dra_index}"
+        offset = 0x021A
+        return self.read_u8(offset + dra_index)
+
+    def write_equipable_item_quantity(self, dra_index: int, quantity: int):
+        assert dra_index < 112, f"Expected index < 112, got {dra_index}"
+
+        # It's recommended to read this in Shrek's voice, or Fat Bastard's.
+        assert quantity < 100, "In this game, you cannae hold 100 or more things of the same type of thing (except gold and food, which need u16 stores, and are NOT EQUIPABLE ITEMS)"
+
+        offset = 0x021A
+        self.write_u8(offset + dra_index, quantity)
+
+    '''
         # --- Party resources ---
         self.food = field_u16(0x0202)
         self.gold = field_u16(0x0204)
@@ -63,12 +98,12 @@ class SavedGame:
         self.last_day_minoc_skull_keys_taken = field_u8(0x020C)
 
         # --- Quest items / special flags ---
-        self.amulet_lord_british = field_u8(0x020D)
-        self.crown_lord_british = field_u8(0x020E)
-        self.sceptre_lord_british = field_u8(0x020F)
-        self.shard_falsehood = field_u8(0x0210)
-        self.shard_hatred = field_u8(0x0211)
-        self.shard_cowardice = field_u8(0x0212)
+        self.amulet_of_lord_british = field_u8(0x020D)
+        self.crown_of_lord_british = field_u8(0x020E)
+        self.sceptre_of_lord_british = field_u8(0x020F)
+        self.shard_of_falsehood = field_u8(0x0210)
+        self.shard_of_hatred = field_u8(0x0211)
+        self.shard_of_cowardice = field_u8(0x0212)
         self.unknown_213 = field_u8(0x0213)
         self.spy_glasses = field_u8(0x0214)
         self.hms_cape_plans = field_u8(0x0215)
@@ -229,3 +264,4 @@ class SavedGame:
         """Write the current buffer back to file."""
         target = path or self.path
         target.write_bytes(self.raw)
+    '''

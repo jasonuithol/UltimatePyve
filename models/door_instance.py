@@ -3,12 +3,12 @@ import random
 from dark_libraries.dark_math        import Coord
 from dark_libraries.service_provider import ServiceProvider
 
+from data.global_registry import GlobalRegistry
 from models.door_type        import DoorType
 from models.enums.door_type_tile_id import DoorTypeTileId
 from models.global_location import GlobalLocation
 from models.magic            import S_MAGIC_UNLOCK
 from models.enums.inventory_offset  import InventoryOffset
-from models.party_inventory  import PartyInventory
 from models.move_into_result import MoveIntoResult
 from models.interactable     import Interactable
 
@@ -20,7 +20,7 @@ class DoorInstance(Interactable):
         self.door_type: DoorType = door_type
         self.coord: Coord = coord
         self.console_service: ConsoleService = ServiceProvider.get_provider().resolve(ConsoleService)
-        self.party_inventory: PartyInventory = ServiceProvider.get_provider().resolve(PartyInventory)
+        self.global_registry: GlobalRegistry = ServiceProvider.get_provider().resolve(GlobalRegistry)
 
         # Set Current state
         self._restore()
@@ -46,11 +46,12 @@ class DoorInstance(Interactable):
             self.tile_id = DoorTypeTileId.D_UNLOCKED_NORMAL.value
 
     def _break_key(self):
-        self.party_inventory.add(InventoryOffset.KEYS, -1)
+        current_keys = self.global_registry.saved_game.read_u8(InventoryOffset.KEYS)
+        self.global_registry.saved_game.write_u8(InventoryOffset.KEYS, current_keys - 1)
         self.console_service.print_ascii("Key broke !")
 
     def _jimmy(self, force_success: bool = False):
-        if self.party_inventory.get_quantity(InventoryOffset.KEYS) == 0:
+        if self.global_registry.saved_game.read_u8(InventoryOffset.KEYS) == 0:
             self.console_service.print_ascii("No Keys !")
             return
         if self.is_open:

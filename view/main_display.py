@@ -69,57 +69,55 @@ class MainDisplay(ScalableComponent):
 
         # A blank space.
         self.celestial_glyphs[0] = self.font_mapper.map_code("IBM.CH", CelestialGlyphCodes.BLANK.value)
-        
+
+        assert self.global_registry.blue_border_glyphs.vertical_block, "Must have a vertical_block"
+        self.drawer = BorderDrawer(self.global_registry.blue_border_glyphs, self.get_input_surface())
+
+
+        self.char_x_middle = self.viewport_width_in_glyphs + 1
+        self.char_x_right  = self.size_in_glyphs.w - 1
+
+        self.char_y_info_panel = self.display_config.INFO_PANEL_SIZE.h
+        self.char_y_bottom = self.size_in_glyphs.h - 1
+
+        # Blue borders - horizontal
+        self.y_range_full = list(range(self.size_in_glyphs.h))
+
         # The borders only need to be drawn once.
         self.draw_borders()
 
     def draw_borders(self):
-        
-        drawer = BorderDrawer(self.global_registry.blue_border_glyphs, self.get_input_surface())
+        drawer = self.drawer
 
-        char_x_middle = self.viewport_width_in_glyphs + 1
-        char_x_right  = self.size_in_glyphs.w - 1
-
-        char_y_info_panel = self.display_config.INFO_PANEL_SIZE.h
-        char_y_bottom = self.size_in_glyphs.h - 1
+        drawer.left      (                 0, self.y_range_full)
+        drawer.right     ( self.char_x_right, self.y_range_full)
+        drawer.vertical(self.char_x_middle, self.y_range_full) # the glyph is vertical, the line is horizontal
 
         # Blue borders - vertical
-        y_range_full = list(range(self.size_in_glyphs.h))
-        drawer.left      (            0, y_range_full)
-        drawer.right     ( char_x_right, y_range_full)
-        drawer.horizontal(char_x_middle, y_range_full) # the glyph is horizontal, the line is vertical
-
-        # Blue borders - horizontal
         x_range_full = list(range(self.size_in_glyphs.w))
-        drawer.top   (x_range_full,             0)
-        drawer.bottom(x_range_full, char_y_bottom)
-
-#        x_range_middle_to_right = list(range(char_x_middle, char_x_right))
-#        drawer.vertical(x_range_middle_to_right, char_y_info_panel) # the glyph is vertical, the line is horizontal
+        drawer.top   (x_range_full,                  0)
+        drawer.bottom(x_range_full, self.char_y_bottom)
 
         # corners
-        drawer.top_left    (           0,             0)
-        drawer.top_right   (char_x_right,             0)
-        drawer.bottom_left (           0, char_y_bottom)
-        drawer.bottom_right(char_x_right, char_y_bottom)
+        drawer.top_left    (                0,                  0)
+        drawer.top_right   (self.char_x_right,                  0)
+        drawer.bottom_left (                0, self.char_y_bottom)
+        drawer.bottom_right(self.char_x_right, self.char_y_bottom)
 
         # junctions
-        drawer.junction(char_x_middle,                  0 )
-        drawer.junction(char_x_middle,      char_y_bottom )
-        drawer.right   (char_x_middle, [char_y_info_panel])
-        drawer.junction(char_x_right ,  char_y_info_panel )
+        drawer.junction(self.char_x_middle,                       0 )
+        drawer.junction(self.char_x_middle,      self.char_y_bottom )
+        drawer.right   (self.char_x_middle, [self.char_y_info_panel - 1])
+        drawer.junction(self.char_x_right ,  self.char_y_info_panel - 1)
 
-        if self.info_panel.split_info_panel:
-            drawer.right   (char_x_middle, [char_y_info_panel - 3])
-            drawer.junction(char_x_right ,  char_y_info_panel - 3 )
 
         # prompts - celestial
         drawer.right_prompt(self.celestial_char_offset, 0)
         drawer.left_prompt(self.viewport_width_in_glyphs - self.celestial_char_offset + 1, 0)
 
         # prompts - wind direction
-        drawer.right_prompt(self.celestial_char_offset + 1, char_y_bottom)
-        drawer.left_prompt(self.viewport_width_in_glyphs - self.celestial_char_offset + 1, char_y_bottom)
+        drawer.right_prompt(self.celestial_char_offset + 1, self.char_y_bottom)
+        drawer.left_prompt(self.viewport_width_in_glyphs - self.celestial_char_offset + 1, self.char_y_bottom)
 
     def draw_celestial_panorama(self):
 
@@ -138,7 +136,16 @@ class MainDisplay(ScalableComponent):
         for cursor, glyph in enumerate(self.font_mapper.map_ascii_string("East  Winds")):
             glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor + 2, char_y_bottom), surf)
 
+    def set_info_panel_split_state(self, split: bool):
+        self._info_panel_split = split
+
     def draw(self):
         self.draw_celestial_panorama()
         self.draw_wind_direction()
 
+        if self._info_panel_split:
+            self.drawer.right   (self.char_x_middle, [self.char_y_info_panel - 4])
+            self.drawer.junction(self.char_x_right ,  self.char_y_info_panel - 4 )
+        else:
+            self.drawer.vertical(self.char_x_middle, [self.char_y_info_panel - 4])
+            self.drawer.right   (self.char_x_right , [self.char_y_info_panel - 4])

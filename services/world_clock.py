@@ -90,8 +90,8 @@ class WorldClock(LoggerMixin, DarkEventListenerMixin):
         self.daylight_savings_time += timedelta(minutes=1)
 
     def set_world_time(self, dt: datetime):
-        self.world_time = dt
-        self.daylight_savings_time = dt + timedelta(hours = 1)
+        self.world_time = dt + timedelta(hours = -1)
+        self.daylight_savings_time = dt
         self.log(f"World time set to {self.world_time} (Natural Time)")
 
     def get_natural_time(self):

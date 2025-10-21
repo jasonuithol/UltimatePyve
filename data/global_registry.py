@@ -47,8 +47,9 @@ class GlobalRegistry:
         self.cursors  = Registry[int, Sprite]()   # CursorType.value
         self.fonts    = Registry[str, U5Font]()   # font_name
         self.font_glyphs = Registry[tuple[str, int], U5Glyph]()  # (font_name, glyph_code)
-        self.blue_border_glyphs = BorderGlyphs
-        self.scroll_border_glyphs = BorderGlyphs
+
+        self.blue_border_glyphs: BorderGlyphs = None
+        self.scroll_border_glyphs: BorderGlyphs = None
 
         self.unbaked_light_maps     = Registry[int,             LightMap]()               # radius
         self.baked_light_level_maps = Registry[tuple[int,int],  dict[Coord, LightMap]]()  # location, level -> coord, lightmap
@@ -61,4 +62,5 @@ class GlobalRegistry:
         self.dungeon_rooms = Registry[int, DungeonRoom]()   # dungeon_room_index
         self.npc_metadata  = Registry[int, NpcMetadata]()   # tile_id
 
-        self.saved_game = SavedGame()
+        # populated by InitialisationController
+        self.saved_game: SavedGame = None

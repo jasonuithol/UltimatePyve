@@ -20,15 +20,12 @@ from models.u5_map              import U5Map
 from models.enums.inventory_offset import InventoryOffset
 
 # singletons
-from models.party_inventory    import PartyInventory
 from models.agents.party_agent import PartyAgent
 
 from services.main_loop_service import MainLoopService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
 from services.world_clock import WorldClock
-
-#from .saved_game import SavedGame
 
 PASS_TIME      = True
 DONT_PASS_TIME = False
@@ -38,7 +35,6 @@ class PartyController(LoggerMixin):
     # Injectable
     party_agent:        PartyAgent
     global_registry:    GlobalRegistry
-    party_inventory:    PartyInventory
 
     dark_event_service: DarkEventService
     main_loop_service:  MainLoopService
@@ -51,13 +47,13 @@ class PartyController(LoggerMixin):
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
 
-
     def _after_inject(self):
         self._is_running = True
 
     def run(self):
 
         self.npc_service.add_npc(self.party_agent)
+
 
         # Propogate the 'loaded' event to listeners.
         self.dark_event_service.loaded(self.party_agent.get_current_location())
@@ -248,11 +244,12 @@ class PartyController(LoggerMixin):
     def ignite_torch(self):
         TORCH_RADIUS = 3
         TORCH_DURATION_HOURS = 4
-        if self.party_inventory.get_quantity(InventoryOffset.TORCHES) == 0:
+        torch_count = self.global_registry.saved_game.read_u8(InventoryOffset.TORCHES)
+        if torch_count == 0:
             self.console_service.print_ascii("No torches !")
             return
         self.console_service.print_ascii("Ignite torch !")
-        self.party_inventory.add(InventoryOffset.TORCHES, -1)
+        self.global_registry.saved_game.write_u8(InventoryOffset.TORCHES, torch_count - 1)
         self.party_agent.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
 
     def attack(self, direction: Vector2):

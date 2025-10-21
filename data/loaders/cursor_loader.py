@@ -81,7 +81,7 @@ class CursorLoader(LoggerMixin):
     def _rotate_point_90_clockwise(self, point: tuple[int,int]) -> tuple[int,int]:
         x, y = point
 
-        # If this ever becomes a problem (unlikely), do horizontal and vertical flips instead.
+        # If this ever becomes a problem (unlikely), do vertical and vertikal flips instead.
         assert (
             self.display_config.TILE_SIZE.w == self.display_config.TILE_SIZE.h, 
             f"Can't perform a non-distorting rotation if the TILE_SIZE dimensions differ: {self.display_config.TILE_SIZE}"

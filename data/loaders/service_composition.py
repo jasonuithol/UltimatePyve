@@ -13,6 +13,7 @@ from data.loaders.flame_sprite_loader         import FlameSpriteLoader
 from data.loaders.light_map_builder           import LightMapBuilder
 from data.loaders.npc_metadata_loader import NpcMetadataLoader
 from data.loaders.save_game_loader import SavedGameLoader
+from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
 from services.light_map_level_baker       import LightMapLevelBaker
 
 from data.loaders.npc_sprite_builder        import NpcSpriteBuilder
@@ -49,6 +50,7 @@ def compose(provider: ServiceProvider):
     provider.register(U5FontLoader)
     provider.register(U5GlyphLoader)
     provider.register(BlueBorderGlyphFactory)
+    provider.register(ScrollBorderGlyphFactory)
 
     provider.register(LocationMetadataBuilder)
     provider.register(U5MapLoader)

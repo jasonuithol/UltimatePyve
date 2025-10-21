@@ -4,7 +4,7 @@ from dark_libraries.service_provider import ServiceProvider
 from models.interactable import Interactable
 from models.interactable import MoveIntoResult
 
-from models.party_inventory import PartyInventory
+#from models.party_inventory import PartyInventory
 from models.world_item import WorldItem
 
 from services.console_service import ConsoleService
@@ -19,7 +19,7 @@ class ItemContainer(Interactable):
         self.opened = False
 
         self.console_service: ConsoleService = ServiceProvider.get_provider().resolve(ConsoleService)
-        self.party_inventory: PartyInventory = ServiceProvider.get_provider().resolve(PartyInventory)
+#        self.party_inventory: PartyInventory = ServiceProvider.get_provider().resolve(PartyInventory)
 
     def add(self, item: WorldItem):
         assert not self.opened, "Cannot add to an already opened ItemContainer."

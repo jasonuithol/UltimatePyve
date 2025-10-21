@@ -66,11 +66,11 @@ class BlueBorderGlyphFactory(LoggerMixin):
         #
         # BORDER HORIZONTAL, VERTICAL MIDDLE BORDER GLYPHS
         #
-        border_glyphs.horizontal_block = border_glyphs.left_block_glyph.overlay_with(
+        border_glyphs.vertical_block = border_glyphs.left_block_glyph.overlay_with(
             overlay                = border_glyphs.right_block_glyph, 
             transparent_mapped_rgb = self._color_dark_blue
         )
-        border_glyphs.vertical_block = border_glyphs.horizontal_block.rotate_90()
+        border_glyphs.horizontal_block = border_glyphs.vertical_block.rotate_90()
 
         #
         # BORDER CORNER GLYPHS

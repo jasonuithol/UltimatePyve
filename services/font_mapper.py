@@ -18,10 +18,14 @@ class FontMapper:
         return self.map_code(font_name, ord(char))
 
     def map_string(self, font_name: str, msg: str) -> Iterable[U5Glyph]:
-        return map(lambda char: self.map_char(font_name, char), msg)
+        if msg is None:
+            return None
+        return list(map(lambda char: self.map_char(font_name, char), msg))
     
     def map_codes(self, font_name: str, msg: Iterable[int]) -> Iterable[U5Glyph]:
-        return map(lambda glyph_code: self.map_code(font_name, glyph_code), msg)
+        if msg is None:
+            return None
+        return list(map(lambda glyph_code: self.map_code(font_name, glyph_code), msg))
     
     def map_ascii_string(self, msg: str) -> Iterable[U5Glyph]:
         return self.map_string(__class__.IBM_FONT_NAME, msg)

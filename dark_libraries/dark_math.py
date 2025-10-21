@@ -196,6 +196,9 @@ class Rect(tuple):
             for x in range(self.x, self.x + self.w):
                 yield Coord(x, y)
 
+    def to_tuple(self):
+        return self.x, self.y, self.w, self.h
+
 #
 # MAIN: Tests
 #

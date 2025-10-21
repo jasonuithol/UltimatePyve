@@ -8,19 +8,20 @@ class SavedGameLoader(LoggerMixin):
     # Injectable
     global_registry: GlobalRegistry
 
-    def _load(self, load_name: str, save_name: str):
+    def _load(self, load_name: str, save_name: str) -> SavedGame:
+
         load_path = Path(f'u5/{load_name}.GAM')
+        bytes = bytearray(load_path.read_bytes())
+        self.log(f"Loaded {len(bytes)} bytes from {load_path}")
+
         save_path = Path(f'u5/{save_name}.GAM')
-        bytes = load_path.read_bytes()
+        return SavedGame(bytes, save_path)
 
-        self.log(f"Loaded {len(bytes)} bytes from {save_path}")
-        self.global_registry.saved_game.init(bytes, save_path)
+    def load_existing(self, save_name="SAVED") -> SavedGame:
+        return self._load(save_name, save_name)
 
-    def load_existing(self, save_name="SAVED"):
-        self._load(save_name, save_name)
-
-    def load_new(self, save_name="SAVED"):
-        self._load("INIT", save_name)
+    def load_new(self, save_name="SAVED") -> SavedGame:
+        return self._load("INIT", save_name)
 
 #
 # MAIN

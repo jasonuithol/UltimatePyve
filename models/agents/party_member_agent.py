@@ -58,12 +58,23 @@ class PartyMemberAgent(CombatAgent):
     def is_in_combat(self):
         return not self.coord is None
 
-    def get_weapons(self) -> list[EquipableItemType]:
-        lh_item = self.global_registry.item_types.get(self._character_record.left_hand)
-        rh_item = self.global_registry.item_types.get(self._character_record.right_hand)
-        helmet  = self.global_registry.item_types.get(self._character_record.helmet)
+    def get_equipped_items(self) -> list[EquipableItemType]:
+        item_codes = [
+            self._character_record.helmet,
+            self._character_record.amulet,
+            self._character_record.armor,
+            self._character_record.left_hand,
+            self._character_record.right_hand,
+            self._character_record.ring
+        ]
 
-        equipped = [lh_item, rh_item, helmet]
+        return [
+            self.global_registry.item_types.get(item_code)
+            for item_code in item_codes
+        ]
+
+    def get_weapons(self) -> list[EquipableItemType]:
+        equipped = self.get_equipped_items()
         weapons  = [item for item in equipped if not item is None and item.attack > 0]
         if not any(weapons): 
             weapons = [BARE_HANDS]
