@@ -45,6 +45,12 @@ class DarkEventService(LoggerMixin):
         for listener in self._dark_event_listeners:
             listener.party_moved(party_location)
 
+    def quit(self):
+        self.log(f"DEBUG: Propogating event 'quit' to {len(self._dark_event_listeners)} listeners")
+        for listener in self._dark_event_listeners:
+            listener.quit()
+
+
 
 
 # models
@@ -55,6 +61,7 @@ class DarkEventListenerMixin:
 
     def _after_inject(self):
         self.dark_event_service.subscribe(self)
+        self._has_quit = False
 
     def loaded(self, party_location: GlobalLocation):
         return
@@ -66,5 +73,9 @@ class DarkEventListenerMixin:
         return
 
     def party_moved(self, party_location: GlobalLocation):
+        return
+    
+    def quit(self):
+        self._has_quit = True
         return
     

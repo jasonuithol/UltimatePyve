@@ -1,5 +1,6 @@
 import pygame
 
+from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
@@ -14,7 +15,7 @@ from services.surface_factory import SurfaceFactory
 from view.info_panel import ORIGINAL_PANEL_WIDTH, InfoPanel, InfoPanelDataSet
 from view.main_display import MainDisplay
 
-class InfoPanelService(LoggerMixin):
+class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
     
     info_panel:      InfoPanel
     party_agent:     PartyAgent
@@ -25,6 +26,7 @@ class InfoPanelService(LoggerMixin):
     surface_factory: SurfaceFactory
 
     def init(self):
+        super().__init__()
         self._up_arrow   = self.font_mapper.map_code("IBM.CH", 24)
         self._down_arrow = self.font_mapper.map_code("IBM.CH", 25)
 
@@ -70,7 +72,7 @@ class InfoPanelService(LoggerMixin):
 
         self._update_choose_item_display(glyph_rows, selected_index)
 
-        while True:
+        while not self._has_quit:
             event = self.main_loop_service.get_next_event()
 
             if event.key == pygame.K_UP:

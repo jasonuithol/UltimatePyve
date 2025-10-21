@@ -1,5 +1,6 @@
 import pygame
 
+from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
 from dark_libraries.dark_math import Coord, Rect, Vector2
 from dark_libraries.logging   import LoggerMixin
 from data.global_registry     import GlobalRegistry
@@ -15,35 +16,45 @@ from view.info_panel import InfoPanel
 
 BIBLICALLY_ACCURATE_RANGE_TWEAK = 0.5
 
-class MainLoopService(LoggerMixin):
+class SyntheticQuit:
+    def __init__(self):
+        self.key = -1
+        self.type = -1
+
+class MainLoopService(DarkEventListenerMixin, LoggerMixin):
 
     party_agent:     PartyAgent
     display_service: DisplayService
     console_service: ConsoleService
     global_registry: GlobalRegistry
     info_panel:      InfoPanel
+    dark_event_service: DarkEventService
 
     def __init__(self):
         super().__init__()
-        self._is_running = True
+
+        # An object designed to prevent event handlers blowing up
+        self._fake_quit_event = SyntheticQuit()        
 
     def _check_quit(self, event: pygame.event.Event):
         if event.type == pygame.QUIT:
-            # Clicking on the X will break out of the loop and exit the game.
-            self._is_running = False
+            self.dark_event_service.quit()
+            return True
+        elif event == self._fake_quit_event:
             return True
         return False
-
-    def should_quit_game(self) -> bool:
-        return self._is_running == False
 
     def obtain_action_direction(self) -> Vector2:
 
         self.console_service.print_ascii("Direction ? ", include_carriage_return = False)
 
-        while self._is_running:
+        while not self._has_quit:
 
             event = self.get_next_event()
+
+            if self._check_quit(event):
+                # Quitting will cancel the action (and quit)
+                return None           
 
             if event.key == pygame.K_ESCAPE:
                 # Pressing escape will just cancel the action.
@@ -55,6 +66,7 @@ class MainLoopService(LoggerMixin):
                 self.console_service.print_ascii(DIRECTION_NAMES[direction] + " !")
                 return direction
 
+        return None
             
     def obtain_cursor_position(self, starting_coord: Coord, boundary_rect: Rect, range_: int) -> Coord:
 
@@ -68,9 +80,13 @@ class MainLoopService(LoggerMixin):
         self.display_service.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
 
         is_aiming = True
-        while self._is_running and is_aiming:
+        while (not self._has_quit) and is_aiming:
 
             event = self.get_next_event()
+
+            if self._check_quit(event):
+                # Quitting will cancel the action (and quit)
+                return None             
 
             if event.key == pygame.K_ESCAPE:
                 # Pressing escape will just cancel the action.
@@ -99,13 +115,13 @@ class MainLoopService(LoggerMixin):
             
     def get_next_event(self) -> pygame.event.Event:
 
-        while self._is_running:
+        while not self._has_quit:
 
             # NOTE: Technically this might skip events.  We can live with that for now.
             for event in pygame.event.get():
 
-                if self._check_quit(event): 
-                    return event
+                if self._check_quit(event):
+                    return self._fake_quit_event                
 
                 elif event.type != pygame.KEYDOWN:
                     continue
@@ -119,5 +135,6 @@ class MainLoopService(LoggerMixin):
         
         # Failsafe - exiting this loop to get here means quitting the game.
         self.log("Exiting the get_next_event loop - switching to Quit Game mode.")
-        self._is_running = False
-        return pygame.event.Event(pygame.QUIT)
+        if not self._has_quit:
+            self.dark_event_service.quit()
+        return self._fake_quit_event

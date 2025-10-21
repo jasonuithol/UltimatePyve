@@ -7,7 +7,7 @@ from controllers.active_member_controller import ActiveMemberController
 from controllers.combat_controller import CombatController
 from controllers.move_controller import MoveController, MoveOutcome
 from controllers.ready_controller import ReadyController
-from dark_libraries.dark_events import DarkEventService
+from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
 from dark_libraries.dark_math   import Vector2
 from dark_libraries.logging     import LoggerMixin
 
@@ -30,7 +30,7 @@ from services.world_clock import WorldClock
 PASS_TIME      = True
 DONT_PASS_TIME = False
 
-class PartyController(LoggerMixin):
+class PartyController(DarkEventListenerMixin, LoggerMixin):
 
     # Injectable
     party_agent:        PartyAgent
@@ -47,18 +47,15 @@ class PartyController(LoggerMixin):
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
 
-    def _after_inject(self):
-        self._is_running = True
-
     def run(self):
 
         self.npc_service.add_npc(self.party_agent)
 
-
         # Propogate the 'loaded' event to listeners.
         self.dark_event_service.loaded(self.party_agent.get_current_location())
 
-        while self._is_running:
+        while not self._has_quit:
+
             should_pass_time = self.dispatch_input()
             
             if should_pass_time:
@@ -69,7 +66,7 @@ class PartyController(LoggerMixin):
                 self.dark_event_service.pass_time(self.party_agent.get_current_location())
 
                 # Internal pass_time (e.g. torches going out)
-                self.pass_time()
+                self.pass_time_internal()
 
                 enemy_npc = self.npc_service.get_attacking_npc()
                 if not enemy_npc is None:
@@ -84,13 +81,6 @@ class PartyController(LoggerMixin):
 
         self.active_member_controller.handle_event(event)
         self.ready_controller.handle_event(event)
-
-        if event.type == pygame.QUIT:
-            self._is_running = False
-            return DONT_PASS_TIME
-
-        if event.type != pygame.KEYDOWN:
-            return DONT_PASS_TIME
 
         #
         # Received key input, call appropriate handler.
@@ -259,7 +249,7 @@ class PartyController(LoggerMixin):
             return
         self.combat_controller.enter_combat(enemy_party)
 
-    def pass_time(self):
+    def pass_time_internal(self):
 
         # Internal
         if not self.party_agent.get_light_expiry() is None and self.world_clock.get_natural_time() > self.party_agent.get_light_expiry():

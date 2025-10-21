@@ -21,8 +21,6 @@ class ActiveMemberController:
 
     # This never passes time or consumes items or nuffin
     def handle_event(self, event: pygame.event.Event):
-        if event.type != pygame.KEYDOWN:
-            return
         if event.key == pygame.K_0:
             self.party_agent.set_active_member(None)
             self.console_service.print_ascii(f"Set active player: None !")

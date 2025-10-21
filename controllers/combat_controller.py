@@ -4,7 +4,7 @@ import random
 from controllers.active_member_controller import ActiveMemberController
 from controllers.move_controller import MoveController
 
-from dark_libraries.dark_events import DarkEventService
+from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
@@ -53,7 +53,7 @@ def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
 IN_COMBAT = True
 COMBAT_OVER = False
 
-class CombatController(LoggerMixin):
+class CombatController(DarkEventListenerMixin, LoggerMixin):
 
     # Injectable
     party_agent: PartyAgent
@@ -115,10 +115,8 @@ class CombatController(LoggerMixin):
 
         current_coord = party_member.coord
 
-        # Quit dispatch handler
-        if event.type == pygame.QUIT:
-            self.console_service.print_ascii("Cannot quit during combat !")
-            return IN_COMBAT
+        if self._has_quit:
+            return COMBAT_OVER
 
         # Wait dispatch handler
         if event.key == pygame.K_SPACE:
@@ -239,7 +237,7 @@ class CombatController(LoggerMixin):
 
         in_combat = IN_COMBAT
 
-        while in_combat and (not self.main_loop_service.should_quit_game()):
+        while in_combat and (not self._has_quit):
 
             next_turn_npc = self.npc_service.get_next_moving_npc()
             if isinstance(next_turn_npc, PartyMemberAgent):
