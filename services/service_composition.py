@@ -6,6 +6,7 @@ from services.display_service import DisplayService
 from services.font_mapper       import FontMapper
 from services.avatar_sprite_factory    import AvatarSpriteFactory
 from services.field_of_view_calculator import FieldOfViewCalculator
+from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
 from services.lighting_service import LightingService
 
@@ -49,6 +50,7 @@ def compose(provider: ServiceProvider):
     provider.register(MainLoopService)
     provider.register(MonsterService)
     provider.register(InfoPanelService)
+    provider.register(InfoPanelDataProvider)
 
     compose_map_cache(provider)
     compose_world_loot(provider)

@@ -1,13 +1,17 @@
-from typing import Iterable
+import pygame
+
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
+
 from models.agents.party_agent import PartyAgent
-from models.enums.inventory_offset import InventoryOffset
-from models.equipable_items import EquipableItemType
-from models.u5_glyph import U5Glyph
+from models.enums.ega_palette_values import EgaPaletteValues
+
 from services.font_mapper import FontMapper
-from services.world_clock import WorldClock
-from view.info_panel import MAXIMUM_NAME_LENGTH, ORIGINAL_PANEL_WIDTH, InfoPanel
+from services.info_panel_data_provider import EquipableItemsData, PartySummaryData
+from services.main_loop_service import MainLoopService
+from services.surface_factory import SurfaceFactory
+
+from view.info_panel import ORIGINAL_PANEL_WIDTH, InfoPanel, InfoPanelDataSet
 from view.main_display import MainDisplay
 
 class InfoPanelService(LoggerMixin):
@@ -16,29 +20,30 @@ class InfoPanelService(LoggerMixin):
     party_agent:     PartyAgent
     global_registry: GlobalRegistry
     font_mapper:     FontMapper
-    world_clock:     WorldClock
     main_display:    MainDisplay
+    main_loop_service: MainLoopService
+    surface_factory: SurfaceFactory
 
-    def _set_panel_geometry(self, split = False, scroll = False):
-        self.info_panel.set_panel_geometry(split = split, scroll = scroll)
-        self.main_display.set_info_panel_split_state(split = split)
+    def init(self):
+        self._up_arrow   = self.font_mapper.map_code("IBM.CH", 24)
+        self._down_arrow = self.font_mapper.map_code("IBM.CH", 25)
 
-    def show_party_summary(self):
+        black = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
+        self._both_arrow = self._up_arrow.overlay_with(self._down_arrow, black)
+
+    def show_party_summary(self, party_summary_data: PartySummaryData):
+
         self._set_panel_geometry(split = True)
 
         # Party members
-
-        top_glyph_rows = [
-            self._build_player_slot(ix)
-            for ix in range(self.party_agent.get_party_count())
-        ]
-        self.info_panel.set_glyph_rows_top(top_glyph_rows)
+        self.info_panel.set_glyph_rows_top(party_summary_data.party_data_set)
 
         # Food, Gold, Current Date
 
-        food = f"F:{self.global_registry.saved_game.read_u16(InventoryOffset.FOOD.value)}"
-        gold = f"G:{self.global_registry.saved_game.read_u16(InventoryOffset.GOLD.value)}".rjust(ORIGINAL_PANEL_WIDTH - len(food))
-        t = self.world_clock.daylight_savings_time
+        t = party_summary_data.datetime_
+
+        food = f"F:{party_summary_data.food}"
+        gold = f"G:{party_summary_data.gold}".rjust(ORIGINAL_PANEL_WIDTH - len(food))
         date = f"    {t.month}-{t.day}-{t.year}"
 
         bottom_glyph_rows = [
@@ -48,81 +53,93 @@ class InfoPanelService(LoggerMixin):
 
         self.info_panel.set_glyph_rows_bottom(bottom_glyph_rows)
 
-    def show_equipable_items(self, party_member_index: int, scroll_offset: int) -> dict[int, int]:
+    def show_equipable_items(self, equipable_items_data: EquipableItemsData):
 
         self._set_panel_geometry(scroll = True)
 
-        party_member_agent = self.party_agent.get_party_member(party_member_index)
-        self.info_panel.set_panel_title(party_member_agent.name)
+        view_height = self.info_panel.get_viewable_size().h
+        item_count = len(equipable_items_data.equipable_items_data_set)
 
-        item_glyphstring_dict    = dict(self._generate_equipable_items(party_member_index))
-        visible_glyphstring_dict = dict(list(item_glyphstring_dict.items())[scroll_offset : scroll_offset + 7])
-        self.info_panel.set_glyph_rows_top(visible_glyphstring_dict.values())
+        self.info_panel.set_panel_title(equipable_items_data.party_member_name)
+        self.info_panel.set_glyph_rows_top(equipable_items_data.equipable_items_data_set[:min(view_height, item_count)])
 
-        return {
-            index : item_id   
-            for index, item_id in enumerate(visible_glyphstring_dict.keys())
-        }
+    def choose_item(self, glyph_rows: InfoPanelDataSet) -> int:
 
-    def _build_player_slot(self, party_member_index: int) -> Iterable[U5Glyph]:
+        # The data index of the highlight cursor
+        selected_index = 0
+        item_count = len(glyph_rows)
 
-        party_member_agent = self.party_agent.get_party_member(party_member_index)
+        self._update_choose_item_display(glyph_rows, selected_index)
 
-        # First row of text
-        name_part   = party_member_agent.name
-        health_part = str(party_member_agent.hitpoints) + party_member_agent._character_record.status
+        while True:
+            event = self.main_loop_service.get_next_event()
 
-        is_active = party_member_index == self.party_agent.get_active_member_index()
-        active_member_indicator_glyph_code = 26 if is_active else 0
+            if event.key == pygame.K_UP:
+                selected_index = (selected_index - 1) % item_count
 
-        glyph_row = (
-            self.font_mapper.map_ascii_string(name_part.ljust(MAXIMUM_NAME_LENGTH + 1))
+            elif event.key == pygame.K_DOWN:
+                selected_index = (selected_index + 1) % item_count
+
+            elif event.key == pygame.K_RETURN:
+                # Pressing enter will return the chosen item index.
+                self.info_panel.set_highlighted_item(None)
+                return selected_index
+
+            elif event.key == pygame.K_ESCAPE:
+                # pressing escape will cancel the action
+                self.info_panel.set_highlighted_item(None)
+                return None
+
+            # Update the info_panel state
+            self._update_choose_item_display(glyph_rows, selected_index)
+
+    def _update_choose_item_display(self, glyph_rows: InfoPanelDataSet, selected_index: int):
+        
+        view_height = self.info_panel.get_viewable_size().h
+        item_count = len(glyph_rows)
+
+        # Middle row index within the viewport
+        mid = view_height // 2
+
+        # Try to center the selected index
+        start_index = selected_index - mid
+
+        # Clamp to valid range
+        if start_index < 0:
+            start_index = 0
+        if start_index + view_height > item_count:
+            start_index = max(item_count - view_height, 0)
+
+        finish_index = start_index + view_height
+
+        viewable_glyphs = glyph_rows[start_index:finish_index]
+        self.info_panel.set_glyph_rows_top(viewable_glyphs)
+
+        highlighted_index = selected_index - start_index
+        self.info_panel.set_highlighted_item(highlighted_index)
+
+        up = down = False
+        if start_index > 0:
+            up = True
+        if finish_index < item_count:
+            down = True
+
+        self.log(
+            f"DEBUG: up={up}, down={down}, highlighted_index={highlighted_index}, start_index={start_index},"
             +
-            [self.global_registry.font_glyphs.get(("IBM.CH", active_member_indicator_glyph_code))]
-            + 
-            self.font_mapper.map_ascii_string(health_part.rjust(5))
+            f" finish_index={finish_index}, view_height={view_height}, item_count={item_count}"
         )
 
-        return glyph_row
-    
-    def _generate_equipable_items(self, party_member_index: int) -> Iterable[tuple[int, Iterable[U5Glyph]]]:
+        if   up and not down:   arrow = self._up_arrow
+        elif down and not up:   arrow = self._down_arrow
+        elif up and down:       arrow = self._both_arrow
+        else:                   arrow = None
 
-        party_member = self.party_agent.get_party_member(party_member_index)
-        items_equipped = party_member.get_equipped_items()
-                            
-        for item_id, equipable_item_type in self.global_registry.item_types.items():
-            if not isinstance(equipable_item_type, EquipableItemType):
-                continue
-            quantity_held = self.global_registry.saved_game.read_u8(equipable_item_type.inventory_offset)
-            is_equipped = (equipable_item_type in items_equipped)
+        self.info_panel.set_bottom_status_icon(arrow)
 
-            if not is_equipped and quantity_held == 0:
-                continue
+    def _set_panel_geometry(self, split = False, scroll = False):
+        self.info_panel.set_panel_geometry(split = split, scroll = scroll)
+        self.main_display.set_info_panel_split_state(split = split)
 
-            if is_equipped and quantity_held == 0:
-                prefix = "--"
-            else:
-                prefix = str(quantity_held).rjust(2) # this means we can only have 99 or less things of any type of thing.
 
-            if is_equipped:
-                assert not equipable_item_type.rune_id is None, "Must have a rune_id"
-                rune_glyph = self.global_registry.font_glyphs.get(("RUNES.CH", equipable_item_type.rune_id.value))
-            else:
-                rune_glyph = self.global_registry.font_glyphs.get(("RUNES.CH", 0))
 
-            assert not rune_glyph is None, f"Must have a rune_glyph (is_equipped={is_equipped}, rune_id={equipable_item_type.rune_id})"
-
-            item_name = equipable_item_type.short_name
-            if not item_name:
-                item_name = equipable_item_type.name
-            assert not item_name is None, "Must have an item_name"
-
-            glyphs = (
-                self.font_mapper.map_ascii_string(prefix)
-                +
-                [rune_glyph]
-                +
-                self.font_mapper.map_ascii_string(item_name)
-            )
-
-            yield item_id, glyphs        

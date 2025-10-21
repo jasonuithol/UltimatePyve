@@ -10,6 +10,7 @@ from models.agents.party_agent  import PartyAgent
 
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
+
 from view.info_panel import InfoPanel
 
 BIBLICALLY_ACCURATE_RANGE_TWEAK = 0.5
@@ -35,39 +36,6 @@ class MainLoopService(LoggerMixin):
 
     def should_quit_game(self) -> bool:
         return self._is_running == False
-    
-    def choose_item(self, item_count: int) -> int:
-
-        selected_item_index = 0
-        self.info_panel.set_highlighted_item(selected_item_index)
-
-        while self._is_running:
-
-            event = self.get_next_event()
-
-            if event.key == pygame.K_UP:
-                selected_item_index = (selected_item_index - 1) % item_count
-
-            elif event.key == pygame.K_DOWN:
-                selected_item_index = (selected_item_index + 1) % item_count
-
-            elif event.key == pygame.K_RETURN:
-                # Pressing enter will return the chosen item index.
-                self.info_panel.set_highlighted_item(None)
-                return selected_item_index
-
-            elif event.key == pygame.K_ESCAPE:
-                # pressing escape will cancel the action
-                self.info_panel.set_highlighted_item(None)
-                return None
-
-            else:
-                # Nothing interesting happened.
-                continue
-
-            # Update the highlighted item
-            self.info_panel.set_highlighted_item(selected_item_index)
-    
 
     def obtain_action_direction(self) -> Vector2:
 

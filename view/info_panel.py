@@ -51,6 +51,12 @@ BOTTOM_CONTENT_RECT = Rect(
 # neither (max capacity)
 UNSPLIT_UNSCROLL_CONTENT_RECT = SCROLL_RECT
 
+class InfoPanelDataRow:
+    glyphs: list[U5Glyph]
+
+class InfoPanelDataSet:
+    rows: list[InfoPanelDataRow]
+
 class InfoPanel(ScalableComponent):
 
     display_config:  DisplayConfig
@@ -71,19 +77,19 @@ class InfoPanel(ScalableComponent):
         super().__init__(self.display_config.INFO_PANEL_SIZE * self.display_config.FONT_SIZE, self.display_config.SCALE_FACTOR)
         super()._after_inject()
 
+    def _clear(self):
+        self.get_input_surface().fill((0,0,0))
+
     def set_highlighted_item(self, item_index: int):
         self._highlighted_item_index = item_index
 
-    def set_glyph_rows_top(self, glyph_rows: list[list[U5Glyph]]):
+    def set_glyph_rows_top(self, glyph_rows: InfoPanelDataSet):
         assert not any([glyph is None for row in glyph_rows for glyph in row]), "Cannot print NULL glyphs"
         self._glyph_rows_top = glyph_rows
 
     def set_glyph_rows_bottom(self, glyph_rows: list[list[U5Glyph]]):
         assert not any([glyph is None for row in glyph_rows for glyph in row]), "Cannot print NULL glyphs"
         self._glyph_rows_bottom = glyph_rows
-
-    def set_context_party_member(self, party_member_index: int):
-        self._context_party_member_index = party_member_index
 
     def set_panel_geometry(self, 
                                 split:  bool = False, 
@@ -105,8 +111,9 @@ class InfoPanel(ScalableComponent):
         else:
             self._top_content_rect = UNSPLIT_UNSCROLL_CONTENT_RECT
             self._bottom_content_rect = None
-            
-        self.get_input_surface().fill((0,0,0))
+
+    def get_viewable_size(self) -> Size:
+        return self._top_content_rect.size
 
     def _create_border_inset(self, glyphs: Iterable[U5Glyph]) -> Iterable[U5Glyph]:
         if glyphs is None:
@@ -126,17 +133,17 @@ class InfoPanel(ScalableComponent):
             return
         self._panel_title_glyphs = self._create_border_inset(self.font_mapper.map_ascii_string(title))
 
-    def set_middle_status_icon(self, glyph_key: tuple[str, int]):
-        if glyph_key is None:
+    def set_middle_status_icon(self, glyph: U5Glyph):
+        if glyph is None:
             self._middle_icon_glyphs = None
             return
-        self._middle_icon_glyphs = self._create_border_inset(self.global_registry.font_glyphs.get(glyph_key))
+        self._middle_icon_glyphs = self._create_border_inset([glyph])
 
-    def set_bottom_status_icon(self, glyph_key: tuple[str, int]):
-        if glyph_key is None:
+    def set_bottom_status_icon(self, glyph: U5Glyph):
+        if glyph is None:
             self._bottom_icon_glyphs = None
             return
-        self._bottom_icon_glyphs = self._create_border_inset(self.global_registry.font_glyphs.get(glyph_key))
+        self._bottom_icon_glyphs = self._create_border_inset([glyph])
 
     # This ignores all cursor state and just plasters the glyphs at the given coord.
     # It will not wrap, scroll, or update any state.
@@ -211,19 +218,21 @@ class InfoPanel(ScalableComponent):
 
     def draw(self):
 
+        self._clear()
+
         self._draw_top_border()
 
         if self._scroll:
             self._draw_scroll()
 
-        # top content
+        # draw_top_content
         for index, glyph_row in enumerate(self._glyph_rows_top):
             if index == self._highlighted_item_index:
                 glyph_row = [glyph.invert_colors() for glyph in glyph_row]
             self._print_glyphs_at(glyph_row, self._top_content_rect.minimum_corner + Vector2(0, index))
 
         if self._split:
-            # bottom content
+            # draw_bottom_content
             for index, glyph_row in enumerate(self._glyph_rows_bottom):
                 self._print_glyphs_at(glyph_row, self._bottom_content_rect.minimum_corner + Vector2(0, index))
 

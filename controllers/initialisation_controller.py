@@ -11,6 +11,7 @@ from data.global_registry_loader    import GlobalRegistryLoader
 from controllers.party_controller   import PartyController
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
+from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
 from services.light_map_level_baker import LightMapLevelBaker
 from services.map_cache.map_cache_service import MapCacheService
@@ -38,6 +39,7 @@ class InitialisationController(LoggerMixin):
     light_map_level_baker: LightMapLevelBaker
     saved_game_loader: SavedGameLoader
     info_panel_service: InfoPanelService
+    info_panel_data_provider: InfoPanelDataProvider
     info_panel: InfoPanel
 
     def init(self):
@@ -90,8 +92,10 @@ class InitialisationController(LoggerMixin):
         #
         self.main_display.init()
         self.info_panel.init()
+        self.info_panel_service.init()
 
-        self.info_panel_service.show_party_summary()
+        party_summary_data = self.info_panel_data_provider.get_party_summary_data()
+        self.info_panel_service.show_party_summary(party_summary_data)
 
         self.console_service.print_ascii("Returned to the world !")
 

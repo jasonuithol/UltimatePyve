@@ -1,21 +1,17 @@
 import pygame
 
 from data.global_registry import GlobalRegistry
-from models.agents.party_agent import PartyAgent
 
 from services.console_service import ConsoleService
-from services.font_mapper import FontMapper
+from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
-from services.main_loop_service import MainLoopService
 
 class ReadyController:
 
-    main_loop_service: MainLoopService
     console_service: ConsoleService
-    party_agent: PartyAgent
     info_panel_service: InfoPanelService
     global_registry: GlobalRegistry
-    font_mapper: FontMapper
+    info_panel_data_provider: InfoPanelDataProvider
 
     def handle_event(self, event: pygame.event.Event):
         if event.key == pygame.K_r:
@@ -26,37 +22,52 @@ class ReadyController:
         #
         # Step 1: Choose player
         #
-
-        self.console_service.print_ascii("Ready...")
-        self.console_service.print_ascii("Player: ", include_carriage_return = False)
-
-        selected_member_index = self.main_loop_service.choose_item(
-            item_count = self.party_agent.get_party_count()
-        )
+        selected_member_index = self._step_1_choose_player()
 
         if selected_member_index is None:
             self.console_service.print_ascii("None")
             return
 
-        party_member_agent = self.party_agent.get_party_member(selected_member_index)
-        self.console_service.print_ascii(party_member_agent.name + " !")
-
         #
         # Step 2: Choose Item
         #
-
-        item_id_indexes = self.info_panel_service.show_equipable_items(selected_member_index, 0)
-
-        selected_item_index = self.main_loop_service.choose_item(
-            len(item_id_indexes)
-        )
-
-        selected_item = self.global_registry.item_types.get(item_id_indexes[selected_item_index])
+        selected_item_id = self._step_2_choose_item(selected_member_index)
+        selected_item = self.global_registry.item_types.get(selected_item_id)
 
         self.console_service.print_ascii(f"Item {selected_item.name} chosen")
 
+        #
+        # Step 3: Update inventories/equipped items
+        #
+
+        #
+        # Step 4: Resume normal playing
+        #
         self.info_panel_service.show_party_summary()
 
+    def _step_1_choose_player(self) -> int:
+
+        party_summary_data_set = self.info_panel_data_provider.get_party_summary_data()
+
+        # QUASI-HEMI-OPTIONAL: Guarantee the correct starting state.
+        self.info_panel_service.show_party_summary(party_summary_data_set)
+
+        self.console_service.print_ascii("Ready...")
+        self.console_service.print_ascii("Player: ", include_carriage_return = False)
+
+        return self.info_panel_service.choose_item(party_summary_data_set.party_data_set)
+
+    def _step_2_choose_item(self, selected_member_index: int) -> int:
+
+        equipable_item_data = self.info_panel_data_provider.get_equipable_items_data(selected_member_index)
+        self.console_service.print_ascii(equipable_item_data.party_member_name + " !")
+
+        # ENTIRELY OPTIONAL
+        self.info_panel_service.show_equipable_items(equipable_item_data)
+
+        selected_item_index = self.info_panel_service.choose_item(equipable_item_data.equipable_items_data_set)
+        return equipable_item_data.equipable_items_index_map[selected_item_index]
+   
 
       
 
