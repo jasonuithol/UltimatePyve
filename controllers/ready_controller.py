@@ -94,14 +94,8 @@ class ReadyController:
             # unequipping an item
             self.global_registry.saved_game.write_u8(selected_item.inventory_offset, current_party_qty + 1)
             party_member.unequip_item(selected_item_id)
-
-        elif party_member.is_slot_available(selected_item.slot):
-            # Equipping an item into an available slot
-            assert current_party_qty > 0, f"No items of item_id={selected_item_id} in party inventory !"
-            self.global_registry.saved_game.write_u8(selected_item.inventory_offset, current_party_qty - 1)
-            party_member.equip_item(selected_item_id)
             
-        else:
+        elif not party_member.is_slot_available(selected_item.slot) :
             if selected_item.slot == EquipableItemSlot.ONE_HAND:
                 self.console_service.print_ascii("Thou must free one of thy hands first !")
             if selected_item.slot == EquipableItemSlot.TWO_HAND:
@@ -115,6 +109,14 @@ class ReadyController:
             if selected_item.slot == EquipableItemSlot.FINGER:
                 self.console_service.print_ascii("Only one magic ring may be worn at a time !")
 
+        elif not party_member.can_carry_extra_weight(selected_item):
+            self.console_service.print_ascii("Thou art not strong enough !")
+
+        else:
+            # Equipping an item into an available slot
+            assert current_party_qty > 0, f"No items of item_id={selected_item_id} in party inventory !"
+            self.global_registry.saved_game.write_u8(selected_item.inventory_offset, current_party_qty - 1)
+            party_member.equip_item(selected_item_id)
 
 
    

@@ -28,7 +28,8 @@ BARE_HANDS = EquipableItemType(
     defence          = 0,
     attack           = 1,
     slot             = EquipableItemSlot.TWO_HAND,
-    rune_id          = None
+    rune_id          = None,
+    weight           = 0
 )
 
 EQUIPMENT_PROPERTY_NAMES = [
@@ -93,6 +94,7 @@ class PartyMemberAgent(CombatAgent):
         return [
             self.global_registry.item_types.get(item_code)
             for item_code in item_codes
+            if item_code != 255
         ]
 
     def has_equipped_item(self, item_id: int) -> bool:
@@ -106,6 +108,10 @@ class PartyMemberAgent(CombatAgent):
             return len(available_props) >= 2
         else:
             return len(available_props) >= 1
+
+    def can_carry_extra_weight(self, item: EquipableItemType):
+        current_carried_weight = sum(item.weight for item in self.get_equipped_items())
+        return current_carried_weight + item.weight <= self.strength
 
     def unequip_item(self, item_id: int):
         assert self.has_equipped_item(item_id), f"Item ({item_id}) not equipped: {self.get_equipped_item_codes()}"
