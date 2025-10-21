@@ -31,6 +31,16 @@ BARE_HANDS = EquipableItemType(
     rune_id          = None
 )
 
+EQUIPMENT_SLOTS = [
+    'helmet',
+    'amulet',
+    'armor',
+    'left_hand',
+    'right_hand',
+    'ring'
+]
+
+
 class IncreasableSkillNames(Enum):
     STR = 'strength'
     DEX = 'dexterity'
@@ -58,8 +68,8 @@ class PartyMemberAgent(CombatAgent):
     def is_in_combat(self):
         return not self.coord is None
 
-    def get_equipped_items(self) -> list[EquipableItemType]:
-        item_codes = [
+    def get_equipped_item_codes(self) -> list[int]:
+        return [
             self._character_record.helmet,
             self._character_record.amulet,
             self._character_record.armor,
@@ -68,10 +78,49 @@ class PartyMemberAgent(CombatAgent):
             self._character_record.ring
         ]
 
+    def get_equipped_items(self) -> list[EquipableItemType]:
+        item_codes = self.get_equipped_item_codes()
+
         return [
             self.global_registry.item_types.get(item_code)
             for item_code in item_codes
         ]
+
+    def has_equipped_item(self, item_id: int) -> bool:
+        item_codes = self.get_equipped_item_codes()
+        return item_id in item_codes
+
+    def unequip_item(self, item_id: int):
+        assert self.has_equipped_item(item_id), f"Item ({item_id}) not equipped: {self.get_equipped_item_codes()}"
+
+        for prop_name in EQUIPMENT_SLOTS:
+            if int(getattr(self._character_record, prop_name)) == item_id:
+                self.log(f"Unequipping {prop_name}(item_id={item_id}) from {self.name}")
+                setattr(self._character_record, prop_name, 255)
+
+    def equip_item(self, item_id: int):
+        assert not self.has_equipped_item(item_id), f"Item ({item_id}) already equipped: {self.get_equipped_item_codes()}"
+
+        item: EquipableItemType = self.global_registry.item_types.get(item_id)
+
+        self.log(f"Equipping {self.name}'s {item.slot.name} with (item_id={item_id})")
+
+        if item.slot == EquipableItemSlot.HEAD:
+            self._character_record.helmet = item_id
+        if item.slot == EquipableItemSlot.BODY:
+            self._character_record.armor = item_id
+        if item.slot == EquipableItemSlot.NECK:
+            self._character_record.amulet = item_id
+        if item.slot == EquipableItemSlot.FINGER:
+            self._character_record.ring = item_id
+        if item.slot == EquipableItemSlot.TWO_HAND:
+            self._character_record.left_hand = item_id
+            self._character_record.right_hand = item_id
+        if item.slot == EquipableItemSlot.ONE_HAND:
+            if self._character_record.right_hand == 255:
+                self._character_record.right_hand = item_id
+            else:
+                self._character_record.left_hand = item_id
 
     def get_weapons(self) -> list[EquipableItemType]:
         equipped = self.get_equipped_items()

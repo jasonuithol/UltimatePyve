@@ -63,10 +63,9 @@ class InfoPanelService(LoggerMixin):
         self.info_panel.set_panel_title(equipable_items_data.party_member_name)
         self.info_panel.set_glyph_rows_top(equipable_items_data.equipable_items_data_set[:min(view_height, item_count)])
 
-    def choose_item(self, glyph_rows: InfoPanelDataSet) -> int:
+    def choose_item(self, glyph_rows: InfoPanelDataSet, selected_index: int) -> int:
 
         # The data index of the highlight cursor
-        selected_index = 0
         item_count = len(glyph_rows)
 
         self._update_choose_item_display(glyph_rows, selected_index)
