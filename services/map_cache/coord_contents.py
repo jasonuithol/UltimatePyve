@@ -8,7 +8,7 @@ from models.interactable import Interactable
 
 class CoordContents:
 
-    def __init__(self, tile: Tile, terrain: Terrain, sprite: Sprite):
+    def __init__(self, tile: Tile, terrain: Terrain, sprite: Sprite[Tile]):
 
         self.tile = tile
         self.terrain = terrain
@@ -40,6 +40,6 @@ class CoordContents:
             return self.terrain_interactable.get_current_tile_id()
 
         if not self.terrain_sprite is None:
-            return self.terrain_sprite.get_current_frame_tile(self.terrain_sprite_time_offset)
+            return self.terrain_sprite.get_current_frame(self.terrain_sprite_time_offset)
 
         return self.tile

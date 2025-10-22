@@ -1,16 +1,13 @@
-# file: animation/sprite.py
-import math
 import pygame
 import random
 
 from dark_libraries.logging import LoggerMixin
-from models.tile import Tile
 
 DEFAULT_FRAME_DURATION_SECONDS: float = 0.5
 
-class Sprite(LoggerMixin):
+class Sprite[TFrame](LoggerMixin):
 
-    def __init__(self, frames: list[Tile] | None = None, frame_duration_seconds: float = DEFAULT_FRAME_DURATION_SECONDS):
+    def __init__(self, frames: list[TFrame] | None = None, frame_duration_seconds: float = DEFAULT_FRAME_DURATION_SECONDS):
         super().__init__()
         self.frames = [] if frames is None else frames
         self.set_uniform_frame_duration(frame_duration_seconds)
@@ -63,7 +60,7 @@ class Sprite(LoggerMixin):
     def create_random_time_offset(self) -> float:
         return random.uniform(0.0, self.frame_cycle_duration)
 
-    def get_current_frame_tile(self, time_offset_seconds: float) -> Tile:
+    def get_current_frame(self, time_offset_seconds: float) -> TFrame:
         frame_index = self._get_current_frame_index(time_offset_seconds)
         return self.frames[frame_index]
 

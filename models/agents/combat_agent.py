@@ -4,12 +4,13 @@ from typing import Self
 
 from dark_libraries.dark_math import Coord
 from models.sprite import Sprite
+from models.tile import Tile
 
 from .npc_agent import NpcAgent
 
 class CombatAgent(NpcAgent):
 
-    def __init__(self, coord: Coord, sprite: Sprite):
+    def __init__(self, coord: Coord, sprite: Sprite[Tile]):
         super().__init__()
         self._coord = coord
         self._sprite = sprite
@@ -18,7 +19,7 @@ class CombatAgent(NpcAgent):
     # NPC_AGENT IMPLEMENTATION (Partial): Start
     @property
     def current_tile(self):
-        return self._sprite.get_current_frame_tile(self._sprite_time_offset)
+        return self._sprite.get_current_frame(self._sprite_time_offset)
 
     @property
     def coord(self) -> Coord:

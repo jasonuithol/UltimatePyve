@@ -1,6 +1,7 @@
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from models.sprite import Sprite
+from models.tile import Tile
 
 class AnimatedTileLoader(LoggerMixin):
 
@@ -21,7 +22,7 @@ class AnimatedTileLoader(LoggerMixin):
 
     def register_sprites(self):
         for tile_id, num_frames in self.animated_tiles:
-            s = Sprite(
+            s = Sprite[Tile](
                 [self.global_registry.tiles.get(i) for i in range(tile_id, tile_id + num_frames)],
                 0.5 if num_frames < 3 else 0.3
             )

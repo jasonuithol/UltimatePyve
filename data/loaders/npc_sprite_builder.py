@@ -3,6 +3,7 @@ from models.enums.npc_tile_id import NpcTileId
 from models.sprite import Sprite
 
 from data.global_registry import GlobalRegistry
+from models.tile import Tile
 
 NUM_FRAMES = 4
 
@@ -15,7 +16,7 @@ class NpcSpriteBuilder(LoggerMixin):
         before = len(self.global_registry.sprites)
         for enum_member in NpcTileId:
             tile_id = enum_member.value
-            s = Sprite(
+            s = Sprite[Tile](
                 [self.global_registry.tiles.get(i) for i in range(tile_id, tile_id + NUM_FRAMES)],
                 0.5 if NUM_FRAMES < 3 else 0.3
             )

@@ -3,12 +3,13 @@ from dark_libraries.dark_math import Coord
 from models.agents.combat_agent import CombatAgent
 from models.npc_metadata        import NpcMetadata
 from models.sprite              import Sprite
+from models.tile import Tile
 
 from .combat_agent import CombatAgent
 
 class MonsterAgent(CombatAgent):
     
-    def __init__(self, coord: Coord, sprite: Sprite, npc_metadata: NpcMetadata):
+    def __init__(self, coord: Coord, sprite: Sprite[Tile], npc_metadata: NpcMetadata):
         super().__init__(coord, sprite)
         self._npc_metadata = npc_metadata
         self._current_hitpoints = self.maximum_hitpoints

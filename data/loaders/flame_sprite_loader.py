@@ -83,8 +83,8 @@ class FlameSpriteLoader(LoggerMixin):
             composed_tile.set_surface(composed_surface)
             yield composed_tile
 
-    def _build_sprite(self, tile_id: int) -> Sprite:
-        return Sprite(
+    def _build_sprite(self, tile_id: int) -> Sprite[Tile]:
+        return Sprite[Tile](
             list(self._build_frames(tile_id)),
             FLAME_FRAME_DURATION
         )
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     selection_index = 0
     current_tile_id = keys[selection_index]
-    current_sprite: Sprite = global_registry.sprites.get(current_tile_id)
+    current_sprite: Sprite[Tile] = global_registry.sprites.get(current_tile_id)
     index_delta = 0
     frame_time = 0.2
 
@@ -164,14 +164,14 @@ if __name__ == "__main__":
             if index_delta != 0:
                 selection_index = (selection_index + index_delta) % len(global_registry.sprites)
                 current_tile_id = keys[selection_index]
-                current_sprite: Sprite = global_registry.sprites.get(current_tile_id)
+                current_sprite: Sprite[Tile] = global_registry.sprites.get(current_tile_id)
 
             frame_time += (frame_time_delta * 0.01)
             if frame_time < 0.01:
                 frame_time = 0.01
 
         current_sprite.set_frame_duration(frame_time)
-        current_frame: Tile = current_sprite.get_current_frame_tile(pygame.time.get_ticks(), 0.0)
+        current_frame: Tile = current_sprite.get_current_frame(pygame.time.get_ticks(), 0.0)
 
         scaled = pygame.transform.scale(current_frame.surface, display_config.TILE_SIZE.scale(SCALE).to_tuple())
         screen.blit(scaled, (0, 0))

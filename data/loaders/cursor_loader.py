@@ -42,14 +42,14 @@ class CursorLoader(LoggerMixin):
         surf.set_colorkey(TRANSPARENT)
         return surf
     
-    def _create_sprite(self, surf: pygame.Surface) -> Sprite:
+    def _create_sprite(self, surf: pygame.Surface) -> Sprite[Tile]:
         on_tile = Tile(
             tile_id = None,
             pixels  = None,
             surface = surf
         )
 
-        return Sprite(
+        return Sprite[Tile](
             [on_tile, self._blank_tile],
             CURSOR_FRAME_DURATION_SECONDS
         )

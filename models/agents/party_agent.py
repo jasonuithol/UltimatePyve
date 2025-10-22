@@ -38,7 +38,7 @@ class PartyAgent(NpcAgent):
     transport_mode: int = None
     last_east_west: int = None
     last_nesw_dir: int = None
-    sprite: Sprite = None
+    sprite: Sprite[Tile] = None
     sprite_time_offset: float = 0.0
 
     # torch, light spell
@@ -91,7 +91,7 @@ class PartyAgent(NpcAgent):
 
     @property
     def current_tile(self) -> Tile:
-        return self.sprite.get_current_frame_tile(self.sprite_time_offset)
+        return self.sprite.get_current_frame(self.sprite_time_offset)
 
     @property
     def coord(self):

@@ -44,8 +44,8 @@ class GlobalRegistry:
 
         # display oriented features.
         self.tiles    = Registry[int, Tile]()     # tile_id
-        self.sprites  = Registry[int, Sprite]()   # tile_id
-        self.cursors  = Registry[int, Sprite]()   # CursorType.value
+        self.sprites  = Registry[int, Sprite[Tile]]()   # tile_id
+        self.cursors  = Registry[int, Sprite[Tile]]()   # CursorType.value
         self.fonts    = Registry[str, U5Font]()   # font_name
         self.font_glyphs = Registry[tuple[str, int], U5Glyph]()  # (font_name, glyph_code)
 

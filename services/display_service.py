@@ -52,11 +52,11 @@ class DisplayService(LoggerMixin):
             vsync = 1
         )
         self.clock = pygame.time.Clock()
-        self._cursors = dict[int, tuple[Coord, Sprite]]()
+        self._cursors = dict[int, tuple[Coord, Sprite[Tile]]]()
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
-    def set_cursor(self, cursor_type: int, cursor_coord: Coord, cursor_sprite: Sprite):
+    def set_cursor(self, cursor_type: int, cursor_coord: Coord, cursor_sprite: Sprite[Tile]):
         assert not cursor_coord is None, "cursor_coord cannot be None"
         assert not cursor_sprite is None, "cursor_sprite cannot be None"
         self._cursors[cursor_type] = (cursor_coord, cursor_sprite)
@@ -146,7 +146,7 @@ class DisplayService(LoggerMixin):
             cursor_coord, cursor_sprite = cursor_coord_sprite_tuple
             self.view_port.draw_tile( 
                 cursor_coord,
-                cursor_sprite.get_current_frame_tile(0.0)
+                cursor_sprite.get_current_frame(0.0)
             )
 
         vp_scaled_surface = self.view_port.get_output_surface()

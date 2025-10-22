@@ -13,6 +13,7 @@ from models.character_record  import CharacterRecord
 from models.equipable_items   import EquipableItemType
 from models.sprite            import Sprite
 from models.enums.equipable_item_slot import EquipableItemSlot
+from models.tile import Tile
 
 from .combat_agent import CombatAgent
 
@@ -61,7 +62,7 @@ class PartyMemberAgent(CombatAgent):
     # TODO: This will be None for the moment
     global_registry: GlobalRegistry
 
-    def __init__(self, sprite: Sprite, character_record: CharacterRecord):
+    def __init__(self, sprite: Sprite[Tile], character_record: CharacterRecord):
         super().__init__(coord = None, sprite = sprite)
         self._character_record = character_record
         self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value.value
