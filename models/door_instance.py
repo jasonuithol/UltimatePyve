@@ -7,7 +7,6 @@ from data.global_registry import GlobalRegistry
 from models.door_type        import DoorType
 from models.enums.door_type_tile_id import DoorTypeTileId
 from models.global_location import GlobalLocation
-from models.magic            import S_MAGIC_UNLOCK
 from models.enums.inventory_offset  import InventoryOffset
 from models.move_into_result import MoveIntoResult
 from models.interactable     import Interactable

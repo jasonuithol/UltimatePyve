@@ -16,6 +16,34 @@ from view.info_panel import InfoPanel
 
 BIBLICALLY_ACCURATE_RANGE_TWEAK = 0.5
 
+
+def keycode_to_char(keycode):
+    # Letters and digits
+    if pygame.K_a <= keycode <= pygame.K_z:
+        return chr(keycode)
+    elif pygame.K_0 <= keycode <= pygame.K_9:
+        return chr(keycode)
+    
+    # Special keys
+    special_map = {
+        pygame.K_SPACE: ' ',
+        pygame.K_COMMA: ',',
+        pygame.K_PERIOD: '.',
+        pygame.K_RETURN: '\n',
+        pygame.K_TAB: '\t',
+        pygame.K_MINUS: '-',
+        pygame.K_EQUALS: '=',
+        pygame.K_SLASH: '/',
+        pygame.K_BACKSLASH: '\\',
+        pygame.K_SEMICOLON: ';',
+        pygame.K_QUOTE: "'",
+        pygame.K_LEFTBRACKET: '[',
+        pygame.K_RIGHTBRACKET: ']',
+        pygame.K_BACKQUOTE: '`',
+    }
+    return special_map.get(keycode, None)
+
+
 class SyntheticQuit:
     def __init__(self):
         self.key = -1

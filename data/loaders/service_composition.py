@@ -14,6 +14,8 @@ from data.loaders.light_map_builder           import LightMapBuilder
 from data.loaders.npc_metadata_loader import NpcMetadataLoader
 from data.loaders.save_game_loader import SavedGameLoader
 from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
+from data.loaders.spell_rune_loader import SpellRuneLoader
+from data.loaders.spell_type_loader import SpellTypeLoader
 from services.light_map_level_baker       import LightMapLevelBaker
 
 from data.loaders.npc_sprite_builder        import NpcSpriteBuilder
@@ -56,3 +58,5 @@ def compose(provider: ServiceProvider):
     provider.register(U5MapLoader)
     provider.register(NpcMetadataLoader)
     provider.register(SavedGameLoader)
+    provider.register(SpellRuneLoader)
+    provider.register(SpellTypeLoader)

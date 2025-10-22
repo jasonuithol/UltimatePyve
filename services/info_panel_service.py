@@ -33,9 +33,14 @@ class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
         black = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
         self._both_arrow = self._up_arrow.overlay_with(self._down_arrow, black)
 
-    def show_party_summary(self, party_summary_data: PartySummaryData):
+    def show_party_summary(self, party_summary_data: PartySummaryData, select_mode: bool = False):
 
         self._set_panel_geometry(split = True)
+
+        if select_mode:
+            self.info_panel.set_panel_title("Select:")
+        else:
+            self.info_panel.set_panel_title(None)
 
         # Party members
         self.info_panel.set_glyph_rows_top(party_summary_data.party_data_set)

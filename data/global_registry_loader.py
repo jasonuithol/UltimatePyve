@@ -10,6 +10,8 @@ from data.loaders.npc_metadata_loader   import NpcMetadataLoader
 from data.loaders.save_game_loader      import SavedGameLoader
 
 from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
+from data.loaders.spell_rune_loader import SpellRuneLoader
+from data.loaders.spell_type_loader import SpellTypeLoader
 from data.loaders.tileset_loader        import TileLoader
 from data.loaders.terrain_loader        import TerrainLoader
 from data.loaders.transport_mode_loader import TransportModeLoader
@@ -66,6 +68,9 @@ class GlobalRegistryLoader(LoggerMixin):
     blue_border_glyph_factory:   BlueBorderGlyphFactory
     scroll_border_glyph_factory: ScrollBorderGlyphFactory
 
+    spell_rune_loader: SpellRuneLoader
+    spell_type_loader: SpellTypeLoader
+
     modding: ModdingService
 
     def _post_load_check(self) -> bool:
@@ -117,6 +122,10 @@ class GlobalRegistryLoader(LoggerMixin):
         self.npc_sprite_builder.register_npc_sprites()
         self.transport_mode_loader.load()
         self.npc_metadata_loader.load()
+
+        # magic
+        self.spell_rune_loader.load()
+        self.spell_type_loader.load()
 
         self.saved_game_loader.load_existing()
 

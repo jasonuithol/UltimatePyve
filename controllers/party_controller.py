@@ -4,6 +4,7 @@ from typing   import Iterable
 import pygame
 
 from controllers.active_member_controller import ActiveMemberController
+from controllers.cast_controller import CastController
 from controllers.combat_controller import CombatController
 from controllers.move_controller import MoveController, MoveOutcome
 from controllers.ready_controller import ReadyController
@@ -46,6 +47,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     move_controller:    MoveController
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
+    cast_controller: CastController
 
     def run(self):
 
@@ -81,6 +83,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
         self.active_member_controller.handle_event(event)
         self.ready_controller.handle_event(event)
+        self.cast_controller.handle_event(event, spell_caster = self.party_agent.get_active_member(), combat_map = None)
 
         #
         # Received key input, call appropriate handler.

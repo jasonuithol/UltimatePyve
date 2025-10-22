@@ -65,8 +65,6 @@ class PartyMemberAgent(CombatAgent):
         super().__init__(coord = None, sprite = sprite)
         self._character_record = character_record
         self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value.value
-        self._mana = self._calculate_maximum_mana()
-        self._level = self._calculate_potential_level()
 
     def enter_combat(self, coord: Coord):
         self.coord = coord
@@ -80,12 +78,8 @@ class PartyMemberAgent(CombatAgent):
 
     def get_equipped_item_codes(self) -> list[int]:
         return [
-            self._character_record.helmet,
-            self._character_record.amulet,
-            self._character_record.armor,
-            self._character_record.left_hand,
-            self._character_record.right_hand,
-            self._character_record.ring
+            int(getattr(self._character_record, name))
+            for name in EQUIPMENT_PROPERTY_NAMES
         ]
 
     def get_equipped_items(self) -> list[EquipableItemType]:
@@ -189,18 +183,6 @@ class PartyMemberAgent(CombatAgent):
     def hitpoints(self, val: int):
         self._character_record.current_hp = val
 
-    @property
-    def maximum_mana(self) -> int:
-        return self._calculate_maximum_mana()
-
-    @property 
-    def mana(self) -> int:
-        return self._character_record.current_mp
-
-    @mana.setter
-    def mana(self, val: int):
-        self._character_record.current_mp = val
-
     def get_damage(self, attack_type: chr) -> int:
         if attack_type in ['R','B']:
             item_id = self._character_record.right_hand
@@ -219,16 +201,36 @@ class PartyMemberAgent(CombatAgent):
     #
     # COMBAT_AGENT IMPLEMENTATION: End
 
-    def _calculate_potential_level(self) -> int:
-        return math.log(self._character_record.experience // 100, 2)
+    @property
+    def level(self) -> int:
+        return int(self._character_record.level)
 
+    @level.setter
+    def level(self, val: int):
+        self._character_record.level = val
+
+    def _calculate_potential_level(self) -> int:
+        return int(math.log(self._character_record.experience // 100, 2))
+
+    @property
+    def maximum_mana(self) -> int:
+        return self._calculate_maximum_mana()
+
+    @property 
+    def mana(self) -> int:
+        return self._character_record.current_mp
+
+    @mana.setter
+    def mana(self, val: int):
+        self._character_record.current_mp = val
+        
     def _calculate_maximum_mana(self) -> int:
         class_multipliers = {
             NpcTileId.ADVENTURER.value : 1.0,
             NpcTileId.MAGE.value       : 1.0,
             NpcTileId.BARD.value       : 0.5
         }
-        return class_multipliers.get(self.tile_id, 0.0) * self._character_record.intelligence
+        return int(class_multipliers.get(self.tile_id, 0.0) * self._character_record.intelligence)
         
     def _increase_skill(self, increased_skill_name: str, amount: int):
         current_skill_value = getattr(self._character_record, increased_skill_name)
@@ -252,9 +254,9 @@ class PartyMemberAgent(CombatAgent):
         self._character_record.experience = min(self._character_record.experience + delta, 0)
 
     def update_level(self):
-        while self._level != self._calculate_potential_level():
-            if self._level < self._calculate_potential_level():
-                self._level += 1
+        while self.level != self._calculate_potential_level():
+            if self.level < self._calculate_potential_level():
+                self.level += 1
                 increased_skill_name = self._choose_increasable_skill()
                 if increased_skill_name:
                     self._increase_skill(increased_skill_name, amount = 1)
@@ -262,7 +264,7 @@ class PartyMemberAgent(CombatAgent):
                 # Getting killed will result in loss of experience, so a level drop is possible.
                 # This does not affect skill levels tho.
                 # This allows absolute sweatlords to level every skill to 30 for all party members.
-                self._level -= 1
+                self.level -= 1
 
 
 

@@ -24,6 +24,13 @@ class ReadyController:
             self.ready()
 
     def ready(self):
+        self._ready()
+
+        # Restore previous info panel state.
+        party_data = self.info_panel_data_provider.get_party_summary_data()
+        self.info_panel_service.show_party_summary(party_data)
+
+    def _ready(self):
 
         self.selected_member_index = 0
         self.selected_item_index = 0
@@ -34,7 +41,6 @@ class ReadyController:
         self._choose_player()
 
         if self.selected_member_index is None:
-            self.console_service.print_ascii("None")
             return
 
         #
@@ -42,11 +48,11 @@ class ReadyController:
         #
         while True:
 
-            equipable_item_data = self.info_panel_data_provider.get_equipable_items_data(self.selected_member_index)
-            self.console_service.print_ascii(equipable_item_data.party_member_name + " !")
-
             # Set the info_panel into the correct state for phase 2
+            equipable_item_data = self.info_panel_data_provider.get_equipable_items_data(self.selected_member_index)
             self.info_panel_service.show_equipable_items(equipable_item_data)
+
+            self.console_service.print_ascii("Item: ", include_carriage_return = False)
 
             self.selected_item_index = self.info_panel_service.choose_item(
                 glyph_rows = equipable_item_data.equipable_items_data_set,
@@ -54,12 +60,9 @@ class ReadyController:
             )
 
             if self.selected_item_index is None:
-
                 #
-                # Exit: Resume normal playing
+                # Exit
                 #
-                party_summary_data_set = self.info_panel_data_provider.get_party_summary_data()
-                self.info_panel_service.show_party_summary(party_summary_data_set)
                 return            
 
             selected_item_id = equipable_item_data.equipable_items_index_map[self.selected_item_index]
@@ -71,18 +74,28 @@ class ReadyController:
 
     def _choose_player(self) -> int:
 
-        party_summary_data_set = self.info_panel_data_provider.get_party_summary_data()
-
-        # Guarantee the correct starting state.
-        self.info_panel_service.show_party_summary(party_summary_data_set)
-
-        self.console_service.print_ascii("Ready...")
+        self.console_service.print_ascii("Ready...", no_prompt = True)
+        self.console_service.print_ascii("", no_prompt = True)
         self.console_service.print_ascii("Player: ", include_carriage_return = False)
 
+        party_summary_data_set = self.info_panel_data_provider.get_party_summary_data()
+        self.info_panel_service.show_party_summary(party_summary_data_set, select_mode = True)
         self.selected_member_index = self.info_panel_service.choose_item(
             glyph_rows = party_summary_data_set.party_data_set,
             selected_index = self.selected_member_index
         )
+
+        if self.selected_member_index is None:
+            self.console_service.print_ascii("None")
+        else:
+            selected_member = self.party_agent.get_party_member(self.selected_member_index)
+            self.console_service.print_ascii(selected_member.name, no_prompt = True)
+
+    def _print_rejection(self, msg):
+        self.console_service.print_ascii("",  no_prompt = True)
+        self.console_service.print_ascii("",  no_prompt = True)
+        self.console_service.print_ascii(msg, no_prompt = True)
+        self.console_service.print_ascii("",  no_prompt = True)
 
     def _update_inventories(self, selected_item_id: int):
 
@@ -97,20 +110,20 @@ class ReadyController:
             
         elif not party_member.is_slot_available(selected_item.slot) :
             if selected_item.slot == EquipableItemSlot.ONE_HAND:
-                self.console_service.print_ascii("Thou must free one of thy hands first !")
+                self._print_rejection("Thou must free one of thy hands first !")
             if selected_item.slot == EquipableItemSlot.TWO_HAND:
-                self.console_service.print_ascii("Both hands must be free before thou canst wield that !")
+                self._print_rejection("Both hands must be free before thou canst wield that !")
             if selected_item.slot == EquipableItemSlot.HEAD:
-                self.console_service.print_ascii("Remove first thy present helm !")
+                self._print_rejection("Remove first thy present helm !")
             if selected_item.slot == EquipableItemSlot.NECK:
-                self.console_service.print_ascii("Thou must remove thine other amulet !")
+                self._print_rejection("Thou must remove thine other amulet !")
             if selected_item.slot == EquipableItemSlot.BODY:
-                self.console_service.print_ascii("Thou must first remove thine other armour !")
+                self._print_rejection("Thou must first remove thine other armour !")
             if selected_item.slot == EquipableItemSlot.FINGER:
-                self.console_service.print_ascii("Only one magic ring may be worn at a time !")
+                self._print_rejection("Only one magic ring may be worn at a time !")
 
         elif not party_member.can_carry_extra_weight(selected_item):
-            self.console_service.print_ascii("Thou art not strong enough !")
+            self._print_rejection("Thou art not strong enough !")
 
         else:
             # Equipping an item into an available slot

@@ -49,7 +49,7 @@ class InteractiveConsole(ScalableComponent):
 
     # This will print at the bottom of the screen and scroll by rolling the component surface upwards.
     # It maintains an x-axis cursor state.
-    def print_glyphs(self, glyphs: Iterable[U5Glyph], include_carriage_return: bool = True):
+    def print_glyphs(self, glyphs: Iterable[U5Glyph], include_carriage_return: bool = True, no_prompt = False):
 
         target = self.get_input_surface()
         for glyph in glyphs:
@@ -62,6 +62,8 @@ class InteractiveConsole(ScalableComponent):
 
         if include_carriage_return:
             self._scroll()
-            self._scroll()
             self._return()
-            self._prompt()
+
+            if not no_prompt:
+                self._scroll()
+                self._prompt()

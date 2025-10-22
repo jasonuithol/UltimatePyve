@@ -3,6 +3,7 @@ from dark_libraries.registry import Registry
 
 from models.combat_map import CombatMap, DungeonRoom
 from models.door_type import DoorType
+from models.spell_type import SpellType
 from models.npc_metadata import NpcMetadata
 from models.saved_game import SavedGame
 from models.u5_font    import U5Font
@@ -61,6 +62,10 @@ class GlobalRegistry:
         self.combat_maps   = Registry[int, CombatMap]()     # combat_map_index
         self.dungeon_rooms = Registry[int, DungeonRoom]()   # dungeon_room_index
         self.npc_metadata  = Registry[int, NpcMetadata]()   # tile_id
+
+        # magic
+        self.runes = Registry[str, str]()               # e.g. "a"  -> "AN",   "b"  -> "BET",   ...
+        self.spell_types = Registry[str, SpellType]()   # e.g. "an" -> An Nox, "rh" -> Rel Hur, ...
 
         # populated by InitialisationController
         self.saved_game: SavedGame = None

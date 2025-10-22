@@ -2,8 +2,10 @@ import pygame
 import random
 
 from controllers.active_member_controller import ActiveMemberController
+from controllers.cast_controller import CastController
 from controllers.move_controller import MoveController
 
+from controllers.ready_controller import ReadyController
 from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
@@ -69,6 +71,8 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     display_service: DisplayService
     move_controller: MoveController
     active_member_controller: ActiveMemberController
+    ready_controller: ReadyController
+    cast_controller: CastController
 
     _last_attacked_monster = dict[str, MonsterAgent]()
 
@@ -124,8 +128,10 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
             party_member.spend_action_quanta()
             return IN_COMBAT
 
-        # Active member selection
+        # hand event to sub-controllers
         self.active_member_controller.handle_event(event)
+        self.ready_controller.handle_event(event)
+        self.cast_controller.handle_event(event, spell_caster = party_member, combat_map = combat_map)
 
         # Attack dispatch handler
         if event.key == pygame.K_a:
