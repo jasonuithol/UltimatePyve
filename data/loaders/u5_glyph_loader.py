@@ -3,6 +3,7 @@ import pygame
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 from models.enums.ega_palette_values import EgaPaletteValues
+from models.glyph_key import GlyphKey
 from models.u5_glyph import U5Glyph
 from services.surface_factory import SurfaceFactory
 from view.display_config import DisplayConfig
@@ -23,7 +24,8 @@ class U5GlyphLoader(LoggerMixin):
             for glyph_code, glyph_data in enumerate(font.data):
 
                 glyph = self._build_glyph(glyph_data)
-                self.global_registry.font_glyphs.register((font_name, glyph_code), glyph)
+                glyph_key = GlyphKey(font_name, glyph_code)
+                self.global_registry.font_glyphs.register(glyph_key, glyph)
 
                 glyph_count = sum(1 for glyph_key in self.global_registry.font_glyphs.keys() if glyph_key[0] == font_name)
             self.log(f"Registered {glyph_count} u5glyphs from {font_name}")

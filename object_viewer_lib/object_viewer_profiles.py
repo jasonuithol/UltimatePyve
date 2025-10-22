@@ -12,6 +12,7 @@ from data.loaders.u5_glyph_loader import U5GlyphLoader
 from data.loaders.u5_map_loader import U5MapLoader
 
 from models.data_ovl import DataOVL
+from models.glyph_key import GlyphKey
 from models.tile import Tile
 from models.u5_glyph import U5Glyph
 from models.u5_map_level import U5MapLevel
@@ -178,7 +179,7 @@ class FontViewerProfile(ViewerProfile[tuple[str,int], U5Glyph]):
         return 128
 
     def get_unscaled_object_surface(self, object_index: int) -> pygame.Surface:
-        glyph: U5Glyph = self.global_registry.font_glyphs.get((self.font_name, object_index))
+        glyph: U5Glyph = self.global_registry.font_glyphs.get(GlyphKey(self.font_name, object_index))
         if glyph:
             return glyph.get_surface()
         else:

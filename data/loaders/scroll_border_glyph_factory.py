@@ -2,6 +2,7 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.border_glyphs import BorderGlyphs
+from models.glyph_key import GlyphKey
 
 TOP_LEFT  = 97
 TOP_RIGHT = 99
@@ -21,7 +22,7 @@ class ScrollBorderGlyphFactory(LoggerMixin):
         self.log("Built scroll border glyphs.")
 
     def _glyph(self, glyph_code: int):
-        return self.global_registry.font_glyphs.get(("RUNES.CH", glyph_code))
+        return self.global_registry.font_glyphs.get(GlyphKey("RUNES.CH", glyph_code))
 
     def _create_border_glyphs(self) -> BorderGlyphs:
 

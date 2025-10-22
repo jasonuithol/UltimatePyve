@@ -9,6 +9,7 @@ from models.agents.party_agent import PartyAgent
 from models.enums.inventory_offset import InventoryOffset
 from models.equipable_items import EquipableItemType
 
+from models.glyph_key import GlyphKey
 from services.font_mapper import FontMapper
 from services.world_clock import WorldClock
 
@@ -63,7 +64,7 @@ class InfoPanelDataProvider(LoggerMixin):
         glyph_row = (
             self.font_mapper.map_ascii_string(name_part.ljust(MAXIMUM_NAME_LENGTH + 1))
             +
-            [self.global_registry.font_glyphs.get(("IBM.CH", active_member_indicator_glyph_code))]
+            [self.global_registry.font_glyphs.get(GlyphKey("IBM.CH", active_member_indicator_glyph_code))]
             + 
             self.font_mapper.map_ascii_string(health_part.rjust(5))
         )
@@ -112,9 +113,9 @@ class InfoPanelDataProvider(LoggerMixin):
 
             if is_equipped:
                 assert not equipable_item_type.rune_id is None, "Must have a rune_id"
-                rune_glyph = self.global_registry.font_glyphs.get(("RUNES.CH", equipable_item_type.rune_id.value))
+                rune_glyph = self.global_registry.font_glyphs.get(GlyphKey("RUNES.CH", equipable_item_type.rune_id.value))
             else:
-                rune_glyph = self.global_registry.font_glyphs.get(("RUNES.CH", 0))
+                rune_glyph = self.global_registry.font_glyphs.get(GlyphKey("RUNES.CH", 0))
 
             assert not rune_glyph is None, f"Must have a rune_glyph (is_equipped={is_equipped}, rune_id={equipable_item_type.rune_id})"
 

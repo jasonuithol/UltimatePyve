@@ -3,6 +3,7 @@ from dark_libraries.registry import Registry
 
 from models.combat_map import CombatMap, DungeonRoom
 from models.door_type import DoorType
+from models.glyph_key import GlyphKey
 from models.spell_type import SpellType
 from models.npc_metadata import NpcMetadata
 from models.saved_game import SavedGame
@@ -47,7 +48,8 @@ class GlobalRegistry:
         self.sprites  = Registry[int, Sprite[Tile]]()   # tile_id
         self.cursors  = Registry[int, Sprite[Tile]]()   # CursorType.value
         self.fonts    = Registry[str, U5Font]()   # font_name
-        self.font_glyphs = Registry[tuple[str, int], U5Glyph]()  # (font_name, glyph_code)
+        self.font_glyphs = Registry[GlyphKey, U5Glyph]()  # (font_name, glyph_code)
+        self.animated_glyphs = Registry[GlyphKey, Sprite[U5Glyph]]
 
         self.blue_border_glyphs: BorderGlyphs = None
         self.scroll_border_glyphs: BorderGlyphs = None
