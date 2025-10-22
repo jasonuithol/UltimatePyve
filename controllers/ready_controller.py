@@ -63,6 +63,7 @@ class ReadyController:
                 #
                 # Exit
                 #
+                self.console_service.print_ascii("Done")
                 return            
 
             selected_item_id = equipable_item_data.equipable_items_index_map[self.selected_item_index]

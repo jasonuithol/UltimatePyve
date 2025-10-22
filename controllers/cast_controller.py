@@ -89,16 +89,21 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         spell_caster_index = self.info_panel_service.choose_item(party_data.party_data_set, 0)
 
         if spell_caster_index is None:
+            spell_caster = None
             self.console_service.print_ascii("None !")
-            return None
         else:
             spell_caster = self.party_agent.get_party_member(spell_caster_index)
             self.console_service.print_ascii(spell_caster.name, no_prompt = True)
-            return spell_caster
+
+        self.info_panel_service.show_party_summary(party_data, select_mode = False)
+
+        return spell_caster
+        
 
     def _read_spell_runes(self) -> list[str]:
 
         self.console_service.print_ascii("Spell name:", no_prompt = True)
+        self.console_service.print_ascii(":", include_carriage_return = False)
 
         rune_keys = ""
 
