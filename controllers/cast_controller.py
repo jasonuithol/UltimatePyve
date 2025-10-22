@@ -1,5 +1,7 @@
 import pygame
 
+from controllers.spell_controllers.general_spell_controller import GeneralSpellController
+from controllers.spell_controllers.party_member_spell_controller import PartyMemberSpellController
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
@@ -18,6 +20,8 @@ from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
 from services.main_loop_service import MainLoopService, keycode_to_char
 
+INCUR_SPELL_COST = True
+NO_SPELL_COST    = False
 
 class CastController(DarkEventListenerMixin, LoggerMixin):
 
@@ -29,36 +33,27 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     
     info_panel_service:       InfoPanelService
     info_panel_data_provider: InfoPanelDataProvider
-    
-    def init(self):
-        self._runes = {
-            rune[0].lower() : rune
-            for rune in DataOVL.to_strs(self.data_ovl.spell_runes) if len(rune) > 0
-        } 
-        self._spells = {
-            "".join([rune[0].lower() for rune in spell_name.split(" ")]) : spell_name
-            for spell_name in DataOVL.to_strs(self.data_ovl.spell_names) if len(spell_name) > 0
-        }
+
+    general_spell_controller: GeneralSpellController
+    party_member_spell_controller: PartyMemberSpellController
 
     def handle_event(self, event: pygame.event.Event, spell_caster: PartyMemberAgent, combat_map: CombatMap):
         if event.key == pygame.K_c:
             self.cast(spell_caster, combat_map)
 
     def cast(self, spell_caster: PartyMemberAgent, combat_map: CombatMap):
-        self._combat_map = combat_map
-        self._spell_caster = spell_caster
-        self._cast()
+        self._cast(spell_caster, combat_map)
 
         # Restore previous info panel state.
         party_data = self.info_panel_data_provider.get_party_summary_data()
         self.info_panel_service.show_party_summary(party_data)
 
-    def _cast(self):
+    def _cast(self, spell_caster: PartyMemberAgent, combat_map: CombatMap):
         self.console_service.print_ascii("Cast...", no_prompt = True)
 
-        if self._spell_caster is None:
-            self._spell_caster = self._get_spell_caster()
-        if self._spell_caster is None:
+        if spell_caster is None:
+            spell_caster = self._get_spell_caster()
+        if spell_caster is None:
             return
 
         rune_keys = self._read_spell_runes()
@@ -74,7 +69,16 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             self.console_service.print_ascii("No effect!")
             return
 
-        self._attempt_spell(spell_type)
+        incur_spell_cost = self._attempt_spell(spell_caster, spell_type, combat_map)
+
+        #
+        # TODO: If this is a potion or scroll, incur different costs.
+        #
+        if incur_spell_cost:
+            spell_caster.mana = spell_caster.mana - spell_type.level
+            premixed_amount = self._get_premixed_amount(spell_type)
+            self._set_premixed_amount(spell_type, premixed_amount - 1)
+            self.console_service.print_ascii("Success!")
 
     def _get_spell_caster(self) -> PartyMemberAgent:
         
@@ -113,7 +117,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
                 continue
 
             rune_key = rune_key.lower()
-            rune = self._runes.get(rune_key, None)
+            rune = self.global_registry.runes.get(rune_key)
 
             if rune is None:
                 continue
@@ -121,47 +125,62 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             rune_keys += rune_key
             self.console_service.print_ascii(rune + " ", include_carriage_return = False)
 
-    def _attempt_spell(self, spell_type: SpellType):
-        
-        if (self._combat_map and not spell_type.combat_allowed) or (not self._combat_map and not spell_type.peace_allowed):
-            self.console_service.print_ascii("Not here !")
-            return
 
-        premixed_amount = self.global_registry.saved_game.read_u8(spell_type.premix_inventory_offset)
+    def _attempt_spell(self, spell_caster: PartyMemberAgent, spell_type: SpellType, combat_map: CombatMap):
+        
+        if (combat_map and not spell_type.combat_allowed) or (not combat_map and not spell_type.peace_allowed):
+            self.console_service.print_ascii("Not here !")
+            return NO_SPELL_COST
+
+        premixed_amount = self._get_premixed_amount(spell_type)
         if premixed_amount == 0:
             self.console_service.print_ascii("None mixed !")
-            return
+            return NO_SPELL_COST
 
-        insufficient_mana  = self._spell_caster.mana < spell_type.level
-        insufficient_level = self._spell_caster.level < spell_type.level
+        insufficient_mana  = spell_caster.mana < spell_type.level
+        insufficient_level = spell_caster.level < spell_type.level
 
         if insufficient_mana or insufficient_level:
             self.console_service.print_ascii("Failed !")
-            self.log(f"Spell failed: caster_mana={self._spell_caster.mana}, caster_level={self._spell_caster.level}, spell_level={spell_type.level}")
-            return
+            self.log(f"Spell failed: caster_mana={spell_caster.mana}, caster_level={spell_caster.level}, spell_level={spell_type.level}")
+            return NO_SPELL_COST
 
-        if spell_type.target_type == SpellTargetType.T_DIRECTION:
+        if spell_type.target_type == SpellTargetType.T_NONE:
+            self.general_spell_controller.cast(spell_caster, spell_type)
+
+        elif spell_type.target_type == SpellTargetType.T_DIRECTION:
             self.console_service.print_ascii("Direction: ", include_carriage_return = False)
             spell_direction = self.main_loop_service.obtain_action_direction()
 
         elif spell_type.target_type == SpellTargetType.T_COORD:
-            #
-            # TODO: Check if in combat mode
-            #
+
+            assert combat_map, "Should be in combat, or have been prevented from casting this spell"
+
             spell_coord = self.main_loop_service.obtain_cursor_position(
-                starting_coord  = self._spell_caster.coord,
-                boundary_rect   = self._combat_map.get_size().to_rect(Coord(0,0)),
+                starting_coord  = spell_caster.coord,
+                boundary_rect   = combat_map.get_size().to_rect(Coord(0,0)),
                 range_          = 255
             )
 
         elif spell_type.target_type == SpellTargetType.T_PARTY_MEMBER:
+
             self.console_service.print_ascii("On who: ", include_carriage_return = False)
             party_data = self.info_panel_data_provider.get_party_summary_data()
             self.info_panel_service.show_party_summary(party_data, select_mode = True)
+
             target_party_member_index = self.info_panel_service.choose_item(party_data.party_data_set, 0)
+            target_party_member = self.party_agent.get_party_member(target_party_member_index)
+            self.console_service.print_ascii(target_party_member.name, no_prompt = True)
 
+            self.party_member_spell_controller.cast(spell_caster, spell_type, target_party_member)
 
-        self.log("Help ! I'm coooosting !!!")
+        return INCUR_SPELL_COST
+
+    def _get_premixed_amount(self, spell_type: SpellType) -> int:
+        return self.global_registry.saved_game.read_u8(spell_type.premix_inventory_offset)
+
+    def _set_premixed_amount(self, spell_type: SpellType, amount: int) -> int:
+        return self.global_registry.saved_game.write_u8(spell_type.premix_inventory_offset, amount)
 
 
 

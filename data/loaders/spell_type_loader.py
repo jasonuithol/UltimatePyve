@@ -67,6 +67,7 @@ class SpellTypeLoader(LoggerMixin):
         assert premix_inventory_offset, f"Could not find premix_inventory_offset for premix_inventory_offset_name={premix_inventory_offset_name}"
 
         spell_type = SpellType(
+            spell_key = spell_key,
             name     = spell_name,
             level    = self._level,
             reagents = reagents,

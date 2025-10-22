@@ -6,6 +6,7 @@ from models.enums.spell_target_type import SpellTargetType
 @immutable
 @auto_init
 class SpellType:
+    spell_key: str
     name: str
     level: int
     reagents: list[Reagent]

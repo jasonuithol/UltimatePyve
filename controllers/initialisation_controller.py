@@ -1,4 +1,3 @@
-from controllers.cast_controller import CastController
 from dark_libraries.logging   import LoggerMixin
 
 from data.loaders.save_game_loader import SavedGameLoader
@@ -43,7 +42,6 @@ class InitialisationController(LoggerMixin):
     info_panel_data_provider: InfoPanelDataProvider
     info_panel: InfoPanel
 
-    cast_controller: CastController
 
     def init(self):
         
@@ -89,9 +87,6 @@ class InitialisationController(LoggerMixin):
 
         self.map_cache_service.init()
         self.light_map_level_baker.bake_level_light_maps()
-
-
-        self.cast_controller.init()
 
         #
         # Start displaying stuff

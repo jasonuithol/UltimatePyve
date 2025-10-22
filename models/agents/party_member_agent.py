@@ -231,7 +231,11 @@ class PartyMemberAgent(CombatAgent):
             NpcTileId.BARD.value       : 0.5
         }
         return int(class_multipliers.get(self.tile_id, 0.0) * self._character_record.intelligence)
-        
+
+    @property
+    def intelligence(self) -> int:
+        return self._character_record.intelligence
+
     def _increase_skill(self, increased_skill_name: str, amount: int):
         current_skill_value = getattr(self._character_record, increased_skill_name)
         setattr(self._character_record, increased_skill_name, max(current_skill_value + amount, MAXIMUM_SKILL_LEVEL))

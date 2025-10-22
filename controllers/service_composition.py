@@ -9,6 +9,8 @@ from .initialisation_controller import InitialisationController
 from .party_controller          import PartyController
 from .combat_controller         import CombatController
 
+from .spell_controllers.service_composition import compose as compose_spell_controllers
+
 def compose(provider: ServiceProvider):
     provider.register(InitialisationController)
     provider.register(PartyController)
@@ -17,4 +19,6 @@ def compose(provider: ServiceProvider):
     provider.register(ActiveMemberController)
     provider.register(ReadyController)
     provider.register(CastController)
+
+    compose_spell_controllers(provider)
 
