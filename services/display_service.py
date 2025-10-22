@@ -173,6 +173,8 @@ class DisplayService(LoggerMixin):
         #
         # InteractiveConsole
         #
+        self.interactive_console.draw()
+
         ic_scaled_surface = self.interactive_console.get_output_surface()
         ic_scaled_pixel_offset = (
             right_hand_element_x, 

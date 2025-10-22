@@ -49,7 +49,6 @@ class GlobalRegistry:
         self.cursors  = Registry[int, Sprite[Tile]]()   # CursorType.value
         self.fonts    = Registry[str, U5Font]()   # font_name
         self.font_glyphs = Registry[GlyphKey, U5Glyph]()  # (font_name, glyph_code)
-        self.animated_glyphs = Registry[GlyphKey, Sprite[U5Glyph]]
 
         self.blue_border_glyphs: BorderGlyphs = None
         self.scroll_border_glyphs: BorderGlyphs = None

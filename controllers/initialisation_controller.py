@@ -18,6 +18,7 @@ from services.map_cache.map_cache_service import MapCacheService
 from services.world_clock           import WorldClock
 from services.world_loot.world_loot_service import WorldLootService
 from view.info_panel import InfoPanel
+from view.interactive_console import InteractiveConsole
 from view.main_display              import MainDisplay
 
 class InitialisationController(LoggerMixin):
@@ -41,6 +42,7 @@ class InitialisationController(LoggerMixin):
     info_panel_service: InfoPanelService
     info_panel_data_provider: InfoPanelDataProvider
     info_panel: InfoPanel
+    interactive_console: InteractiveConsole
 
 
     def init(self):
@@ -92,6 +94,7 @@ class InitialisationController(LoggerMixin):
         # Start displaying stuff
         #
         self.main_display.init()
+        self.interactive_console.init()
         self.info_panel.init()
         self.info_panel_service.init()
 
