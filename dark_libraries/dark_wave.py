@@ -337,11 +337,8 @@ class DarkWaveGenerator:
     def sawtooth_wave(self) -> 'DarkWaveSequencer':
 
         def _wave_function(hz: float, sec: float):
+            assert 0.0 <= hz < (self.frequency_sample_rate / 2), f"hz must be between 0 and {self.frequency_sample_rate / 2}"
             n_samples = int(self.frequency_sample_rate * sec)
-
-            if not (0.0 <= hz < (self.frequency_sample_rate / 2)):
-                return numpy.zeros((n_samples,), dtype=numpy.float64)
-
             t = numpy.arange(n_samples, dtype=numpy.float64) / self.frequency_sample_rate
             # Basic sawtooth: fractional part of (hz * t), scaled to [-1, 1]
             return self._dark_wave(2.0 * (hz * t % 1.0) - 1.0)
@@ -351,6 +348,7 @@ class DarkWaveGenerator:
     def square_wave(self) -> 'DarkWaveSequencer':
 
         def _wave_function(hz: float, sec: float):
+            assert 0.0 <= hz < (self.frequency_sample_rate / 2), f"hz must be between 0 and {self.frequency_sample_rate / 2}"
             input_wave = self.sine_wave().sequence([(hz, sec)])
             return self._dark_wave(numpy.sign(input_wave.wave_data))
         
@@ -359,11 +357,9 @@ class DarkWaveGenerator:
     def sine_wave(self) -> 'DarkWaveSequencer':
 
         def _wave_function(hz: float, sec: float):
-
-            number_of_samples = int(self.frequency_sample_rate * sec)
-
             assert 0.0 <= hz < (self.frequency_sample_rate / 2), f"hz must be between 0 and {self.frequency_sample_rate / 2}"
 
+            number_of_samples = int(self.frequency_sample_rate * sec)
             time_axis: RawValueWaveArrayType = numpy.arange(number_of_samples, dtype=numpy.float64) / self.frequency_sample_rate
             return self._dark_wave(numpy.sin(2 * numpy.pi * hz * time_axis))
         return self._dark_wave_sequencer(_wave_function)
