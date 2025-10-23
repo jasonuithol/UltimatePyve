@@ -145,6 +145,12 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         insufficient_mana  = spell_caster.mana < spell_type.level
         insufficient_level = spell_caster.level < spell_type.level
 
+        # We're definitely casting some sort of spell.  Do the thing.
+        if spell_type.target_type == SpellTargetType.T_COORD:
+            self._do_special_effects_coord()
+        else:
+            self._do_special_effects_normal()
+
         if insufficient_mana or insufficient_level:
             self.console_service.print_ascii("Failed !")
             self.log(f"Spell failed: caster_mana={spell_caster.mana}, caster_level={spell_caster.level}, spell_level={spell_type.level}")
@@ -186,8 +192,35 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
     def _set_premixed_amount(self, spell_type: SpellType, amount: int) -> int:
         return self.global_registry.saved_game.write_u8(spell_type.premix_inventory_offset, amount)
+    
+    def _do_special_effects_normal(self):
+        # SOUND: The bubbling of the fabric of reality
 
+        # VISUAL: Invert all colors of the viewport
 
+        # SOUND: The searing of the energy plane.
+
+        # VISUAL: Restore all colors of the viewport.
+        return
+
+    def _do_special_effects_coord(self):
+        # SOUND: The bubbling of the fabric of reality
+
+        # SOUND: Whooshing of projectile.
+
+        # ANIMATION: Animate the movement of a glyph to the target.
+
+        # if hit:
+
+            # SOUND: "BBRRERRRKKCH"
+            # ANIMATION: The flashy explody tile.
+
+        # else (a miss):
+
+            # SOUND: "WHOOIIIP !"
+            # ANIMATION: n/a
+
+        return
 
 
 

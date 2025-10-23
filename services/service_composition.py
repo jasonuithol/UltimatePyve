@@ -19,8 +19,8 @@ from services.combat_map_service import CombatMapService
 from services.npc_service import NpcService
 
 from services.modding_service     import ModdingService
-from services.sound_track_player  import SoundTrackPlayer
 
+from services.sound_service import SoundService
 from services.surface_factory import SurfaceFactory
 from services.world_clock import WorldClock
 
@@ -39,7 +39,7 @@ def compose(provider: ServiceProvider):
     provider.register(LightingService)
     provider.register(ModdingService)
     provider.register(MonsterSpawner)
-    provider.register(SoundTrackPlayer)
+    provider.register(SoundService)
     provider.register(NpcService)
 
     provider.register(WorldClock)

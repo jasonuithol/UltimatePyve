@@ -1,0 +1,64 @@
+
+    def _one_pole_allpass(self, x: RawValueWaveArrayType, a: float) -> RawValueWaveArrayType:
+        # y[n] = -a*x[n] + x[n-1] + a*y[n-1]
+        y = numpy.zeros_like(x, dtype=numpy.float64)
+        xn1 = 0.0
+        yn1 = 0.0
+        for n in range(len(x)):
+            y[n] = -a * x[n] + xn1 + a * yn1
+            xn1 = x[n]
+            yn1 = y[n]
+        return y
+
+    def _a_from_fc(self, fc: float) -> float:
+        # Bilinear transform mapping (Tustin). fc normalized to Hz.
+        # a = (1 - tan(pi*fc/fs)) / (1 + tan(pi*fc/fs))
+        t = numpy.tan(numpy.pi * fc / self.sample_rate)
+        return (1.0 - t) / (1.0 + t)
+
+    def phaser(self,
+            x: RawValueWaveArrayType,
+            stages: int = 4,
+            lfo_hz: float = 0.3,
+            min_fc: float = 300.0,
+            max_fc: float = 1500.0,
+            feedback: float = 0.0,
+            mix: float = 0.7) -> RawValueWaveArrayType:
+        """
+        Simple multi‑stage phaser:
+        - stages: number of all‑pass cascades (2–8 typical)
+        - lfo_hz: sweep rate
+        - min_fc/max_fc: sweep range (Hz)
+        - feedback: 0.0–0.7 to intensify notches
+        - mix: wet/dry mix
+        """
+        x = x.astype(numpy.float64)
+        n = len(x)
+        t = numpy.arange(n) / self.sample_rate
+        # LFO in [0,1]
+        lfo = 0.5 * (1.0 + numpy.sin(2 * numpy.pi * lfo_hz * t))
+        # Sweep cutoff per sample
+        fc = min_fc + (max_fc - min_fc) * lfo
+        # Precompute a(t) per sample
+        a_t = (1.0 - numpy.tan(numpy.pi * fc / self.sample_rate)) / (1.0 + numpy.tan(numpy.pi * fc / self.sample_rate))
+
+        y = x.copy()
+        fb = 0.0
+        for _ in range(stages):
+            # Per-sample varying a: apply as time‑varying filter
+            # Loop for clarity; vectorized versions exist but are less readable
+            out = numpy.zeros_like(y)
+            xn1 = 0.0
+            yn1 = 0.0
+            for i in range(n):
+                xi = y[i] + feedback * fb
+                ai = a_t[i]
+                yi = -ai * xi + xn1 + ai * yn1
+                out[i] = yi
+                xn1 = xi
+                yn1 = yi
+            fb = out[-1]
+            y = out
+
+        # Wet/dry mix
+        return (1.0 - mix) * x + mix * y
