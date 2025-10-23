@@ -1,40 +1,22 @@
 import pygame
 import numpy
 
-from enum import Enum
-from typing import Callable, Sequence, Union
-
+from dark_libraries.dark_wave import BitSampledWaveArrayType, DarkWaveGenerator, DarkWaveStereo, RawValueWaveArrayType
 from dark_libraries.logging import LoggerMixin
 
-NDArrayInt8  = numpy.ndarray[tuple[int], numpy.dtype[numpy.int8]]
-NDArrayUInt8 = numpy.ndarray[tuple[int], numpy.dtype[numpy.uint8]]
-NDArrayInt16 = numpy.ndarray[tuple[int], numpy.dtype[numpy.int16]]
-NDArrayInt32 = numpy.ndarray[tuple[int], numpy.dtype[numpy.int32]]
-
-# For mixing/modulating, performing mathematical transforms on.
-RawValueWaveArrayType = numpy.ndarray[numpy.float64]
-
-# For multiple RawValueWaveArrayType in an array of unknown shape.
-# Primarily used for mixing operations.  Could also be used for multi-channel effects applied prior to sampling.
-RawValueMatrixArrayType = numpy.ndarray[numpy.float64]
-
-# Sampled to the system's sample bit rate.
-BitSampledWaveArrayType = Union[NDArrayInt8, NDArrayUInt8, NDArrayInt16, NDArrayInt32]
-
-StereoPostProcessorFunc = Callable[[tuple[RawValueWaveArrayType,RawValueWaveArrayType]],tuple[RawValueWaveArrayType,RawValueWaveArrayType]]
-
 FADEOUT_MILLISECONDS = 1500
-
-class StereoChannel(Enum):
-    Left = 0
-    Right = 1
 
 class SoundService(LoggerMixin):
 
     def init(self):
         pygame.mixer.init()
         self.frequency_sample_rate, self.sound_format, self.channels = pygame.mixer.get_init()
-        self.log(f"Initialised pygame.mixer: frequency_sample_rate={self.frequency_sample_rate}, sound_format={self.sound_format}, channels={self.channels}")
+        self.log(
+            f"Initialised pygame.mixer: " 
+            + f"frequency_sample_rate={self.frequency_sample_rate}, "
+            + f"sound_format={self.sound_format}, "
+            + f"channels={self.channels}"
+        )
 
         # Determine amplitude
         bits = abs(self.sound_format)
@@ -82,290 +64,31 @@ class SoundService(LoggerMixin):
     def get_soundtrack_volume(self) -> float:
         return self.soundtrack_volume
 
-    #
-    # SFX Generation and Playback
-    #
-
-    # Wave generators.
-
-    def sawtooth_wave(self, hz: float, sec: float) -> RawValueWaveArrayType:
-        n_samples = int(self.frequency_sample_rate * sec)
-
-        if not (0.0 <= hz < (self.frequency_sample_rate / 2)):
-            return numpy.zeros((n_samples,), dtype=numpy.float64)
-
-        t = numpy.arange(n_samples, dtype=numpy.float64) / self.frequency_sample_rate
-        # Basic sawtooth: fractional part of (hz * t), scaled to [-1, 1]
-        return 2.0 * (hz * t % 1.0) - 1.0
-
-    def square_wave(self, hz: float, sec: float) -> RawValueWaveArrayType:
-        input_wave = self.sine_wave(hz, sec)
-        return numpy.sign(input_wave)
-
-    def sine_wave(self, hz: float, sec: float) -> RawValueWaveArrayType:
-        number_of_samples = int(self.frequency_sample_rate * sec)
-
-        assert 0.0 <= hz < (self.frequency_sample_rate / 2), f"hz must be between 0 and {self.frequency_sample_rate / 2}"
-
-        time_axis: RawValueWaveArrayType = numpy.arange(number_of_samples, dtype=numpy.float64) / self.frequency_sample_rate
-        return numpy.sin(2 * numpy.pi * hz * time_axis)
-
-    def white_noise(self, sec: float) -> RawValueWaveArrayType:
-        n_samples = int(self.frequency_sample_rate * sec)
-        return numpy.random.uniform(-1.0, 1.0, n_samples).astype(numpy.float64)
-
 
     #
-    # Mixers/modulators/filters
+    # SFX & SFX Playback
     #
 
-    def clamp(self, input_wave: RawValueWaveArrayType, min: float, max: float) -> RawValueWaveArrayType:
-        return numpy.clip(input_wave, min, max)
+    def get_generator(self) -> DarkWaveGenerator:
+        return DarkWaveGenerator(self.frequency_sample_rate)
 
-    def mix(self, input_waves: list[RawValueWaveArrayType]) -> RawValueWaveArrayType:
-        stacked = numpy.vstack(input_waves).astype(numpy.float64)
-        return stacked.sum(axis=0)
-        
-    def fm_modulated_wave(self, base_hz: float, sec: float, mod_freq: float, deviation_hz: float) -> RawValueWaveArrayType:
-        n = int(self.frequency_sample_rate * sec)
-        t = numpy.arange(n) / self.frequency_sample_rate
-        # sine modulator
-        mod = numpy.sin(2 * numpy.pi * mod_freq * t)
-        # instantaneous phase with frequency deviation
-        phase = 2 * numpy.pi * (base_hz * t + deviation_hz * mod.cumsum() / self.frequency_sample_rate)
-        return numpy.sin(phase)
-
-    def amplitude_modulate(self, carrier: RawValueWaveArrayType, modulator: RawValueWaveArrayType, depth: float = 1.0) -> RawValueWaveArrayType:
-        envelope = 0.5 * (modulator + 1.0)
-        return carrier * (1.0 - depth + depth * envelope)
-
-    def _one_pole_allpass(self, x: RawValueWaveArrayType, a: float) -> RawValueWaveArrayType:
-        # y[n] = -a*x[n] + x[n-1] + a*y[n-1]
-        y = numpy.zeros_like(x, dtype=numpy.float64)
-        xn1 = 0.0
-        yn1 = 0.0
-        for n in range(len(x)):
-            y[n] = -a * x[n] + xn1 + a * yn1
-            xn1 = x[n]
-            yn1 = y[n]
-        return y
-
-    def _a_from_fc(self, fc: float) -> float:
-        # Bilinear transform mapping (Tustin). fc normalized to Hz.
-        # a = (1 - tan(pi*fc/fs)) / (1 + tan(pi*fc/fs))
-        t = numpy.tan(numpy.pi * fc / self.frequency_sample_rate)
-        return (1.0 - t) / (1.0 + t)
-
-    def phaser(self,
-            input_wave: RawValueWaveArrayType,
-            stages: int = 4,
-            lfo_hz: float = 0.3,
-            min_fc: float = 300.0,
-            max_fc: float = 1500.0,
-            feedback: float = 0.0,
-            mix: float = 0.7,
-            lfo_phase: float = 0.0   # NEW, in radians
-            ) -> RawValueWaveArrayType:
-        """
-        Simple multi‑stage phaser:
-        - stages: number of all‑pass cascades (2–8 typical)
-        - lfo_hz: sweep rate
-        - min_fc/max_fc: sweep range (Hz)
-        - feedback: 0.0–0.7 to intensify notches
-        - mix: wet/dry mix
-        """
-        number_frequency_samples = len(input_wave)
-        time_axis = numpy.arange(number_frequency_samples) / self.frequency_sample_rate
-        # LFO in [0,1]
-        lfo = 0.5 * (1.0 + numpy.sin(2 * numpy.pi * lfo_hz * time_axis + lfo_phase))
-        # Sweep cutoff per sample
-        fc = min_fc + (max_fc - min_fc) * lfo
-        # Precompute a(t) per sample
-        a_t = (1.0 - numpy.tan(numpy.pi * fc / self.frequency_sample_rate)) / (1.0 + numpy.tan(numpy.pi * fc / self.frequency_sample_rate))
-
-        y = input_wave.copy()
-        fb = 0.0
-        for _ in range(stages):
-            # Per-sample varying a: apply as time‑varying filter
-            # Loop for clarity; vectorized versions exist but are less readable
-            out = numpy.zeros_like(y)
-            xn1 = 0.0
-            yn1 = 0.0
-            for i in range(number_frequency_samples):
-                xi = y[i] + feedback * fb
-                ai = a_t[i]
-                yi = -ai * xi + xn1 + ai * yn1
-                out[i] = yi
-                xn1 = xi
-                yn1 = yi
-            fb = out[-1]
-            y = out
-
-        # Wet/dry mix
-        return (1.0 - mix) * input_wave + mix * y
-    
-    def envelope(self, wave: RawValueWaveArrayType, attack: float, decay_fast=0.2, decay_slow=1.0) -> RawValueWaveArrayType:
-        n = len(wave)
-        t = numpy.arange(n) / self.frequency_sample_rate
-        env = numpy.exp(-t/decay_slow)
-        env *= numpy.exp(-t/decay_fast)  # fast initial drop
-        env[:int(attack*self.frequency_sample_rate)] = numpy.linspace(0, 1, int(attack*self.frequency_sample_rate))
-        return wave * env
-
-    def normalize_rms(self, wave: RawValueWaveArrayType, target_rms: float = 0.1) -> RawValueWaveArrayType:
-        rms = numpy.sqrt(numpy.mean(wave**2))
-        if rms < 1e-9:
-            return wave  # avoid divide-by-zero
-        return wave * (target_rms / rms)
-    
-
-    #
-    # Sequence creation
-    #
-
-    def from_frequency_duration_sequence(self, 
-                                            input_sequence: Sequence[tuple[float, float]],
-                                            wave_generator_func: Callable[[float, float], RawValueWaveArrayType]
-                                         ) -> RawValueWaveArrayType:
-        waves: list[RawValueWaveArrayType] = [wave_generator_func(hz, sec) for hz, sec in input_sequence]
-        return numpy.concatenate(waves)
-
-    #
-    # Stereo Post-processing
-    #
-
-    def stereo_phase_widen(self,
-        stereo_wave: tuple[RawValueWaveArrayType, RawValueWaveArrayType],
-        channel:     StereoChannel = StereoChannel.Right,
-        ref_hz:      float         = 440.0,
-        phase_deg:   float         = 90.0,
-
-    ) -> tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
-
-        left, right = stereo_wave
-
-        # Convert phase offset to fractional delay in samples
-        delay_sec = (phase_deg / 360.0) / ref_hz
-        delay_samples = delay_sec * self.frequency_sample_rate
-
-        # Fractional delay with linear interpolation
-        number_of_freq_samples = len(left)
-        idx = numpy.arange(number_of_freq_samples, dtype=numpy.float64)
-
-        if channel == StereoChannel.Left:
-            left  = numpy.interp(idx, idx - delay_samples, left.astype (left.dtype ), left=0.0, right=0.0)
-        elif channel == StereoChannel.Right:
-            right = numpy.interp(idx, idx - delay_samples, right.astype(right.dtype), left=0.0, right=0.0)
-
-        return left, right
-
-    def haas_widen(self, 
-        input_waves:   tuple[RawValueWaveArrayType,RawValueWaveArrayType], 
-        channel :      StereoChannel = StereoChannel.Right,
-        delay_seconds: float         = 0.002
-
-    ) -> tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
-        
-        left, right = input_waves
-        delay_samples = int(delay_seconds * self.frequency_sample_rate)
-
-        if channel == StereoChannel.Left:
-            left = numpy.concatenate([
-                numpy.zeros(delay_samples, dtype=left.dtype),
-                left[:-delay_samples]
-            ])
-        elif channel == StereoChannel.Right:
-            right = numpy.concatenate([
-                numpy.zeros(delay_samples, dtype=right.dtype),
-                right[:-delay_samples]
-            ])
-        return left, right
-
-    def stereo_balance_modulator(
-        self,
-        input_waves: tuple[RawValueWaveArrayType, RawValueWaveArrayType],
-        lfo_hz: float = 0.5
-    ) -> tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
-        
-        left, right = input_waves
-        n_samples = len(left)
-        if len(right) != n_samples:
-            raise ValueError("Left and right channels must have the same length")
-
-        t = numpy.arange(n_samples, dtype=numpy.float64) / self.frequency_sample_rate
-        lfo = 0.5 * (1.0 + numpy.sin(2.0 * numpy.pi * lfo_hz * t))  # 0..1
-
-        # Scale left and right inversely
-        left_mod  = left.astype(numpy.float64)  * lfo
-        right_mod = right.astype(numpy.float64) * (1.0 - lfo)
-
-        return left_mod, right_mod
-
-    def stereo_mid_side(
-        self,
-        stereo_wave: tuple[RawValueWaveArrayType, RawValueWaveArrayType],
-        side_gain: float = 1.5
-    ) ->  tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
-        left, right = stereo_wave
-        if len(left) != len(right):
-            raise ValueError("Left and right channels must have the same length")
-
-        left = left.astype(numpy.float64)
-        right = right.astype(numpy.float64)
-
-        mid = 0.5 * (left + right)
-        side = 0.5 * (left - right)
-
-        side *= side_gain
-
-        new_left = mid + side
-        new_right = mid - side
-
-        return new_left, new_right
-
-    def stereo_phaser(
-        self,
-        stereo_wave: tuple[RawValueWaveArrayType, RawValueWaveArrayType],
-        stages: int = 4,
-        lfo_hz: float = 0.5,
-        min_fc: float = 300.0,
-        max_fc: float = 1500.0,
-        feedback: float = 0.0,
-        mix: float = 0.7,
-        phase_offset: float = numpy.pi
-    ) -> tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
-        left, right = stereo_wave
-
-        # Left channel: normal phaser
-        left_out  = self.phaser(left,  stages, lfo_hz, min_fc, max_fc, feedback, mix, lfo_phase = 0.0)
-        right_out = self.phaser(right, stages, lfo_hz, min_fc, max_fc, feedback, mix, lfo_phase = phase_offset)
-
-        return left_out, right_out
-
-    #
-    # SFX Playback
-    #
-
-    def to_amplitude_sampled_wave(self, input_wave: RawValueWaveArrayType) -> BitSampledWaveArrayType:
+    def _to_amplitude_sampled_wave(self, input_wave: RawValueWaveArrayType) -> BitSampledWaveArrayType:
         return (input_wave * self.amplitude_sampling_range).astype(self.dtype)
     
-    def play_sound(self, input_wave: RawValueWaveArrayType, post_processors: Sequence[StereoPostProcessorFunc] = []) -> tuple[pygame.mixer.Sound, pygame.mixer.Channel]:
-
-        volume_adjusted:  RawValueWaveArrayType = (input_wave * self.sfx_volume)
+    def play_sound(self, input_wave: DarkWaveStereo) -> tuple[pygame.mixer.Sound, pygame.mixer.Channel]:
 
         if self.channels == 2:
-            # Split mono -> stereo
-            channels = volume_adjusted, volume_adjusted
-            for post_processor_func in post_processors:
-                channels = post_processor_func(channels)
+            volume_adjusted = [
+                channel * self.sfx_volume
+                for channel in [input_wave.left, input_wave.right]
+            ]
 
-            left, right = channels
             channel_adjusted = numpy.column_stack((
-                self.to_amplitude_sampled_wave(left), 
-                self.to_amplitude_sampled_wave(right) 
+                self._to_amplitude_sampled_wave(volume_adjusted[0]), 
+                self._to_amplitude_sampled_wave(volume_adjusted[1]) 
             ))
         else:
-             channel_adjusted = self.to_amplitude_sampled_wave(volume_adjusted)
+             assert False, "Not supported yet"
 
         sound_handle = pygame.sndarray.make_sound(channel_adjusted)
 
@@ -412,22 +135,18 @@ if __name__ == "__main__":
     ]
     expected_duration = sum(note[1] for note in pentatonic_sequence)
 
-    square_wave = service.from_frequency_duration_sequence(pentatonic_sequence, service.square_wave)
-    sawtooth_wave = service.from_frequency_duration_sequence(pentatonic_sequence, service.sawtooth_wave)
-    sawtooth_wave = service.clamp(sawtooth_wave, -0.4, +0.6)
+    generator = service.get_generator()
 
-    amplitude_modulation = service.sine_wave(20.0, expected_duration)
+    sawtooth_wave     = generator.sawtooth_wave().sequence(pentatonic_sequence).clamp(-0.4, +0.6)
+    square_wave       = generator.square_wave().sequence(pentatonic_sequence).clamp(-0.4, +0.6)
+    fm_modulated_wave = generator.fm_modulated_wave(mod_freq = 6.0, deviation_hz = 8.0).sequence(pentatonic_sequence).clamp(-0.4, +0.6)
+    am_modulated_wave = generator.am_modulated_wave(mod_freq = 6.0, depth = 0.8).sequence(pentatonic_sequence).clamp(-0.4, +0.6)
 
-    am_modulated_wave = service.amplitude_modulate(carrier = square_wave, modulator = amplitude_modulation, depth = 1.0)
+    for sound_wave in [sawtooth_wave, square_wave, fm_modulated_wave, am_modulated_wave]: # [am_modulated_wave]: 
 
-    fm_modulated_wave = service.from_frequency_duration_sequence(pentatonic_sequence, lambda hz, sec: service.fm_modulated_wave(hz, sec, mod_freq = 6.0, deviation_hz = 8.0))
-    fm_modulated_wave = service.clamp(fm_modulated_wave, -0.4, +0.6)
-
-    for sound_wave in [fm_modulated_wave]: # [am_modulated_wave, fm_modulated_wave, sawtooth_wave]: 
-
-        normal = service.normalize_rms(sound_wave)
-
-        sound_handle, channel_handle = service.play_sound(normal)
+        normal = sound_wave.normalize_rms(target_rms = 0.1)
+        stereo = normal.to_stereo().haas_widen()
+        sound_handle, channel_handle = service.play_sound(stereo)
 
         print(f"Expected duration={expected_duration}, reported duration={sound_handle.get_length()}")
 
@@ -437,7 +156,7 @@ if __name__ == "__main__":
 
         print("Channel no longer busy.")
 
-
+    '''
     print("TEST TWO - KABOOM!")
 
     # 1 second of noise
@@ -475,5 +194,7 @@ if __name__ == "__main__":
         pygame.time.wait(1000)
 
     print("Channel no longer busy.")
+    '''
+
 
 
