@@ -4,7 +4,8 @@ import numpy
 from dark_libraries.dark_wave import BitSampledWaveArrayType, DarkWaveGenerator, DarkWaveStereo, RawValueWaveArrayType
 from dark_libraries.logging import LoggerMixin
 
-FADEOUT_MILLISECONDS = 1500
+FADEIN_MILLISECONDS  = 5000
+FADEOUT_MILLISECONDS = 5000
 
 class SoundService(LoggerMixin):
 
@@ -111,7 +112,7 @@ class SoundService(LoggerMixin):
             self.log(f"ERROR: could not play background track at {path}: {e}")
             return
         pygame.mixer.music.set_volume(self.soundtrack_volume)
-        pygame.mixer.music.play(-1)
+        pygame.mixer.music.play(loops = 0, fade_ms = FADEIN_MILLISECONDS)
 
     def stop_music(self):
         pygame.mixer.music.stop()
