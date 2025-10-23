@@ -1,7 +1,6 @@
+from enum import Enum
 import pygame
 import numpy
-
-from enum import Enum
 from typing import Callable, Sequence, Union
 
 from dark_libraries.logging import LoggerMixin
@@ -60,8 +59,8 @@ class SoundService(LoggerMixin):
         self.log(f"Using output data type {dtype_type.__name__}")
         self.dtype = numpy.dtype(dtype_type)
 
-        self.set_sfx_volume(0.35)
-        self.set_soundtrack_volume(0.35)
+        self.set_sfx_volume(0.05)
+        self.set_soundtrack_volume(0.05)
 
     #
     # Volume Control
@@ -89,6 +88,10 @@ class SoundService(LoggerMixin):
     # Wave generators.
 
     def sawtooth_wave(self, hz: float, sec: float) -> RawValueWaveArrayType:
+        """
+        Generate a band‑limited sawtooth approximation.
+        Range: [-1.0, 1.0]
+        """
         n_samples = int(self.frequency_sample_rate * sec)
 
         if not (0.0 <= hz < (self.frequency_sample_rate / 2)):
@@ -105,7 +108,8 @@ class SoundService(LoggerMixin):
     def sine_wave(self, hz: float, sec: float) -> RawValueWaveArrayType:
         number_of_samples = int(self.frequency_sample_rate * sec)
 
-        assert 0.0 <= hz < (self.frequency_sample_rate / 2), f"hz must be between 0 and {self.frequency_sample_rate / 2}"
+        if not (0.0 <= hz < (self.frequency_sample_rate / 2)):
+            return numpy.zeros((number_of_samples,), dtype=numpy.float64)
 
         time_axis: RawValueWaveArrayType = numpy.arange(number_of_samples, dtype=numpy.float64) / self.frequency_sample_rate
         return numpy.sin(2 * numpy.pi * hz * time_axis)
@@ -119,13 +123,20 @@ class SoundService(LoggerMixin):
     # Mixers/modulators/filters
     #
 
-    def clamp(self, input_wave: RawValueWaveArrayType, min: float, max: float) -> RawValueWaveArrayType:
-        return numpy.clip(input_wave, min, max)
+    def normalize_peak(wave: RawValueWaveArrayType) -> RawValueWaveArrayType:
+        return wave / numpy.max(numpy.abs(wave)) if numpy.max(numpy.abs(wave)) > 0 else wave
 
-    def mix(self, input_waves: list[RawValueWaveArrayType]) -> RawValueWaveArrayType:
-        stacked = numpy.vstack(input_waves).astype(numpy.float64)
-        return stacked.sum(axis=0)
-        
+    def normalize_rms(wave: RawValueWaveArrayType, target_rms: float = 0.1) -> np.ndarray:
+        """
+        Normalize a waveform to a target RMS level.
+        target_rms: desired RMS amplitude (0.1 = 10% of full scale)
+        """
+        wave = wave.astype(np.float64)
+        rms = np.sqrt(np.mean(wave**2))
+        if rms < 1e-9:
+            return wave  # avoid divide-by-zero
+        return wave * (target_rms / rms)
+
     def fm_modulated_wave(self, base_hz: float, sec: float, mod_freq: float, deviation_hz: float) -> RawValueWaveArrayType:
         n = int(self.frequency_sample_rate * sec)
         t = numpy.arange(n) / self.frequency_sample_rate
@@ -135,9 +146,75 @@ class SoundService(LoggerMixin):
         phase = 2 * numpy.pi * (base_hz * t + deviation_hz * mod.cumsum() / self.frequency_sample_rate)
         return numpy.sin(phase)
 
+    '''
+    def mix(self, input_waves: list[RawValueWaveArrayType]) -> RawValueWaveArrayType:
+        # Stack into 2D array for vectorised mixing
+        # Stacked is NOT a RawValueWaveArrayType because it's a different shape.
+        # It is instead a RawValueMatrixArrayType, which contains many RawValueWaveArrayType's (abstractly)
+        stacked: RawValueMatrixArrayType = numpy.vstack(input_waves).astype(numpy.float64)
+
+        # Average across voices (prevents clipping)
+        return stacked.mean(axis=0)
+    '''
+    def mix(self, input_waves: list[RawValueWaveArrayType]) -> RawValueWaveArrayType:
+        stacked = numpy.vstack(input_waves).astype(numpy.float64)
+        summed = stacked.sum(axis=0)
+        # normalize to prevent clipping
+        return summed / numpy.max(numpy.abs(summed))
+
     def amplitude_modulate(self, carrier: RawValueWaveArrayType, modulator: RawValueWaveArrayType, depth: float = 1.0) -> RawValueWaveArrayType:
         envelope = 0.5 * (modulator + 1.0)
         return carrier * (1.0 - depth + depth * envelope)
+
+    def lowpass_filter(self, wave: RawValueWaveArrayType, cutoff_hz: float) -> RawValueWaveArrayType:
+        """
+        One‑pole low‑pass filter.
+        """
+        rc = 1.0 / (2 * numpy.pi * cutoff_hz)
+        dt = 1.0 / self.frequency_sample_rate
+        alpha = dt / (rc + dt)
+
+        out = numpy.zeros_like(wave, dtype=numpy.float64)
+        out[0] = wave[0]
+        for i in range(1, len(wave)):
+            out[i] = out[i-1] + alpha * (wave[i] - out[i-1])
+        return out
+
+    def highpass_filter(self, wave: RawValueWaveArrayType, cutoff_hz: float) -> RawValueWaveArrayType:
+        """
+        One‑pole high‑pass filter.
+        """
+        rc = 1.0 / (2 * numpy.pi * cutoff_hz)
+        dt = 1.0 / self.frequency_sample_rate
+        alpha = rc / (rc + dt)
+
+        out = numpy.zeros_like(wave, dtype=numpy.float64)
+        out[0] = wave[0]
+        for i in range(1, len(wave)):
+            out[i] = alpha * (out[i-1] + wave[i] - wave[i-1])
+        return out
+
+    def bandpass_filter(
+        self,
+        wave: RawValueWaveArrayType,
+        low_cut_hz: float,
+        high_cut_hz: float
+    ) -> RawValueWaveArrayType:
+        """
+        One‑pole band‑pass filter.
+        Implemented as: high‑pass(low_cut) -> low‑pass(high_cut).
+        """
+        if high_cut_hz <= low_cut_hz:
+            raise ValueError("high_cut_hz must be greater than low_cut_hz")
+
+        # First remove everything below low_cut
+        hp = self.highpass_filter(wave, cutoff_hz=low_cut_hz)
+
+        # Then remove everything above high_cut
+        bp = self.lowpass_filter(hp, cutoff_hz=high_cut_hz)
+
+        return bp.astype(numpy.float64)
+
 
     def _one_pole_allpass(self, x: RawValueWaveArrayType, a: float) -> RawValueWaveArrayType:
         # y[n] = -a*x[n] + x[n-1] + a*y[n-1]
@@ -212,13 +289,6 @@ class SoundService(LoggerMixin):
         env[:int(attack*self.frequency_sample_rate)] = numpy.linspace(0, 1, int(attack*self.frequency_sample_rate))
         return wave * env
 
-    def normalize_rms(self, wave: RawValueWaveArrayType, target_rms: float = 0.1) -> RawValueWaveArrayType:
-        rms = numpy.sqrt(numpy.mean(wave**2))
-        if rms < 1e-9:
-            return wave  # avoid divide-by-zero
-        return wave * (target_rms / rms)
-    
-
     #
     # Sequence creation
     #
@@ -241,7 +311,15 @@ class SoundService(LoggerMixin):
         phase_deg:   float         = 90.0,
 
     ) -> tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
+        """
+        Stereo phase widening: apply a fractional delay corresponding to a phase offset
+        at a reference frequency to one channel of a stereo pair.
 
+        stereo_wave: (left, right) tuple of 1‑D float64 arrays
+        ref_hz: reference frequency for phase calculation
+        phase_deg: desired phase offset in degrees
+        channel: which channel to shift ("left" or "right")
+        """
         left, right = stereo_wave
 
         # Convert phase offset to fractional delay in samples
@@ -286,7 +364,12 @@ class SoundService(LoggerMixin):
         input_waves: tuple[RawValueWaveArrayType, RawValueWaveArrayType],
         lfo_hz: float = 0.5
     ) -> tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
-        
+        """
+        Modulate stereo balance with an LFO.
+        input_waves: (left, right) tuple of 1‑D float64 arrays
+        lfo_hz: modulation frequency in Hz
+        Returns: (left, right) tuple with time‑varying balance
+        """
         left, right = input_waves
         n_samples = len(left)
         if len(right) != n_samples:
@@ -306,6 +389,11 @@ class SoundService(LoggerMixin):
         stereo_wave: tuple[RawValueWaveArrayType, RawValueWaveArrayType],
         side_gain: float = 1.5
     ) ->  tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
+        """
+        Mid/Side stereo processing.
+        Input: (left, right) tuple of float64 arrays
+        side_gain > 1.0 widens stereo, < 1.0 narrows it.
+        """
         left, right = stereo_wave
         if len(left) != len(right):
             raise ValueError("Left and right channels must have the same length")
@@ -334,6 +422,12 @@ class SoundService(LoggerMixin):
         mix: float = 0.7,
         phase_offset: float = numpy.pi
     ) -> tuple[RawValueWaveArrayType, RawValueWaveArrayType]:
+        """
+        Stereo wrapper for phaser.
+        Runs two phasers with an LFO phase offset between channels.
+        Input: (left, right) tuple of float64 arrays
+        Output: (left, right) tuple of float64 arrays
+        """
         left, right = stereo_wave
 
         # Left channel: normal phaser
@@ -403,7 +497,7 @@ if __name__ == "__main__":
 
     service = SoundService()
     service.init()
-
+    '''
     print("TEST ONE - PENTATONIC")
 
     pentatonic_sequence = [
@@ -414,20 +508,16 @@ if __name__ == "__main__":
 
     square_wave = service.from_frequency_duration_sequence(pentatonic_sequence, service.square_wave)
     sawtooth_wave = service.from_frequency_duration_sequence(pentatonic_sequence, service.sawtooth_wave)
-    sawtooth_wave = service.clamp(sawtooth_wave, -0.4, +0.6)
 
     amplitude_modulation = service.sine_wave(20.0, expected_duration)
 
     am_modulated_wave = service.amplitude_modulate(carrier = square_wave, modulator = amplitude_modulation, depth = 1.0)
 
     fm_modulated_wave = service.from_frequency_duration_sequence(pentatonic_sequence, lambda hz, sec: service.fm_modulated_wave(hz, sec, mod_freq = 6.0, deviation_hz = 8.0))
-    fm_modulated_wave = service.clamp(fm_modulated_wave, -0.4, +0.6)
 
-    for sound_wave in [fm_modulated_wave]: # [am_modulated_wave, fm_modulated_wave, sawtooth_wave]: 
+    for sound_wave in [am_modulated_wave, fm_modulated_wave, sawtooth_wave]: 
 
-        normal = service.normalize_rms(sound_wave)
-
-        sound_handle, channel_handle = service.play_sound(normal)
+        sound_handle, channel_handle = service.play_sound(sound_wave)
 
         print(f"Expected duration={expected_duration}, reported duration={sound_handle.get_length()}")
 
@@ -436,18 +526,20 @@ if __name__ == "__main__":
             pygame.time.wait(1000)
 
         print("Channel no longer busy.")
-
+    '''
 
     print("TEST TWO - KABOOM!")
 
     # 1 second of noise
     noise = service.white_noise(1.0)
 
-    noise = service.clamp(noise, -0.2, 0.6)
-
-    noise = service.normalize_rms(noise)
-
     # Shape it
+    low = service.lowpass_filter(noise, cutoff_hz=200.0)
+    mid  = service.bandpass_filter(noise, 500.0, 2000.0)  # you'd need to add this helper
+    mid  = service.bandpass_filter(mid, 500.0, 2000.0)  # you'd need to add this helper
+    high = service.highpass_filter(noise, cutoff_hz=4000.0) * 2
+
+    mid *= 5.0 
 
     # Add a low sine thump
     t = numpy.arange(len(noise)) / service.frequency_sample_rate
@@ -456,9 +548,7 @@ if __name__ == "__main__":
     thump *= 2.0
 
     # Mix broadband
-    blast = service.mix([noise, thump])
-
-    blast = service.normalize_rms(blast)
+    blast = service.mix([low, mid, high, thump])
 
     # Envelope shape (fast attack, 1s decay)
     blast = service.envelope(blast, attack=0.005, decay_fast=0.2, decay_slow=1.0)
@@ -466,7 +556,7 @@ if __name__ == "__main__":
     # Optional shimmer
     blast = service.phaser(blast, stages=6, lfo_hz=0.5, feedback=0.4, mix=0.8)
 
-    blast = service.normalize_rms(blast)
+    blast *= 40
 
     sound_handle, channel_handle = service.play_sound(blast)
 
