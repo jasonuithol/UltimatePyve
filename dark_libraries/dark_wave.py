@@ -316,8 +316,12 @@ class DarkWave:
             return self  # avoid divide-by-zero
         return self._dark_wave(self.wave_data * (target_rms / rms))
     
-    def to_stereo(self) -> DarkWaveStereo:
-        return DarkWaveStereo(self.frequency_sample_rate, left = self.wave_data, right = self.wave_data)
+    def to_stereo(self, left: 'DarkWave' = None, right: 'DarkWave' = None) -> DarkWaveStereo:
+        if left is None:
+            left = self
+        if right is None:
+            right = self
+        return DarkWaveStereo(self.frequency_sample_rate, left = left.wave_data, right = right.wave_data)
     
 class DarkWaveGenerator:
 
