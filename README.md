@@ -35,8 +35,15 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
     UltimatePyve
     |
-    \- loaders
-    \- u5
+    |- (a bunch of UltimatPyve subfolders)
+    |- main.py
+    |- (more crap)
+    |
+    | ...
+    |
+    |      ***********************************
+    \- u5  <== COPY IT TO THIS ONE RIGHT HERE
+           ***********************************
 
     I hope to get rid of this requirement later but for now, it is what it is.
 
