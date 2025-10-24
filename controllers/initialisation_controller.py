@@ -48,11 +48,11 @@ class InitialisationController(LoggerMixin):
 
 
     def init(self):
-        
-        self.global_registry_loader.load()
 
-        # Initialises pygame.
+        # Set's pygame screen/video mode.
         self.display_service.init()
+
+        self.global_registry_loader.load()
 
         # --------------------------------------------------
         #

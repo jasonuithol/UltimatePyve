@@ -5,7 +5,7 @@ from controllers.spell_controllers.general_spell_controller import GeneralSpellC
 from controllers.spell_controllers.party_member_spell_controller import PartyMemberSpellController
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
-from dark_libraries.dark_wave import DarkNote
+from dark_libraries.dark_wave import DarkNote, DarkWaveGenerator
 from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
@@ -18,10 +18,12 @@ from models.enums.spell_target_type import SpellTargetType
 from models.spell_type import SpellType
 
 from services.console_service import ConsoleService
+from services.display_service import DisplayService
 from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
 from services.main_loop_service import MainLoopService, keycode_to_char
 from services.sound_service import SoundService
+from view.view_port import ViewPort
 
 INCUR_SPELL_COST = True
 NO_SPELL_COST    = False
@@ -40,6 +42,9 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     general_spell_controller: GeneralSpellController
     party_member_spell_controller: PartyMemberSpellController
     sound_service: SoundService
+
+    display_service: DisplayService
+    view_port: ViewPort
 
     def handle_event(self, event: pygame.event.Event, spell_caster: PartyMemberAgent, combat_map: CombatMap):
         if event.key == pygame.K_c:
@@ -195,7 +200,8 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     def _set_premixed_amount(self, spell_type: SpellType, amount: int) -> int:
         return self.global_registry.saved_game.write_u8(spell_type.premix_inventory_offset, amount)
     
-    def _do_special_effects_normal(self):
+
+    def _do_special_effects_bubbling_of_reality(self):
         # SOUND: The bubbling of the fabric of reality
         generator = self.sound_service.get_generator()
 
@@ -210,7 +216,16 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
         # Keep program alive long enough to hear it
         while channel_handle.get_busy():
-            pygame.time.wait(1000)
+            self.display_service.render()
+
+    def _do_special_effects_normal(self):
+
+        self._do_special_effects_bubbling_of_reality()
+
+        generator = self.sound_service.get_generator()
+
+        # VISUAL: Invert all colors of the viewport
+        self.view_port.invert_colors(True)
 
         # SOUND: The searing of the energy plane.
 
@@ -225,16 +240,15 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
         # Keep program alive long enough to hear it
         while channel_handle.get_busy():
-            pygame.time.wait(1000)
-
-        # VISUAL: Invert all colors of the viewport
-
+            self.display_service.render()
 
         # VISUAL: Restore all colors of the viewport.
+        self.view_port.invert_colors(False)
         return
 
     def _do_special_effects_coord(self):
         # SOUND: The bubbling of the fabric of reality
+        self._do_special_effects_bubbling_of_reality()
 
         # SOUND: Whooshing of projectile.
 
