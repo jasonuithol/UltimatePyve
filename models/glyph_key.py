@@ -1,10 +1,10 @@
-class GlyphKey(tuple[str,int]):
+class GlyphKey(tuple):
 
     # NOTE: This does NOT get inherited !
     __slots__ = ()
 
     def __new__(cls, font_name: str, glyph_code: int):
-        return super().__new__(cls, (font_name, glyph_code))
+        return tuple().__new__(cls, (font_name, glyph_code))
 
     @property
     def font_name(self)  -> str: 

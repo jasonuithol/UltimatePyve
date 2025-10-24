@@ -4,7 +4,7 @@ from data.global_registry import GlobalRegistry
 
 from models.agents.party_agent import PartyAgent
 from models.enums.equipable_item_slot import EquipableItemSlot
-from models.equipable_items import EquipableItemType
+from models.equipable_item_type import EquipableItemType
 from services.console_service import ConsoleService
 from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService

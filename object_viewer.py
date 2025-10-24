@@ -3,9 +3,11 @@ import pygame
 
 from data.global_registry import GlobalRegistry
 from data.loaders.tileset_loader import TileLoader
+
 from models.data_ovl import DataOVL
 from services.surface_factory import SurfaceFactory
 from view.display_config import DisplayConfig
+
 from object_viewer_lib.object_viewer_menu_bar import ObjectViewerMenuBar
 from object_viewer_lib.object_viewer_profiles import FontViewerProfile, MapViewerProfile, TileViewerProfile, ViewerProfile, configure_profiles
 

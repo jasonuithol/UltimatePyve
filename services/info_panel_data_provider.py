@@ -7,7 +7,7 @@ from data.global_registry import GlobalRegistry
 
 from models.agents.party_agent import PartyAgent
 from models.enums.inventory_offset import InventoryOffset
-from models.equipable_items import EquipableItemType
+from models.equipable_item_type import EquipableItemType
 
 from models.glyph_key import GlyphKey
 from services.font_mapper import FontMapper

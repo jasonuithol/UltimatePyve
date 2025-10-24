@@ -2,15 +2,21 @@ import pygame
 
 from typing import Self
 
-from dark_libraries.custom_decorators import immutable
 from dark_libraries.dark_math import Coord
 from models.enums.ega_palette_values import EgaPaletteValues
 
-@immutable
-class U5Glyph:
+class U5Glyph(tuple):
 
-    def __init__(self, surface: pygame.Surface):
-        self._surface = surface
+    @classmethod
+    def from_surface(cls, surface: pygame.Surface) -> Self:
+        return tuple.__new__(cls, (surface, None))
+
+    def __new__(cls, surface: pygame.Surface):
+        return cls.from_surface(surface)
+
+    @property
+    def _surface(self) -> pygame.Surface:
+        return self[0]
 
     def get_surface(self) -> pygame.Surface:
         return self._surface
@@ -23,40 +29,40 @@ class U5Glyph:
         )
 
     def rotate_90(self) -> Self:
-        rotated = object.__new__(self.__class__)
-        rotated._surface = pygame.transform.rotate(self._surface, 90)
-        return rotated
+        new_surface = pygame.transform.rotate(self._surface, 90)
+        return __class__.from_surface(new_surface)
 
     def flip(self, flip_x: bool = False, flip_y: bool = False) -> Self:
-        bird_recipient = object.__new__(self.__class__)
-        bird_recipient._surface = pygame.transform.flip(self._surface, flip_x, flip_y)
-        return bird_recipient
-
-    def copy(self) -> Self:
-        clone = object.__new__(self.__class__)
-        clone._surface = self._surface.copy()
-        return clone
+        new_surface = pygame.transform.flip(self._surface, flip_x, flip_y)
+        return __class__.from_surface(new_surface)
     
     def overlay_with(self, overlay: Self, transparent_mapped_rgb: int) -> Self:
         existing_color_key = overlay._surface.get_colorkey()
-        result = self.copy()
         overlay._surface.set_colorkey(transparent_mapped_rgb)
-        result._surface.blit(source = overlay._surface, dest = (0,0))
+
+        new_surface = self._surface.copy()
+        new_surface.blit(source = overlay._surface, dest = (0,0))
         overlay._surface.set_colorkey(existing_color_key)
-        return result
+
+        return __class__.from_surface(new_surface)
 
     def replace_color(self, old_mapped_rgb: int, new_mapped_rbg: int) -> Self:
-        new_glyph = self.copy()
-        pa = pygame.PixelArray(new_glyph._surface)
+
+        new_surface = self._surface.copy()
+
+        pa = pygame.PixelArray(new_surface)
         pa.replace(old_mapped_rgb, new_mapped_rbg)
         del pa
-        return new_glyph
+
+        return __class__.from_surface(new_surface)
     
     def invert_colors(self) -> Self:
-        new_glyph = self.copy()
+
+        new_surface = self._surface.copy()
+
         white = self._surface.map_rgb(EgaPaletteValues.White.value)
         black = self._surface.map_rgb(EgaPaletteValues.Black.value)
-        pa = pygame.PixelArray(new_glyph._surface)
+        pa = pygame.PixelArray(new_surface)
         for y in range(self._surface.get_height()):
             for x in range(self._surface.get_width()):
                 if pa[x,y] == white:
@@ -64,4 +70,5 @@ class U5Glyph:
                 else:
                     pa[x,y] = white
         del pa
-        return new_glyph
+
+        return __class__.from_surface(new_surface)

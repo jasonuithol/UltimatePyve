@@ -6,7 +6,7 @@ from models.enums.equipable_item_rune_id import EquipableItemRuneId
 from models.enums.equipable_item_slot import EquipableItemSlot
 from models.enums.equipable_item_tile_id import EquipableItemTileId
 from models.enums.inventory_offset  import InventoryOffset
-from models.equipable_items import EquipableItemType
+from models.equipable_item_type import EquipableItemType
 
 
 class EquipableItemTypeLoader(LoggerMixin):

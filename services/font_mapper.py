@@ -13,7 +13,10 @@ class FontMapper:
     global_registry: GlobalRegistry
 
     def map_code(self, font_name: str, glyph_code: int) -> U5Glyph:
-        return self.global_registry.font_glyphs.get(GlyphKey(font_name, glyph_code))
+        glyph_key = GlyphKey(font_name, glyph_code)
+        result = self.global_registry.font_glyphs.get(glyph_key)
+        assert result, f"Could not fetch glyph for font_name={font_name}, glyph_code={glyph_code}, glyph_key={glyph_key}"
+        return result
 
     def map_char(self, font_name: str, char: chr) -> U5Glyph:
         return self.map_code(font_name, ord(char))

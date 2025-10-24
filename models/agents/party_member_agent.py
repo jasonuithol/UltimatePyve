@@ -10,7 +10,7 @@ from models.enums.character_class_to_tile_id import CharacterClassToTileId
 from models.enums.npc_tile_id import NpcTileId
 
 from models.character_record  import CharacterRecord
-from models.equipable_items   import EquipableItemType
+from models.equipable_item_type   import EquipableItemType
 from models.sprite            import Sprite
 from models.enums.equipable_item_slot import EquipableItemSlot
 from models.tile import Tile

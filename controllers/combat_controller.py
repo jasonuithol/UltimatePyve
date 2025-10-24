@@ -23,7 +23,7 @@ from models.location_metadata import LocationMetadata
 from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
 from models.u5_map import U5Map
-from models.equipable_items import EquipableItemType # for syntax highlighting
+from models.equipable_item_type import EquipableItemType # for syntax highlighting
 
 from services.combat_map_service import CombatMapService
 from services.console_service import ConsoleService

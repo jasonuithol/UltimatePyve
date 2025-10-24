@@ -1,155 +1,21 @@
-from enum import Enum
-from dark_libraries.custom_decorators import auto_init, immutable
+class ItemType(tuple):
+    __slots__ = ()    
 
+    def __new__(cls, item_id: int, inventory_offset: int, tile_id: int, name: str):
+        return super().__new__(cls, (item_id, inventory_offset, tile_id, name))
 
-    
+    @property
+    def item_id(self) -> int:
+        return self[0]
 
-@immutable
-@auto_init
-class ItemType:
-    item_id: int
-    inventory_offset: int
-    tile_id: int
-    name: str
+    @property
+    def inventory_offset(self) -> int:
+        return self[1]
 
-'''
-class InventoryId(Enum):
+    @property
+    def tile_id(self) -> int:
+        return self[2]
 
-    ##
-    ## TODO: Replace with offsets
-    ##
-
-    LEATHER_HELM = 0
-    CHAIN_COIF = 1
-    IRON_HELM = 2
-    SPIKED_HELM = 3
-    SMALL_SHIELD = 4
-    LARGE_SHIELD = 5
-    SPIKED_SHIELD = 6
-    MAGIC_SHIELD = 7
-    JEWELLED_SHIELD = 8
-    CLOTH = 9
-    LEATHER = 10
-    RING_MAIL = 11
-    SCALE_MAIL = 12
-    CHAIN_MAIL = 13
-    PLATE_MAIL = 14
-    MYSTIC_ARMOUR = 15
-    DAGGER = 16
-    SLING = 17
-    CLUB = 18
-    FLAMING_OIL = 19
-    MAIN_GAUCHE = 20
-    SPEAR = 21
-    THROWING_AXE = 22
-    SHORT_SWORD = 23
-    MACE = 24
-    MORNING_STAR = 25
-    BOW = 26
-    ARROWS = 27
-    CROSSBOW = 28
-    QUARRELS = 29
-    LONG_SWORD = 30
-    TWO_H_HAMMER = 31
-    TWO_H_AXE = 32
-    TWO_H_SWORD = 33
-    HALBERD = 34
-    CHAOS_SWORD = 35
-    MAGIC_BOW = 36
-    SILVER_SWORD = 37
-    MAGIC_AXE = 38
-    GLASS_SWORD = 39
-    JEWELED_SWORD = 40
-    MYSTIC_SWORD = 41
-    INVISIBILITY_RING = 42
-    PROTECTION_RING = 43
-    REGENERATION_RING = 44
-    AMULET_OF_TURNING = 45
-    SPIKED_COLLAR = 46
-    ANKH = 47
-
-    MIXED_IN_LOR = 48
-    MIXED_GRAV_POR = 49
-    MIXED_AN_ZU = 50
-    MIXED_AN_NOX = 51
-    MIXED_MANI = 52
-    MIXED_AN_YLEM = 53
-    MIXED_AN_SANCT = 54
-    MIXED_AN_XEN_CORP = 55
-    MIXED_REL_HUR = 56
-    MIXED_IN_WIS = 57
-    MIXED_KAL_XEN = 58
-    MIXED_IN_XEN_MANI = 59
-    MIXED_VAS_LOR = 60
-    MIXED_VAS_FLAM = 61
-    MIXED_IN_FLAM_GRAV = 62
-    MIXED_IN_NOX_GRAV = 63
-    MIXED_IN_ZU_GRAV = 64
-    MIXED_IN_POR = 65
-    MIXED_AN_GRAV = 66
-    MIXED_IN_SANCT = 67
-    MIXED_IN_SANCT_GRAV = 68
-    MIXED_UUS_POR = 69
-    MIXED_DES_POR = 70
-    MIXED_WIS_QUAS = 71
-    MIXED_IN_BET_XEN = 72
-    MIXED_AN_EX_POR = 73
-    MIXED_IN_EX_POR = 74
-    MIXED_VAS_MANI = 75
-    MIXED_IN_ZU = 76
-    MIXED_REL_TYM = 77
-    MIXED_IN_VAS_POR_YLEM = 78
-    MIXED_QUAS_AN_WIS = 79
-    MIXED_IN_AN = 80
-    MIXED_WIS_AN_YLEM = 81
-    MIXED_AN_XEN_EX = 82
-    MIXED_REL_XEN_BET = 83
-    MIXED_SANCT_LOR = 84
-    MIXED_XEN_CORP = 85
-    MIXED_IN_QUAS_XEN = 86
-    MIXED_IN_QUAS_WIS = 87
-    MIXED_IN_NOX_HUR = 88
-    MIXED_IN_QUAS_CORP = 89
-    MIXED_IN_MANI_CORP = 90
-    MIXED_KAL_XEN_CORP = 91
-    MIXED_IN_VAS_GRAV_CORP = 92
-    MIXED_IN_FLAM_HUR = 93
-    MIXED_VAS_REL_POR = 94
-    MIXED_AN_TYM = 95
-
-    VAS_LOR_SCROLL = 96
-    REL_HUR_SCROLL = 97
-    IN_SANCT_SCROLL = 98
-    IN_AN_SCROLL = 99
-    IN_QUAS_WIS_SCROLL = 100
-    KAL_XEN_CORP_SCROLL = 101
-    IN_MANI_CORP_SCROLL = 102
-    AN_TYM_SCROLL = 103
-    
-    BLUE_POTION = 104
-    YELLOW_POTION = 105
-    RED_POTION = 106
-    GREEN_POTION = 107
-    ORANGE_POTION = 108
-    PURPLE_POTION = 109
-    BLACK_POTION = 110
-    WHITE_POTION = 111
-
-    #
-    # MYSTERIOUS GAP: Start
-    #
-
-    #
-    # MYSTERIOUS GAP: End
-    #
-
-    SULPHUROUS_ASH = 144
-    GINSENG = 145
-    GARLIC = 146
-    SPIDER_SILK = 147
-    BLOOD_MOSS = 148
-    BLACK_PEARL = 149
-    NIGHTSHADE = 150
-    MANDRAKE_ROOT = 151
-
-'''
+    @property
+    def name(self) -> str:
+        return self[3]

@@ -1,8 +1,22 @@
-from dark_libraries.custom_decorators import auto_init, immutable
 from .item_type import ItemType
 
-@immutable
-@auto_init
-class WorldItem:
-    item_type: ItemType
-    quantity: int
+class WorldItem(tuple):
+    __slots__ = ()
+
+    def __new__(
+        cls,
+        item_type: ItemType,
+        quantity: int,
+    ):
+        return tuple.__new__(cls, (
+            item_type,
+            quantity,
+        ))
+
+    @property
+    def item_type(self) -> ItemType:
+        return self[0]
+
+    @property
+    def quantity(self) -> int:
+        return self[1]
