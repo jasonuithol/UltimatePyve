@@ -1,3 +1,4 @@
+import random
 from typing import Union
 import pygame
 import numpy as np
@@ -146,18 +147,21 @@ class SoundService(LoggerMixin):
 #
 if __name__ == "__main__":
 
+    def _harmonic(base_hz, harmonic):
+        return base_hz * 2**(harmonic / 12)
+
     service = SoundService()
     service.init()
     generator = service.get_generator()
 
-    do_tests = [True, True]
+    do_tests = [False, False, True]
 
     if do_tests[0]:
 
         print("TEST ONE - PENTATONIC")
 
         pentatonic_sequence = [
-            DarkNote(440 * 2**(n / 12), 0.5)
+            DarkNote(_harmonic(base_hz = 440, harmonic = n), 0.5)
             for n in [0, 2, 4, 7, 9, 12]
         ]
         expected_duration = sum(note[1] for note in pentatonic_sequence)
@@ -192,7 +196,7 @@ if __name__ == "__main__":
 
         # Add a low sine thump
         t = np.arange(len(noise_wave)) / service.frequency_sample_rate
-        thump_wave: DarkWaveFloatArray = np.sin(2*np.pi*60*t) * np.exp(-t/0.6) * 2 # 60 Hz boom with 0.5s decay
+        thump_wave: DarkWaveFloatArray = np.sin(2*np.pi*60*t) * np.exp(-t/0.6) # 60 Hz boom with 0.5s decay
         dark_thump = DarkWave(thump_wave)
 
         # Mix broadband
@@ -202,12 +206,15 @@ if __name__ == "__main__":
             attack=0.005, 
             decay_fast=0.2, 
             decay_slow=1.0
+        ).normalize_rms()
+        '''
         ).phaser(
             stages=6, 
             lfo_hz=0.5, 
             feedback=0.4, 
             mix=0.8
         ).normalize_rms()
+        '''
 
         stereo_blast_wave = blast_wave.to_stereo()
 
@@ -219,5 +226,37 @@ if __name__ == "__main__":
 
         print("Channel no longer busy.")
 
+    if do_tests[2]:
 
+        print("TEST THREE - SPELL CASTING NOISES")
+
+        bubbling_sequence = [
+            DarkNote(hz = random.uniform(100.0, 800.0), sec = random.uniform(0.04, 0.12))
+            for _ in range(16)
+        ]
+
+        cast_wave = generator.square_wave().sequence(bubbling_sequence).clamp(-0.4, +0.6).to_stereo()
+
+        _, channel_handle = service.play_sound(cast_wave)
+
+        # Keep program alive long enough to hear it
+        while channel_handle.get_busy():
+            pygame.time.wait(1000)
+
+        print("Channel no longer busy.")
+
+        duration = 2.0
+        phase_shift = 1 / duration
+        spell_wave_1 = generator.sawtooth_wave().sequence([DarkNote(hz = 800.0, sec = 2.0)]).clamp(-0.4, +0.6)
+        spell_wave_2 = generator.sawtooth_wave().sequence([DarkNote(hz = 1600.0 - phase_shift, sec = 2.0)])
+        
+        spell_wave = spell_wave_1.to_stereo(left = spell_wave_2)        
+
+        _, channel_handle = service.play_sound(spell_wave)
+
+        # Keep program alive long enough to hear it
+        while channel_handle.get_busy():
+            pygame.time.wait(1000)
+
+        print("Channel no longer busy.")
 
