@@ -55,7 +55,7 @@ class CombatAgent(NpcAgent):
     # Attack Type = L, R or B for handedness
     def calculate_damage(self, attack_type: str) -> int:
         damage_penalty = 0.5 + (0.5 * self.strength / 30)
-        return self.get_damage(attack_type) * damage_penalty
+        return int(self.get_damage(attack_type) * damage_penalty)
         
     def take_damage(self, damage: int) -> bool:
         self.hitpoints = self.hitpoints - damage

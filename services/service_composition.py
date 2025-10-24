@@ -20,6 +20,7 @@ from services.npc_service import NpcService
 
 from services.modding_service     import ModdingService
 
+from services.sfx_library_service import SfxLibraryService
 from services.sound_service import SoundService
 from services.surface_factory import SurfaceFactory
 from services.world_clock import WorldClock
@@ -51,6 +52,7 @@ def compose(provider: ServiceProvider):
     provider.register(MonsterService)
     provider.register(InfoPanelService)
     provider.register(InfoPanelDataProvider)
+    provider.register(SfxLibraryService)
 
     compose_map_cache(provider)
     compose_world_loot(provider)

@@ -31,6 +31,7 @@ from services.display_service import DisplayService
 from services.main_loop_service import MainLoopService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
+from services.sfx_library_service import SfxLibraryService
 
 
 def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
@@ -73,6 +74,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
     cast_controller: CastController
+    sfx_library_service: SfxLibraryService
 
     _last_attacked_monster = dict[str, MonsterAgent]()
 
@@ -154,6 +156,8 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 if target_coord is None:
                     continue
 
+                self.sfx_library_service.emit_projectile()
+
                 target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
 
                 # Cursor positioning over.  Do we have an enemy ?
@@ -169,6 +173,9 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                         enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
 
                         self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + f"!")
+
+                        self.sfx_library_service.damage(target_coord)
+
                         if target_enemy.hitpoints <= 0:
                             self.npc_service.remove_npc(target_enemy)
                     else:

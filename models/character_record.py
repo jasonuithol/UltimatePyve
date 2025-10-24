@@ -16,7 +16,7 @@ class CharacterRecord:
     def _get_u16(self, rel):
         return int.from_bytes(self._raw[self._offset + rel:self._offset + rel + 2], 'little')
 
-    def _set_u16(self, rel, val):
+    def _set_u16(self, rel: int, val: int):
         self._raw[self._offset + rel:self._offset + rel + 2] = val.to_bytes(2, 'little')
 
     @property

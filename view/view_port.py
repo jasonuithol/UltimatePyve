@@ -17,6 +17,7 @@ class ViewPort(ScalableComponent, LoggerMixin):
     def __init__(self):
         LoggerMixin.__init__(self)
         self.invert_colors(False)
+        self.set_damage_blast_at(None)
 
     def _after_inject(self):
         ScalableComponent.__init__(
@@ -30,6 +31,9 @@ class ViewPort(ScalableComponent, LoggerMixin):
         self.log(f"Invert colors: {value}")
         self._invert_colors = value
 
+    def set_damage_blast_at(self, coord: Coord):
+        self._damage_blast_coord = coord
+
     # TODO: We have returned to view_port coords now
     def draw_map(self, tiles: dict[Coord, Tile]) -> None:
 
@@ -37,6 +41,9 @@ class ViewPort(ScalableComponent, LoggerMixin):
 
         for coord, tile in tiles.items():
             self.draw_tile(coord, tile)
+
+        if self._damage_blast_coord:
+            self.draw_tile(self._damage_blast_coord, self.global_registry.tiles.get(0))
 
     @property
     def view_rect(self) -> Rect:
