@@ -1,21 +1,44 @@
 import math
 import pygame
 
+from data.global_registry import GlobalRegistry
+from data.loaders.tileset_loader import TileLoader
+from models.data_ovl import DataOVL
+from services.surface_factory import SurfaceFactory
+from view.display_config import DisplayConfig
+from object_viewer_lib.object_viewer_menu_bar import ObjectViewerMenuBar
+from object_viewer_lib.object_viewer_profiles import FontViewerProfile, MapViewerProfile, TileViewerProfile, ViewerProfile, configure_profiles
+
 pygame.init()
 pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
+screen = pygame.display.set_mode(
+    size  = (100,100),
+    flags = pygame.SCALED | pygame.DOUBLEBUF, 
+    vsync = 1
+)
 
-def get_object_rect(col: int, row: int) -> pygame.Rect:
-    
-    x = MARGIN + col * active_profile.object_scaled_size().w
-    y = MARGIN + row * active_profile.object_scaled_size().h
-    w,h = active_profile.object_scaled_size().to_tuple()
+clock = pygame.time.Clock()
 
-    return pygame.Rect(x,y,w,h)
+display_config = DisplayConfig()
 
+surface_factory = SurfaceFactory()
+surface_factory.display_config = display_config
+surface_factory._after_inject()
 
-# Import ViewerProfiles (AFTER pygame.init())
-from object_viewer_lib.object_viewer_menu_bar import ObjectViewerMenuBar
-from object_viewer_lib.object_viewer_profiles import MARGIN, FontViewerProfile, MapViewerProfile, TileViewerProfile, ViewerProfile, tile_loader
+data_ovl = DataOVL.load()
+
+tile_loader = TileLoader()
+tile_loader.display_config  = display_config
+tile_loader.global_registry = GlobalRegistry()
+tile_loader.surface_factory = surface_factory
+
+tile_loader.load_tiles()
+
+MARGIN = 20  # padding around grid
+
+configure_profiles(
+    display_config, surface_factory, data_ovl, tile_loader, MARGIN
+)
 
 profiles = list[ViewerProfile]([
     TileViewerProfile(),

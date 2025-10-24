@@ -168,8 +168,8 @@ if __name__ == "__main__":
         False,  # spell casting noises
         False,  # cannonball
         False,  # projectile whoosh
-        False,  # waterfall
-        True    # projectile impact
+        True,  # waterfall
+        False    # projectile impact
     ]
 
     if do_tests[0]:

@@ -20,7 +20,7 @@ from models.u5_map_level import U5MapLevel
 from services.surface_factory import SurfaceFactory
 
 from view.display_config import DisplayConfig
-
+'''
 display_config = DisplayConfig()
 
 surface_factory = SurfaceFactory()
@@ -36,8 +36,37 @@ tile_loader.surface_factory = surface_factory
 
 tile_loader.load_tiles()
 
-MARGIN = 20  # padding around grid
 
+MARGIN = 20  # padding around grid
+'''
+
+display_config:  DisplayConfig  = None
+surface_factory: SurfaceFactory = None
+data_ovl:        DataOVL        = None
+tile_loader:     TileLoader     = None
+margin:          int            = None
+
+def configure_profiles(
+    display_config_:  DisplayConfig,
+    surface_factory_: SurfaceFactory,
+    data_ovl_:        DataOVL,
+    tile_loader_:     TileLoader,
+    margin_:          int
+):
+    global display_config
+    display_config  = display_config_
+
+    global surface_factory
+    surface_factory = surface_factory_
+
+    global data_ovl
+    data_ovl = data_ovl_
+
+    global tile_loader
+    tile_loader = tile_loader_
+
+    global MARGIN
+    MARGIN = margin_
 
 # Inherit from this to make a custom profile type
 class ViewerProfile[TKey, TValue]:
@@ -66,6 +95,14 @@ class ViewerProfile[TKey, TValue]:
 
     def object_scaled_size(self) -> Size:
         return self.object_size().scale(self.current_scale_factor)
+
+    def get_object_rect(self, col: int, row: int) -> pygame.Rect:
+        
+        x = MARGIN + col * self.object_scaled_size().w
+        y = MARGIN + row * self.object_scaled_size().h
+        w,h = self.object_scaled_size().to_tuple()
+
+        return pygame.Rect(x,y,w,h)
 
     # size is in objects, not pixels.
     def viewer_size(self) -> Size:

@@ -138,7 +138,11 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
         # Attack dispatch handler
         if event.key == pygame.K_a:
 
+            #
+            # BUG: This causes pressing A to attack with all weapons one after the other without further prompting.
+            #
             for weapon in party_member.get_weapons():
+
 
                 self.console_service.print_ascii(weapon.name + " - ", include_carriage_return = False)
 
