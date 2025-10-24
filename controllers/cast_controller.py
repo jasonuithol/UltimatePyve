@@ -1,9 +1,11 @@
+import random
 import pygame
 
 from controllers.spell_controllers.general_spell_controller import GeneralSpellController
 from controllers.spell_controllers.party_member_spell_controller import PartyMemberSpellController
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
+from dark_libraries.dark_wave import DarkNote
 from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
@@ -19,6 +21,7 @@ from services.console_service import ConsoleService
 from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
 from services.main_loop_service import MainLoopService, keycode_to_char
+from services.sound_service import SoundService
 
 INCUR_SPELL_COST = True
 NO_SPELL_COST    = False
@@ -36,6 +39,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
     general_spell_controller: GeneralSpellController
     party_member_spell_controller: PartyMemberSpellController
+    sound_service: SoundService
 
     def handle_event(self, event: pygame.event.Event, spell_caster: PartyMemberAgent, combat_map: CombatMap):
         if event.key == pygame.K_c:
@@ -115,6 +119,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
                 return None
             
             if event.key == pygame.K_RETURN:
+                print("BILL ODDIE")
                 return rune_keys
             
             rune_key = keycode_to_char(event.key)
@@ -145,23 +150,19 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         insufficient_mana  = spell_caster.mana < spell_type.level
         insufficient_level = spell_caster.level < spell_type.level
 
-        # We're definitely casting some sort of spell.  Do the thing.
-        if spell_type.target_type == SpellTargetType.T_COORD:
-            self._do_special_effects_coord()
-        else:
-            self._do_special_effects_normal()
-
         if insufficient_mana or insufficient_level:
             self.console_service.print_ascii("Failed !")
             self.log(f"Spell failed: caster_mana={spell_caster.mana}, caster_level={spell_caster.level}, spell_level={spell_type.level}")
             return NO_SPELL_COST
 
         if spell_type.target_type == SpellTargetType.T_NONE:
+            self._do_special_effects_normal()
             self.general_spell_controller.cast(spell_caster, spell_type)
 
         elif spell_type.target_type == SpellTargetType.T_DIRECTION:
             self.console_service.print_ascii("Direction: ", include_carriage_return = False)
             spell_direction = self.main_loop_service.obtain_action_direction()
+            self._do_special_effects_normal()
 
         elif spell_type.target_type == SpellTargetType.T_COORD:
 
@@ -172,6 +173,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
                 boundary_rect   = combat_map.get_size().to_rect(Coord(0,0)),
                 range_          = 255
             )
+            self._do_special_effects_coord()
 
         elif spell_type.target_type == SpellTargetType.T_PARTY_MEMBER:
 
@@ -179,10 +181,13 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             party_data = self.info_panel_data_provider.get_party_summary_data()
             self.info_panel_service.show_party_summary(party_data, select_mode = True)
 
+            print("GRAHAM GARDNER")
             target_party_member_index = self.info_panel_service.choose_item(party_data.party_data_set, 0)
+            print("TIM BROOKE-TAYLOR")
             target_party_member = self.party_agent.get_party_member(target_party_member_index)
             self.console_service.print_ascii(target_party_member.name, no_prompt = True)
 
+            self._do_special_effects_normal()
             self.party_member_spell_controller.cast(spell_caster, spell_type, target_party_member)
 
         return INCUR_SPELL_COST
@@ -195,10 +200,38 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     
     def _do_special_effects_normal(self):
         # SOUND: The bubbling of the fabric of reality
+        generator = self.sound_service.get_generator()
+
+        bubbling_sequence = [
+            DarkNote(hz = random.uniform(100.0, 800.0), sec = random.uniform(0.04, 0.12))
+            for _ in range(16)
+        ]
+
+        cast_wave = generator.square_wave().sequence(bubbling_sequence).clamp(-0.4, +0.6).to_stereo()
+
+        _, channel_handle = self.sound_service.play_sound(cast_wave)
+
+        # Keep program alive long enough to hear it
+        while channel_handle.get_busy():
+            pygame.time.wait(1000)
+
+        # SOUND: The searing of the energy plane.
+
+        duration = 2.0
+        phase_shift = 1 / duration
+        spell_wave_1 = generator.sawtooth_wave().sequence([DarkNote(hz = 800.0, sec = 2.0)]).clamp(-0.4, +0.6)
+        spell_wave_2 = generator.sawtooth_wave().sequence([DarkNote(hz = 1600.0 - phase_shift, sec = 2.0)])
+        
+        spell_wave = spell_wave_1.to_stereo(left = spell_wave_2)        
+
+        _, channel_handle = self.sound_service.play_sound(spell_wave)
+
+        # Keep program alive long enough to hear it
+        while channel_handle.get_busy():
+            pygame.time.wait(1000)
 
         # VISUAL: Invert all colors of the viewport
 
-        # SOUND: The searing of the energy plane.
 
         # VISUAL: Restore all colors of the viewport.
         return

@@ -15,6 +15,7 @@ from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
 from services.light_map_level_baker import LightMapLevelBaker
 from services.map_cache.map_cache_service import MapCacheService
+from services.sound_service import SoundService
 from services.world_clock           import WorldClock
 from services.world_loot.world_loot_service import WorldLootService
 from view.info_panel import InfoPanel
@@ -43,6 +44,7 @@ class InitialisationController(LoggerMixin):
     info_panel_data_provider: InfoPanelDataProvider
     info_panel: InfoPanel
     interactive_console: InteractiveConsole
+    sound_service: SoundService
 
 
     def init(self):
@@ -89,6 +91,8 @@ class InitialisationController(LoggerMixin):
 
         self.map_cache_service.init()
         self.light_map_level_baker.bake_level_light_maps()
+
+        self.sound_service.init()
 
         #
         # Start displaying stuff
