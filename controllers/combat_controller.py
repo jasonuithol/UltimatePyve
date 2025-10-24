@@ -153,7 +153,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                     boundary_rect  = combat_map.get_size().to_rect(Coord(0,0)),
                     range_         = max(weapon.range_, 1)
                 )
-                if target_coord is None:
+                if target_coord is None or target_coord == party_member.coord:
                     continue
 
                 self.sfx_library_service.emit_projectile()
