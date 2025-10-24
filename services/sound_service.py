@@ -1,8 +1,18 @@
+from typing import Union
 import pygame
-import numpy
+import numpy as np
+import numpy.typing as npt
 
-from dark_libraries.dark_wave import BitSampledWaveArrayType, DarkWaveGenerator, DarkWaveStereo, RawValueWaveArrayType
+from dark_libraries.dark_wave import DarkNote, DarkWave, DarkWaveGenerator, DarkWaveStereo, DarkWaveFloatArray, set_frequency_sample_rate as set_dark_wave_frequency_sample_rate
 from dark_libraries.logging import LoggerMixin
+
+NDArrayInt8  = npt.NDArray[np.int8]
+NDArrayUInt8 = npt.NDArray[np.uint8]
+NDArrayInt16 = npt.NDArray[np.int16]
+NDArrayInt32 = npt.NDArray[np.int32]
+
+# Sampled to the system's sample bit rate.
+BitSampledWaveArrayType = Union[NDArrayInt8, NDArrayUInt8, NDArrayInt16, NDArrayInt32]
 
 FADEIN_MILLISECONDS  = 5000
 FADEOUT_MILLISECONDS = 5000
@@ -19,6 +29,8 @@ class SoundService(LoggerMixin):
             + f"channels={self.channels}"
         )
 
+        set_dark_wave_frequency_sample_rate(self.frequency_sample_rate)
+
         # Determine amplitude
         bits = abs(self.sound_format)
         signed = self.sound_format < 0
@@ -30,18 +42,18 @@ class SoundService(LoggerMixin):
         self.log(f"Setting amplitude_sampling_range to {self.amplitude_sampling_range}")
 
         # Determining data type for output
-        dtype_type: numpy.typing.DTypeLike = None
+        dtype_type: npt.DTypeLike = None
         if bits == 8:
-            dtype_type = numpy.int8 if signed else numpy.uint8
+            dtype_type = np.int8 if signed else np.uint8
         elif bits == 16:
-            dtype_type = numpy.int16
+            dtype_type = np.int16
         elif bits == 32:
-            dtype_type = numpy.int32
+            dtype_type = np.int32
 
         assert dtype_type, f"Unsupported bit depth: {bits}"
 
         self.log(f"Using output data type {dtype_type.__name__}")
-        self.dtype = numpy.dtype(dtype_type)
+        self.dtype = np.dtype(dtype_type)
 
         self.set_sfx_volume(0.35)
         self.set_soundtrack_volume(0.35)
@@ -71,25 +83,34 @@ class SoundService(LoggerMixin):
     #
 
     def get_generator(self) -> DarkWaveGenerator:
-        return DarkWaveGenerator(self.frequency_sample_rate)
+        return DarkWaveGenerator()
 
-    def _to_amplitude_sampled_wave(self, input_wave: RawValueWaveArrayType) -> BitSampledWaveArrayType:
+    def _to_amplitude_sampled_wave(self, input_wave: DarkWaveFloatArray) -> BitSampledWaveArrayType:
         return (input_wave * self.amplitude_sampling_range).astype(self.dtype)
     
-    def play_sound(self, input_wave: DarkWaveStereo) -> tuple[pygame.mixer.Sound, pygame.mixer.Channel]:
+    def play_sound(self, input_wave: DarkWave | DarkWaveStereo) -> tuple[pygame.mixer.Sound, pygame.mixer.Channel]:
 
-        if self.channels == 2:
+        #
+        # TODO: automatically split/mix input into required output arity.
+        #
+
+        if isinstance(input_wave, DarkWaveStereo) and self.channels == 2:
             volume_adjusted = [
                 channel * self.sfx_volume
                 for channel in [input_wave.left, input_wave.right]
             ]
 
-            channel_adjusted = numpy.column_stack((
+            channel_adjusted = np.column_stack((
                 self._to_amplitude_sampled_wave(volume_adjusted[0]), 
                 self._to_amplitude_sampled_wave(volume_adjusted[1]) 
             ))
+
+        elif isinstance(input_wave, DarkWave) and self.channels == 1:
+            volume_adjusted = input_wave.wave_data * self.sfx_volume
+            channel_adjusted = self._to_amplitude_sampled_wave(volume_adjusted)
+
         else:
-             assert False, "Not supported yet"
+            assert False, f"Not implemented: input_wave is {type(input_wave).__name__} and channels={self.channels}"
 
         sound_handle = pygame.sndarray.make_sound(channel_adjusted)
 
@@ -127,75 +148,76 @@ if __name__ == "__main__":
 
     service = SoundService()
     service.init()
-
-    print("TEST ONE - PENTATONIC")
-
-    pentatonic_sequence = [
-        (440 * 2**(n / 12), 0.5)
-        for n in [0, 2, 4, 7, 9, 12]
-    ]
-    expected_duration = sum(note[1] for note in pentatonic_sequence)
-
     generator = service.get_generator()
 
-    sawtooth_wave     = generator.sawtooth_wave().sequence(pentatonic_sequence).clamp(-0.4, +0.6)
-    square_wave       = generator.square_wave().sequence(pentatonic_sequence).clamp(-0.4, +0.6)
-    fm_modulated_wave = generator.fm_modulated_wave(mod_freq = 6.0, deviation_hz = 8.0).sequence(pentatonic_sequence).clamp(-0.4, +0.6)
-    am_modulated_wave = generator.am_modulated_wave(mod_freq = 6.0, depth = 0.8).sequence(pentatonic_sequence).clamp(-0.4, +0.6)
+    do_tests = [True, True]
 
-    for sound_wave in [sawtooth_wave, square_wave, fm_modulated_wave, am_modulated_wave]: # [am_modulated_wave]: 
+    if do_tests[0]:
 
-        normal = sound_wave.normalize_rms(target_rms = 0.1)
-        stereo = normal.to_stereo().haas_widen()
-        sound_handle, channel_handle = service.play_sound(stereo)
+        print("TEST ONE - PENTATONIC")
 
-        print(f"Expected duration={expected_duration}, reported duration={sound_handle.get_length()}")
+        pentatonic_sequence = [
+            DarkNote(440 * 2**(n / 12), 0.5)
+            for n in [0, 2, 4, 7, 9, 12]
+        ]
+        expected_duration = sum(note[1] for note in pentatonic_sequence)
+
+        sawtooth_wave     = generator.sawtooth_wave().sequence(pentatonic_sequence).clamp(-0.4, +0.6)
+        square_wave       = generator.square_wave().sequence(pentatonic_sequence).clamp(-0.4, +0.6)
+        fm_modulated_wave = generator.fm_modulated_wave(mod_freq = 6.0, deviation_hz = 8.0).sequence(pentatonic_sequence).clamp(-0.4, +0.6)
+        am_modulated_wave = generator.am_modulated_wave(mod_freq = 6.0, depth = 0.8).sequence(pentatonic_sequence).clamp(-0.4, +0.6)
+
+        for sound_wave in [sawtooth_wave, square_wave, fm_modulated_wave, am_modulated_wave]: # [am_modulated_wave]: 
+
+            normal = sound_wave.normalize_rms(target_rms = 0.1)
+            stereo = normal.to_stereo().haas_widen()
+            sound_handle, channel_handle = service.play_sound(stereo)
+
+            print(f"Expected duration={expected_duration}, reported duration={sound_handle.get_length()}")
+
+            # Keep program alive long enough to hear it
+            while channel_handle.get_busy():
+                pygame.time.wait(1000)
+
+            print("Channel no longer busy.")
+
+    if do_tests[1]:
+
+        print("TEST TWO - KABOOM!")
+
+        # 1 second of noise
+        noise_wave = generator.white_noise(1.0).clamp(-0.2, +0.6).normalize_rms()
+
+        # Shape it
+
+        # Add a low sine thump
+        t = np.arange(len(noise_wave)) / service.frequency_sample_rate
+        thump_wave: DarkWaveFloatArray = np.sin(2*np.pi*60*t) * np.exp(-t/0.6) * 2 # 60 Hz boom with 0.5s decay
+        dark_thump = DarkWave(thump_wave)
+
+        # Mix broadband
+        blast_wave = noise_wave.mix(
+            dark_thump
+        ).normalize_rms().envelope(
+            attack=0.005, 
+            decay_fast=0.2, 
+            decay_slow=1.0
+        ).phaser(
+            stages=6, 
+            lfo_hz=0.5, 
+            feedback=0.4, 
+            mix=0.8
+        ).normalize_rms()
+
+        stereo_blast_wave = blast_wave.to_stereo()
+
+        sound_handle, channel_handle = service.play_sound(stereo_blast_wave)
 
         # Keep program alive long enough to hear it
         while channel_handle.get_busy():
             pygame.time.wait(1000)
 
         print("Channel no longer busy.")
-
-    '''
-    print("TEST TWO - KABOOM!")
-
-    # 1 second of noise
-    noise = service.white_noise(1.0)
-
-    noise = service.clamp(noise, -0.2, 0.6)
-
-    noise = service.normalize_rms(noise)
-
-    # Shape it
-
-    # Add a low sine thump
-    t = numpy.arange(len(noise)) / service.frequency_sample_rate
-    thump = numpy.sin(2*numpy.pi*60*t) * numpy.exp(-t/0.6)  # 60 Hz boom with 0.5s decay
-
-    thump *= 2.0
-
-    # Mix broadband
-    blast = service.mix([noise, thump])
-
-    blast = service.normalize_rms(blast)
-
-    # Envelope shape (fast attack, 1s decay)
-    blast = service.envelope(blast, attack=0.005, decay_fast=0.2, decay_slow=1.0)
-
-    # Optional shimmer
-    blast = service.phaser(blast, stages=6, lfo_hz=0.5, feedback=0.4, mix=0.8)
-
-    blast = service.normalize_rms(blast)
-
-    sound_handle, channel_handle = service.play_sound(blast)
-
-    # Keep program alive long enough to hear it
-    while channel_handle.get_busy():
-        pygame.time.wait(1000)
-
-    print("Channel no longer busy.")
-    '''
 
 
 
