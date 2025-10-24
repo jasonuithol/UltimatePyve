@@ -180,6 +180,12 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             )
             self._do_special_effects_coord()
 
+            #
+            # TODO: Did the magic spell hit ?
+            #
+            self._do_special_effects_impact()
+            
+
         elif spell_type.target_type == SpellTargetType.T_PARTY_MEMBER:
 
             self.console_service.print_ascii("On who: ", include_carriage_return = False)
@@ -241,6 +247,20 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         while channel_handle.get_busy():
             self.display_service.render()
 
+    def _do_special_effects_impact(self):
+        # SOUND: "BBRRERRRKKCH"
+        generator = self.sound_service.get_generator()
+        noise_wave = generator.white_noise(hz = 1600.0, sec = 0.5).to_stereo()
+
+        _, channel_handle = self.sound_service.play_sound(noise_wave)
+
+        # Keep program alive long enough to hear it
+        while channel_handle.get_busy():
+            self.display_service.render()
+
+        # ANIMATION: The flashy explody tile.
+
+
     def _do_special_effects_normal(self):
 
         self._do_special_effects_bubbling_of_reality()
@@ -280,8 +300,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
         # if hit:
 
-            # SOUND: "BBRRERRRKKCH"
-            # ANIMATION: The flashy explody tile.
+#            self._do_special_effects_impact()
 
         # else (a miss):
 

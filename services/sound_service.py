@@ -162,7 +162,15 @@ if __name__ == "__main__":
     service.init()
     generator = service.get_generator()
 
-    do_tests = [False, False, False, False, True]
+    do_tests = [
+        False,  # pentatonic
+        False,  # kaboom (more like a silent but deadly)
+        False,  # spell casting noises
+        False,  # cannonball
+        False,  # projectile whoosh
+        False,  # waterfall
+        True    # projectile impact
+    ]
 
     if do_tests[0]:
 
@@ -288,4 +296,24 @@ if __name__ == "__main__":
         ).to_stereo()
 
         _, channel_handle = service.play_sound(whoosh_wave)
+        _wait(channel_handle)
+
+
+    if do_tests[5]:
+
+        print("TEST SIX - WATERFALL!")
+
+        noise_wave = generator.white_noise(hz = 20.0, sec = 2.0).to_stereo()
+
+        _, channel_handle = service.play_sound(noise_wave)
+        _wait(channel_handle)
+
+
+    if do_tests[6]:
+
+        print("TEST SIX - IMPACT!")
+
+        noise_wave = generator.white_noise(hz = 1600.0, sec = 0.5).to_stereo()
+
+        _, channel_handle = service.play_sound(noise_wave)
         _wait(channel_handle)

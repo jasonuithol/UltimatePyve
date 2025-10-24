@@ -589,9 +589,42 @@ class DarkWaveGenerator:
 
         return self._dark_wave_sequencer(_wave_function)
 
-    def white_noise(self, sec: float) -> DarkWave:
+    def white_noise(self, hz: float, sec: float) -> DarkWave:
+        """
+        Generate sample-and-hold white noise.
+
+        Parameters
+        ----------
+        hz : float
+            Update rate of the noise (new random value per second).
+        sec : float
+            Duration in seconds.
+
+        Returns
+        -------
+        DarkWave
+            Noise signal of length sec * sample_rate.
+        """
+        assert hz > 0, "hz must be positive"
         n_samples = int(frequency_sample_rate * sec)
-        return self._dark_wave(np.random.uniform(-1.0, 1.0, n_samples).astype(np.float64))
+
+        # Number of samples per hold interval (may be fractional)
+        samples_per_step = frequency_sample_rate / hz
+
+        # Number of random values needed
+        n_randoms = int(np.ceil(n_samples / samples_per_step))
+
+        # Generate random values
+        randoms = np.random.uniform(-1.0, 1.0, n_randoms)
+
+        # Repeat each random value for the right number of samples
+        samples = np.repeat(randoms, np.ceil(samples_per_step).astype(int))
+
+        # Truncate to exact length
+        samples = samples[:n_samples]
+
+        return self._dark_wave(samples.astype(np.float64))
+
 
 class DarkWaveSequencer:
 
