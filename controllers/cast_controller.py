@@ -119,7 +119,6 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
                 return None
             
             if event.key == pygame.K_RETURN:
-                print("BILL ODDIE")
                 return rune_keys
             
             rune_key = keycode_to_char(event.key)
@@ -181,9 +180,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             party_data = self.info_panel_data_provider.get_party_summary_data()
             self.info_panel_service.show_party_summary(party_data, select_mode = True)
 
-            print("GRAHAM GARDNER")
             target_party_member_index = self.info_panel_service.choose_item(party_data.party_data_set, 0)
-            print("TIM BROOKE-TAYLOR")
             target_party_member = self.party_agent.get_party_member(target_party_member_index)
             self.console_service.print_ascii(target_party_member.name, no_prompt = True)
 
