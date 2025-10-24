@@ -342,12 +342,10 @@ class DarkWave:
         return self._dark_wave(mixed[0])  # flatten back to 1D
 
     def amplitude_modulate(self, modulator_wave: DarkWaveFloatArray, depth: float = 1.0) -> Self:
-        assert isinstance(modulator_wave, DarkWaveFloatArray), f"Expected {__class__.__name__}, got {DarkWaveFloatArray.__name__}"
         am_wave = am_modulator(self.wave_data, modulator_wave, depth)
         return self._dark_wave(am_wave)
 
     def frequency_modulate(self, modulator_wave: DarkWaveFloatArray, base_hz: float, deviation_hz: float) -> Self:
-        assert isinstance(modulator_wave, DarkWaveFloatArray), f"Expected {__class__.__name__}, got {DarkWaveFloatArray.__name__}"
         fm_wave = fm_modulator(base_hz, modulator_wave, deviation_hz)
         return self._dark_wave(fm_wave)
 
@@ -495,15 +493,45 @@ class DarkWaveGenerator:
     def _dark_wave_sequencer(self, wave_function: WaveFunction) -> 'DarkWaveSequencer':
         return DarkWaveSequencer(wave_function)
 
-    def sawtooth_wave(self) -> 'DarkWaveSequencer':
+    def sawtooth_wave(self, geometry: float = 0.0) -> 'DarkWaveSequencer':
+        """
+        Generate a skewed sawtooth/triangle wave.
+
+        Parameters
+        ----------
+        geometry : float in [-1, 1]
+            -1.0 = right-angled sawtooth (instant rise, long fall)
+            0.0 = isosceles triangle
+            +1.0 = right-angled sawtooth (long rise, instant fall)
+        """
 
         def _wave_function(note: DarkNote):
-            assert 0.0 <= note.hz < (frequency_sample_rate / 2), f"hz must be between 0 and {frequency_sample_rate / 2}"
+            assert 0.0 <= note.hz < (frequency_sample_rate / 2), \
+                f"hz must be between 0 and {frequency_sample_rate / 2}"
             n_samples = int(frequency_sample_rate * note.sec)
             t = np.arange(n_samples, dtype=np.float64) / frequency_sample_rate
-            # Basic sawtooth: fractional part of (hz * t), scaled to [-1, 1]
-            return self._dark_wave(2.0 * (note.hz * t % 1.0) - 1.0)
-        
+
+            # Phase in [0,1)
+            phase = (note.hz * t) % 1.0
+
+            # Map geometry [-1,1] -> duty cycle [0,1]
+            d = (geometry + 1.0) / 2.0
+
+            if d == 0.0:
+                # Degenerate: instant rise, long fall
+                wave = 1.0 - phase
+            elif d == 1.0:
+                # Degenerate: long rise, instant fall
+                wave = phase
+            else:
+                wave = np.empty_like(phase)
+                rise = phase < d
+                wave[rise] = phase[rise] / d
+                wave[~rise] = 1.0 - (phase[~rise] - d) / (1.0 - d)
+
+            # Scale to [-1, 1]
+            return self._dark_wave(2.0 * wave - 1.0)
+
         return self._dark_wave_sequencer(_wave_function)
 
     def square_wave(self) -> 'DarkWaveSequencer':
@@ -515,14 +543,14 @@ class DarkWaveGenerator:
         
         return self._dark_wave_sequencer(_wave_function)
 
-    def sine_wave(self) -> 'DarkWaveSequencer':
+    def sine_wave(self, phase_offset: float = 0.0) -> 'DarkWaveSequencer':
 
         def _wave_function(note: DarkNote):
             assert 0.0 <= note.hz < (frequency_sample_rate / 2), f"hz must be between 0 and {frequency_sample_rate / 2}"
 
             number_of_samples = int(frequency_sample_rate * note.sec)
             time_axis: DarkWaveFloatArray = np.arange(number_of_samples, dtype=np.float64) / frequency_sample_rate
-            return self._dark_wave(np.sin(2 * np.pi * note.hz * time_axis))
+            return self._dark_wave(np.sin(2 * np.pi * note.hz * time_axis + phase_offset))
         return self._dark_wave_sequencer(_wave_function)
 
     def fm_modulated_wave(self, mod_freq: float, deviation_hz: float) -> 'DarkWaveSequencer':

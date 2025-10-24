@@ -1,3 +1,4 @@
+import math
 import random
 import pygame
 
@@ -5,7 +6,7 @@ from controllers.spell_controllers.general_spell_controller import GeneralSpellC
 from controllers.spell_controllers.party_member_spell_controller import PartyMemberSpellController
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
-from dark_libraries.dark_wave import DarkNote, DarkWaveGenerator
+from dark_libraries.dark_wave import DarkNote
 from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
@@ -218,6 +219,28 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         while channel_handle.get_busy():
             self.display_service.render()
 
+    def _do_special_effects_projectile(self):
+
+        generator = self.sound_service.get_generator()
+
+        start_hz = 1400.0
+        end_hz   = 200.0
+        duration = 0.25
+
+#        sweep_down_modulator = generator.sawtooth_wave(geometry=-1.0).sequence([DarkNote(hz = duration * 16, sec = duration)])
+        sweep_down_modulator = generator.sine_wave(phase_offset = math.pi / 2).sequence([DarkNote(hz = duration * 8, sec = duration)])
+        whoosh_wave = generator.square_wave().sequence([DarkNote(hz = start_hz, sec = duration)]).frequency_modulate(
+            sweep_down_modulator.wave_data, 
+            base_hz = start_hz, 
+            deviation_hz = start_hz - end_hz
+        ).to_stereo()
+
+        _, channel_handle = self.sound_service.play_sound(whoosh_wave)
+
+        # Keep program alive long enough to hear it
+        while channel_handle.get_busy():
+            self.display_service.render()
+
     def _do_special_effects_normal(self):
 
         self._do_special_effects_bubbling_of_reality()
@@ -251,6 +274,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         self._do_special_effects_bubbling_of_reality()
 
         # SOUND: Whooshing of projectile.
+        self._do_special_effects_projectile()
 
         # ANIMATION: Animate the movement of a glyph to the target.
 

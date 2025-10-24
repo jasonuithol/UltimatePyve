@@ -32,10 +32,8 @@ class Tile:
 
     def get_surface(self, inverted = False) -> pygame.Surface:
         if inverted == True:
-            print("BILL ODDIE")
             return self.inverted_surface
         else:
-            print("GRAHAM GARDNER")
             return self.surface
 
     def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord = Coord(0,0), inverted = False):

@@ -149,12 +149,20 @@ if __name__ == "__main__":
 
     def _harmonic(base_hz, harmonic):
         return base_hz * 2**(harmonic / 12)
+    
+    def _wait(channel_handle):
+        # Keep program alive long enough to hear it
+        while channel_handle.get_busy():
+            pygame.time.wait(1000)
+
+        print("Channel no longer busy.")
+
 
     service = SoundService()
     service.init()
     generator = service.get_generator()
 
-    do_tests = [False, False, True]
+    do_tests = [False, False, False, False, True]
 
     if do_tests[0]:
 
@@ -179,11 +187,8 @@ if __name__ == "__main__":
 
             print(f"Expected duration={expected_duration}, reported duration={sound_handle.get_length()}")
 
-            # Keep program alive long enough to hear it
-            while channel_handle.get_busy():
-                pygame.time.wait(1000)
-
-            print("Channel no longer busy.")
+            _, channel_handle = service.play_sound(sound_wave)
+            _wait(channel_handle)
 
     if do_tests[1]:
 
@@ -218,11 +223,8 @@ if __name__ == "__main__":
 
         stereo_blast_wave = blast_wave.to_stereo()
 
-        sound_handle, channel_handle = service.play_sound(stereo_blast_wave)
-
-        # Keep program alive long enough to hear it
-        while channel_handle.get_busy():
-            pygame.time.wait(1000)
+        _, channel_handle = service.play_sound(stereo_blast_wave)
+        _wait(channel_handle)
 
         print("Channel no longer busy.")
 
@@ -237,13 +239,8 @@ if __name__ == "__main__":
 
         cast_wave = generator.square_wave().sequence(bubbling_sequence).clamp(-0.4, +0.6).to_stereo()
 
-        _, channel_handle = service.play_sound(cast_wave)
-
-        # Keep program alive long enough to hear it
-        while channel_handle.get_busy():
-            pygame.time.wait(1000)
-
-        print("Channel no longer busy.")
+        _, channel_handle = service.play_sound(stereo_blast_wave)
+        _wait(channel_handle)
 
         duration = 2.0
         phase_shift = 1 / duration
@@ -253,10 +250,42 @@ if __name__ == "__main__":
         spell_wave = spell_wave_1.to_stereo(left = spell_wave_2)        
 
         _, channel_handle = service.play_sound(spell_wave)
+        _wait(channel_handle)
 
-        # Keep program alive long enough to hear it
-        while channel_handle.get_busy():
-            pygame.time.wait(1000)
+    if do_tests[3]:
 
-        print("Channel no longer busy.")
+        print("TEST FOUR - CANNON BALL !")
 
+        start_hz = 400.0
+        end_hz   = 0.0
+        duration = 1.0
+
+        sweep_down_modulator = generator.sawtooth_wave(geometry=-1.0).sequence([DarkNote(hz = duration, sec = duration)])
+        whoosh_wave = generator.square_wave().sequence([DarkNote(hz = start_hz, sec = duration)]).frequency_modulate(
+            sweep_down_modulator.wave_data, 
+            base_hz = start_hz, 
+            deviation_hz = start_hz - end_hz
+        ).to_stereo()
+
+        _, channel_handle = service.play_sound(whoosh_wave)
+        _wait(channel_handle)
+
+
+    if do_tests[4]:
+
+        print("TEST FIVE - COMBAT PROJECTILE!")
+
+        start_hz = 1400.0
+        end_hz   = 200.0
+        duration = 0.25
+
+#        sweep_down_modulator = generator.sawtooth_wave(geometry=-1.0).sequence([DarkNote(hz = duration * 16, sec = duration)])
+        sweep_down_modulator = generator.sine_wave(phase_offset = np.pi/2).sequence([DarkNote(hz = duration * 8, sec = duration)])
+        whoosh_wave = generator.square_wave().sequence([DarkNote(hz = start_hz, sec = duration)]).frequency_modulate(
+            sweep_down_modulator.wave_data, 
+            base_hz = start_hz, 
+            deviation_hz = start_hz - end_hz
+        ).to_stereo()
+
+        _, channel_handle = service.play_sound(whoosh_wave)
+        _wait(channel_handle)
