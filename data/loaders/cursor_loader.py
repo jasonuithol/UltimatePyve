@@ -22,6 +22,8 @@ BORDER_OFFSET = 0
 OUTER_BORDER = 2
 INNER_BORDER = 6
 
+
+
 class CursorLoader(LoggerMixin):
 
     # Injectable
@@ -67,15 +69,30 @@ class CursorLoader(LoggerMixin):
 
     def _build_cursor_crosshair(self):
         surf = self._get_cursor_surface()
-        vertices = [
-            (INNER_BORDER, OUTER_BORDER),
-            (INNER_BORDER, INNER_BORDER),
-            (OUTER_BORDER, INNER_BORDER)
+
+        # a backwards L
+        white_vertices = [
+            (INNER_BORDER, OUTER_BORDER), # middle, top
+            (INNER_BORDER, INNER_BORDER), # middle, middle
+            (OUTER_BORDER, INNER_BORDER)  # left  , middle
+        ]
+
+        black_vertices = [
+            (INNER_BORDER + 1, OUTER_BORDER), # middle, top
+            (INNER_BORDER + 1, INNER_BORDER), # middle, middle
+
+            (INNER_BORDER, INNER_BORDER + 1), # middle, middle
+            (OUTER_BORDER, INNER_BORDER + 1)  # left  , middle
         ]
         for _ in range(4):
-            pygame.draw.line(surf, WHITE, vertices[0], vertices[1], 1)
-            pygame.draw.line(surf, WHITE, vertices[1], vertices[2], 1)
-            vertices = [self._rotate_point_90_clockwise(v) for v in vertices]
+            pygame.draw.line(surf, WHITE, white_vertices[0], white_vertices[1], 1) # down
+            pygame.draw.line(surf, WHITE, white_vertices[1], white_vertices[2], 1) # left
+
+            pygame.draw.line(surf, BLACK, black_vertices[0], black_vertices[1], 1) # down
+            pygame.draw.line(surf, BLACK, black_vertices[2], black_vertices[3], 1) # left
+
+            white_vertices = [self._rotate_point_90_clockwise(v) for v in white_vertices]
+            black_vertices = [self._rotate_point_90_clockwise(v) for v in black_vertices]
         return surf
     
     def _rotate_point_90_clockwise(self, point: tuple[int,int]) -> tuple[int,int]:
