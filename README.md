@@ -17,9 +17,11 @@ It uses the original game data files but runs them through a modern, Python‑ba
 ## Installation
 
 1. **Install Python 3.13+**  
+
     Make sure `python` (or `python3`) points to the correct version.  When it asks if you want to add it to the PATH, say yes.
 
 2. **Install Python libraries**
+
     Run this command:
 
     ```
