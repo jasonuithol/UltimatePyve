@@ -17,30 +17,37 @@ It uses the original game data files but runs them through a modern, Python‑ba
 ## Installation
 
 1. **Install Python 3.13+**  
-   Make sure `python` (or `python3`) points to the correct version.  When it asks if you want to add it to the PATH, say yes.
+    Make sure `python` (or `python3`) points to the correct version.  When it asks if you want to add it to the PATH, say yes.
 
-2. **Clone this repository**  
-   ```
-   git clone https://github.com/jasonuithol/UltimatePyve.git
-   cd UltimatePyve
-   ```
-   OR
-   Download this link https://github.com/jasonuithol/UltimatePyve/archive/refs/heads/master.zip
+2. **Install Python libraries**
+    Run this command:
+
+    `pip install -r requirements.txt`
+
+3. **Clone this repository**  
+
+    ```
+    git clone https://github.com/jasonuithol/UltimatePyve.git
+    cd UltimatePyve
+    ```
+
+    OR
+
+    Download this link https://github.com/jasonuithol/UltimatePyve/archive/refs/heads/master.zip
    
 ## IMPORTANT REASSURANCE: This program does NOT alter your u5 or Ultima V directory or file contents.
 
 Currently, this program looks for your Ultima V installation at:
 
-"%ProgramFiles(x86)%\GOG Galaxy\Games\Ultima 5"
+`%ProgramFiles(x86)%\GOG Galaxy\Games\Ultima 5`
 
 This value lives in configure.py
 
 ## Running
 
     Running the main engine:
-    ```
-    python main.py
-    ```
+
+    `python main.py`
 
 ---
 
