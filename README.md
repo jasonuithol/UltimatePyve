@@ -48,7 +48,9 @@ This value lives in configure.py
 
 Double-click on **UltimatePyve.cmd**
 
----
+## Updating
+
+Double-click on **update.cmd** (Windows 10 onwards)
 
 ## Legal
     
