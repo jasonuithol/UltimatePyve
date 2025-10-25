@@ -28,7 +28,7 @@ class MainDisplay(ScalableComponent):
         ic_w, ic_h = (self.display_config.CONSOLE_SIZE * self.display_config.FONT_SIZE).to_tuple()
 
         super().__init__(
-            unscaled_size_in_pixels = Size(
+            unscaled_size_in_pixels = Size[int](
                 # width of ViewPort, InteractiveConsole, and 3 border lines.
                 vp_w + ic_w + (3 * self.display_config.FONT_SIZE.w),
 
@@ -127,14 +127,14 @@ class MainDisplay(ScalableComponent):
 
         for cursor, glyph_code in enumerate(self.world_clock.get_celestial_panorama()):
             glyph = self.celestial_glyphs[glyph_code]
-            glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor + 1, 0), surf)
+            glyph.blit_to_surface(Coord[int](self.celestial_char_offset + cursor + 1, 0), surf)
 
     def draw_wind_direction(self):
         surf = self.get_input_surface()
         char_y_bottom = self.size_in_glyphs.h - 1
 
         for cursor, glyph in enumerate(self.font_mapper.map_ascii_string("East  Winds")):
-            glyph.blit_to_surface(Coord(self.celestial_char_offset + cursor + 2, char_y_bottom), surf)
+            glyph.blit_to_surface(Coord[int](self.celestial_char_offset + cursor + 2, char_y_bottom), surf)
 
     def set_info_panel_split_state(self, split: bool):
         self._info_panel_split = split

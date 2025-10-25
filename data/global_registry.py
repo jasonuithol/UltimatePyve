@@ -4,6 +4,7 @@ from dark_libraries.registry import Registry
 from models.combat_map import CombatMap, DungeonRoom
 from models.data_ovl import DataOVL
 from models.door_type import DoorType
+from models.enums.projectile_type import ProjectileType
 from models.glyph_key import GlyphKey
 from models.spell_type import SpellType
 from models.npc_metadata import NpcMetadata
@@ -70,6 +71,7 @@ class GlobalRegistry:
         # magic
         self.runes = Registry[str, str]()               # e.g. "a"  -> "AN",   "b"  -> "BET",   ...
         self.spell_types = Registry[str, SpellType]()   # e.g. "an" -> An Nox, "rh" -> Rel Hur, ...
+        self.projectiles = Registry[ProjectileType, Sprite[U5Glyph]]
 
         # populated by InitialisationController
         self.saved_game: SavedGame = None

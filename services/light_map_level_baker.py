@@ -20,13 +20,13 @@ class LightMapLevelBaker(LoggerMixin):
     global_registry:    GlobalRegistry
     fov_calculator:     FieldOfViewCalculator
 
-    def _get_fov_visible_coords(self, light_emitter_location: GlobalLocation) -> set[Coord]:
+    def _get_fov_visible_coords(self, light_emitter_location: GlobalLocation) -> set[Coord[int]]:
 
-        radius_offset = Vector2(__class__.FIXED_LIGHT_RADIUS, __class__.FIXED_LIGHT_RADIUS)
+        radius_offset = Vector2[int](__class__.FIXED_LIGHT_RADIUS, __class__.FIXED_LIGHT_RADIUS)
         centre_thiccness = (1,1)
 
         # Calculate which tiles are visible from the light emitter's field of view.
-        view_rect = Rect(
+        view_rect = Rect[int](
             light_emitter_location.coord - radius_offset, 
             size = (radius_offset * 2) + centre_thiccness
         )
@@ -37,7 +37,7 @@ class LightMapLevelBaker(LoggerMixin):
         return self.default_light_map.translate(light_emitter_location.coord).intersect(visible_world_coords)
 
     def _bake_level(self, u5_map: U5Map, level_index: int) -> int:
-        baked_dict = dict[Coord, LightMap]()
+        baked_dict = dict[Coord[int], LightMap]()
         for map_coord in u5_map.get_coord_iteration():
             tile_id = u5_map.get_tile_id(level_index, map_coord)
             terrain: Terrain = self.global_registry.terrains.get(tile_id)

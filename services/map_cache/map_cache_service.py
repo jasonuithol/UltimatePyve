@@ -39,7 +39,7 @@ class MapCacheService(LoggerMixin, DarkEventListenerMixin):
         self.log(f"Cached {len(self._map_level_content_dict)} maps")
 
     def cache_u5_map_level(self, cache_key: Any, u5_map_level: U5MapLevel):
-        coord_contents_dict = dict[Coord, MapLevelContents]()            
+        coord_contents_dict = dict[Coord[int], MapLevelContents]()            
         for coord, tile_id in u5_map_level:
             coord_contents_dict[coord] = CoordContents(
                 tile    = self.global_registry.tiles.get(tile_id),
@@ -65,7 +65,7 @@ class MapCacheService(LoggerMixin, DarkEventListenerMixin):
     def get_map_level_contents(self, location_index: int, level_index: int) -> MapLevelContents:
         return self._map_level_content_dict[(location_index, level_index)]
 
-    def get_blocked_coords(self, location_index: int, level_index: int, transport_mode_index: int) -> set[Coord]:
+    def get_blocked_coords(self, location_index: int, level_index: int, transport_mode_index: int) -> set[Coord[int]]:
         map_level_contents: MapLevelContents = self.get_map_level_contents(location_index, level_index)
         transport_mode_name = self.global_registry.transport_modes.get(transport_mode_index)
         blocked_coords = {

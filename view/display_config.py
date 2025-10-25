@@ -15,19 +15,19 @@ class DisplayConfig:
     # In theory these should come from their respective realms
     # but it's too much of a pain in the butt to make them that dynamic.
     #
-    FONT_SIZE = Size( 8,  8) # in unscaled pixels.
-    TILE_SIZE = Size(16, 16) # in unscaled pixels.
+    FONT_SIZE = Size[int]( 8,  8) # in unscaled pixels.
+    TILE_SIZE = Size[int](16, 16) # in unscaled pixels.
 
 
     # ================================================================================
     # =============== Section 2: Change these to whatever you like ===================
     # ================================================================================
 
-    VIEW_PORT_SIZE  = Size(17, 17) # In tiles       (which are themselves 16x16 by default, unless changed in TILE_SIZE)
-    INFO_PANEL_SIZE = Size(32, 11) # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
+    VIEW_PORT_SIZE  = Size[int](17, 17) # In tiles       (which are themselves 16x16 by default, unless changed in TILE_SIZE)
+    INFO_PANEL_SIZE = Size[int](32, 11) # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
     
     # In font glyphs (which are themselves  8x8  by default, unless changed in FONT_SIZE)
-    CONSOLE_SIZE = Size(INFO_PANEL_SIZE.w, VIEW_PORT_SIZE.h * 2 - INFO_PANEL_SIZE.h) 
+    CONSOLE_SIZE = Size[int](INFO_PANEL_SIZE.w, VIEW_PORT_SIZE.h * 2 - INFO_PANEL_SIZE.h) 
 
     #
     # TODO: Right now we do NOT take advantage of the fact we can create 8-bit (or other) surfaces and then provide them a palette, or frankly

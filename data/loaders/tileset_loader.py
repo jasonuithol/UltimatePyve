@@ -99,7 +99,7 @@ class TileLoader(LoggerMixin):
         del surface_pixels
         return surface
 
-    def _draw_onto_pixel_array(self, tile: Tile, surface_pixels : pygame.PixelArray, target_pixel_offset: Coord = Coord(0,0)):
+    def _draw_onto_pixel_array(self, tile: Tile, surface_pixels : pygame.PixelArray, target_pixel_offset: Coord[int] = Coord[int](0,0)):
 
         for pixel_coord in tile._get_size():
 

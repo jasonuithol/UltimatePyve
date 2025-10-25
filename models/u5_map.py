@@ -25,7 +25,7 @@ class U5Map(tuple):
     def _location_metadata(self) -> LocationMetadata:
         return self[1]
 
-    def get_size(self) -> Size:
+    def get_size(self) -> Size[int]:
         return self[2]
 
     @property
@@ -47,17 +47,17 @@ class U5Map(tuple):
     def get_level_indexes(self) -> list[int]:
         return list(self._levels.keys())
 
-    def is_in_bounds(self, coord: Coord) -> bool:
+    def is_in_bounds(self, coord: Coord[int]) -> bool:
         return self.get_size().is_in_bounds(coord)
 
-    def get_wrapped_coord(self, coord: Coord) -> Coord:
-        return Coord(coord.x % self.get_size().x, coord.y % self.get_size().y)
+    def get_wrapped_coord(self, coord: Coord[int]) -> Coord[int]:
+        return Coord[int](coord.x % self.get_size().x, coord.y % self.get_size().y)
 
-    def get_tile_id(self, level_index: int, coord: Coord) -> int:
+    def get_tile_id(self, level_index: int, coord: Coord[int]) -> int:
         map_level = self.get_map_level(level_index)
         return map_level.get_tile_id(coord)
 
-    def get_coord_iteration(self) -> Iterable[Coord]:
+    def get_coord_iteration(self) -> Iterable[Coord[int]]:
         return __class__._get_first_map(self._levels).coords()
 
     def render_to_disk(self):

@@ -144,9 +144,11 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
             #
             for weapon in party_member.get_weapons():
 
-
                 self.console_service.print_ascii(weapon.name + " - ", include_carriage_return = False)
 
+                #
+                # AIMING
+                #
                 target_enemy = self._last_attacked_monster.get(party_member.name, None)
                 if target_enemy is None:
                     starting_coord = party_member.coord
@@ -161,6 +163,9 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 if target_coord is None or target_coord == party_member.coord:
                     continue
 
+                #
+                # FIRING / SWINGING
+                #
                 self.sfx_library_service.emit_projectile()
 
                 target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
@@ -175,6 +180,9 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                     self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
                     did_attack_hit = party_member.attack(target_enemy)
                     if did_attack_hit:
+                        #
+                        # INFLICT DAMAGE
+                        #
                         enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
 
                         self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + f"!")
@@ -184,6 +192,9 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                         if target_enemy.hitpoints <= 0:
                             self.npc_service.remove_npc(target_enemy)
                     else:
+                        #
+                        # MISSED 
+                        #
                         self.console_service.print_ascii("Missed !")
                 party_member.spend_action_quanta()
             return IN_COMBAT

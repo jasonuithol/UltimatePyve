@@ -14,10 +14,10 @@ from models.interactable     import Interactable
 from services.console_service import ConsoleService
 
 class DoorInstance(Interactable):
-    def __init__(self, door_type: DoorType, coord: Coord):
+    def __init__(self, door_type: DoorType, coord: Coord[int]):
         assert not door_type is None, "door_type cannot be None"
         self.door_type: DoorType = door_type
-        self.coord: Coord = coord
+        self.coord: Coord[int] = coord
         self.console_service: ConsoleService = ServiceProvider.get_provider().resolve(ConsoleService)
         self.global_registry: GlobalRegistry = ServiceProvider.get_provider().resolve(GlobalRegistry)
 

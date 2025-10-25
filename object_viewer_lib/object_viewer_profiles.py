@@ -65,7 +65,7 @@ class ViewerProfile[TKey, TValue]:
         self.scroll_row: int = 0
         self.current_scale_factor = self.default_scale_factor()
 
-        self.window_size: Size = None
+        self.window_size: Size[int] = None
         self.screen: pygame.Surface = None
         self.button_rect: pygame.Rect = None
         self.dropdown_rect: pygame.Rect = None
@@ -77,10 +77,10 @@ class ViewerProfile[TKey, TValue]:
         return 2.0
 
     # in un-scaled pixels
-    def object_size(self) -> Size:
+    def object_size(self) -> Size[int]:
         ...
 
-    def object_scaled_size(self) -> Size:
+    def object_scaled_size(self) -> Size[int]:
         return self.object_size().scale(self.current_scale_factor)
 
     def get_object_rect(self, col: int, row: int) -> pygame.Rect:
@@ -92,7 +92,7 @@ class ViewerProfile[TKey, TValue]:
         return pygame.Rect(x,y,w,h)
 
     # size is in objects, not pixels.
-    def viewer_size(self) -> Size:
+    def viewer_size(self) -> Size[int]:
         ...
 
     def object_count(self) -> int:
@@ -123,7 +123,7 @@ class ViewerProfile[TKey, TValue]:
 
     def initialise_components(self):
 
-        self.window_size = Size(
+        self.window_size = Size[int](
             self.viewer_size().w * self.object_scaled_size().w + MARGIN * 2,
             self.viewer_size().h * self.object_scaled_size().h + MARGIN * 2
         )
@@ -142,13 +142,13 @@ class TileViewerProfile(ViewerProfile[int, Tile]):
         return 2
 
     # in un-scaled pixels
-    def object_size(self) -> Size:
+    def object_size(self) -> Size[int]:
         return display_config.TILE_SIZE
 
     # size is in objects, not pixels.
-    def viewer_size(self) -> Size:
+    def viewer_size(self) -> Size[int]:
         width = 32
-        return Size(width, math.ceil(self.object_count() / width))
+        return Size[int](width, math.ceil(self.object_count() / width))
     
     def object_count(self) -> int:
         return len(self.global_registry.tiles)
@@ -192,13 +192,13 @@ class FontViewerProfile(ViewerProfile[tuple[str,int], U5Glyph]):
         return 8
 
     # in un-scaled pixels
-    def object_size(self) -> Size:
+    def object_size(self) -> Size[int]:
         return display_config.FONT_SIZE
 
     # size is in objects, not pixels.
-    def viewer_size(self) -> Size:
+    def viewer_size(self) -> Size[int]:
         width = 16
-        return Size(width, math.ceil(self.object_count() / width))
+        return Size[int](width, math.ceil(self.object_count() / width))
     
     def object_count(self) -> int:
         return 128
@@ -287,7 +287,7 @@ class MapViewerProfile(ViewerProfile[tuple[str,int], U5MapLevel]):
             self.current_scale_factor = 1
             tile_size = 1
 
-        maximum_map_size = Size(
+        maximum_map_size = Size[int](
             max(map.get_size().w for map in self.global_registry.maps.values()),
             max(map.get_size().h for map in self.global_registry.maps.values())
         )
@@ -308,14 +308,14 @@ class MapViewerProfile(ViewerProfile[tuple[str,int], U5MapLevel]):
         return 1
 
     # in un-scaled pixels
-    def object_size(self) -> Size:
+    def object_size(self) -> Size[int]:
         return self._object_size
 
     # size is in objects, not pixels.
-    def viewer_size(self) -> Size:
+    def viewer_size(self) -> Size[int]:
         width  = max(self.primary_display_size[0] // self.object_scaled_size().w, 1)
         height = max((self.primary_display_size[1] - 100) // self.object_scaled_size().h, 1)
-        return Size(width, height)
+        return Size[int](width, height)
     
     def object_count(self) -> int:
         return len(self.map_levels)

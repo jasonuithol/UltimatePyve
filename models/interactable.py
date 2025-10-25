@@ -6,7 +6,7 @@ from dark_libraries.dark_math import Coord
 from models.move_into_result  import MoveIntoResult
 
 class Interactable(Protocol):
-    coord: Coord
+    coord: Coord[int]
     tile_id: int
 
     # For Viewport.draw_map

@@ -170,7 +170,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     # TODO: Choose a better name for this method
 
 
-    def _update_transport_state(self, move_offset: Vector2):
+    def _update_transport_state(self, move_offset: Vector2[int]):
         if move_offset.x == 1:
             # east
             self.party_agent.last_east_west = 0
@@ -190,7 +190,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     #
     # Party driven State transitions
     #
-    def move(self, move_offset: Vector2):
+    def move(self, move_offset: Vector2[int]):
         party_location = self.party_agent.get_current_location()
         transport_mode_name = self.global_registry.transport_modes.get(self.party_agent.transport_mode)
         move_outcome: MoveOutcome = self.move_controller.move(party_location, move_offset, transport_mode_name)
@@ -228,7 +228,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
             self.console_service.print_ascii("Down !")
             return
 
-    def jimmy(self, direction: Vector2):
+    def jimmy(self, direction: Vector2[int]):
         target_coord = self.party_agent.get_current_location().coord.add(direction)
         interactable: Interactable = self.global_registry.interactables.get(target_coord)      
         if interactable:
@@ -245,7 +245,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         self.global_registry.saved_game.write_u8(InventoryOffset.TORCHES, torch_count - 1)
         self.party_agent.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
 
-    def attack(self, direction: Vector2):
+    def attack(self, direction: Vector2[int]):
         target_coord = self.party_agent.get_current_location().coord.add(direction)
         enemy_party = self.npc_service.get_npc_at(target_coord)
         if enemy_party is None:

@@ -45,7 +45,7 @@ class SavedGame:
         return GlobalLocation(
             location_index = self.read_u8(0x02ED),
             level_index    = self.read_u8(0x02EF),
-            coord          = Coord(self.read_u8(0x02F0), self.read_u8(0x02F1))
+            coord          = Coord[int](self.read_u8(0x02F0), self.read_u8(0x02F1))
         )
 
     def write_party_location(self, party_location: GlobalLocation):

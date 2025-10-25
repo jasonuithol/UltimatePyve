@@ -98,7 +98,7 @@ class PartyAgent(NpcAgent):
         return self.get_current_location().coord
 
     @coord.setter
-    def coord(self, value: Coord):
+    def coord(self, value: Coord[int]):
         self.location_stack[-1] = self.location_stack[-1].move_to_coord(value)
 
     @property
@@ -128,7 +128,7 @@ class PartyAgent(NpcAgent):
             level_index = 255
         self.location_stack[-1] = self.location_stack[-1].move_to_level(level_index)
 
-    def change_coord(self, coord: Coord):
+    def change_coord(self, coord: Coord[int]):
         old_location = self.location_stack[-1]
         new_location = self.location_stack[-1].move_to_coord(coord)
         self.location_stack[-1] = new_location

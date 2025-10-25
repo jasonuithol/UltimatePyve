@@ -23,46 +23,6 @@ class DoorTypeLoader(LoggerMixin):
         self.log(f"Registered {len(self.global_registry.door_types)} door types.")
 
 
-'''
-#
-# main
-#
-if __name__ == "__main__":
-
-    from typing import Callable
-    from dark_libraries.dark_math import Coord
-    from models.door_instance import DoorInstance
-
-    registry = GlobalRegistry()
-
-    loader = DoorTypeLoader()
-    loader.global_registry = registry
-    loader.load()
-
-    x = 0
-    def assert_state_change(original_tile_id: int, result_tile_id: int, transform: Callable):
-        global registry
-        global x
-        door_instance: DoorInstance = registry.interactables.get(Coord(x,0))
-        transform(door_instance)
-        assert door_instance.tile_id == result_tile_id, f"door {original_tile_id} -> {result_tile_id}: failed test - got result of {door_instance.tile_id}."
-        x = x + 1
-
-    # unlock tests
-
-    assert_state_change(DoorType.D_LOCKED_NORMAL,   DoorType.D_UNLOCKED_NORMAL,   lambda x: x._jimmy(force_success=True))
-    assert_state_change(DoorType.D_LOCKED_WINDOWED, DoorType.D_UNLOCKED_WINDOWED, lambda x: x._jimmy(force_success=True))
-
-    assert_state_change(DoorType.D_MAGIC_NORMAL,    DoorType.D_UNLOCKED_NORMAL,   lambda x: x._magic_unlock())
-    assert_state_change(DoorType.D_MAGIC_WINDOWED,  DoorType.D_UNLOCKED_WINDOWED, lambda x: x._magic_unlock())
-
-    assert_state_change(DoorType.D_UNLOCKED_NORMAL,   DoorType.D_OPENED, lambda x: x._open())
-    assert_state_change(DoorType.D_UNLOCKED_WINDOWED, DoorType.D_OPENED, lambda x: x._open())
-
-    print("All tests passed.")
-    exit()
-
-'''
 
 
 

@@ -32,7 +32,7 @@ class LightingService:
         return viewable_radius
 
 
-    def calculate_lighting(self, player_location: GlobalLocation, player_light_radius: int, fov_visible_coords: set[Coord]) -> set[Coord]:
+    def calculate_lighting(self, player_location: GlobalLocation, player_light_radius: int, fov_visible_coords: set[Coord[int]]) -> set[Coord[int]]:
 
         player_light_radius = self.get_player_light_radius()
 
@@ -40,7 +40,7 @@ class LightingService:
         baked_level_light_maps = self.global_registry.baked_light_level_maps.get((player_location.location_index, player_location.level_index))
 
         # Make a set of lit coords in the view_rect
-        lit_world_coords: set[Coord] = set(baked_player_light_map.coords_or_offsets.keys())
+        lit_world_coords: set[Coord[int]] = set(baked_player_light_map.coords_or_offsets.keys())
         if not baked_level_light_maps is None:
             for light_emitter_coord, baked_level_light_map in baked_level_light_maps.items():
 

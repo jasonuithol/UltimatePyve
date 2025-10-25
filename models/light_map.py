@@ -5,7 +5,7 @@ from dark_libraries.dark_math import Coord, Vector2
 class LightMap:
 
     def __init__(self):
-        self.coords_or_offsets: dict[Coord | Vector2, int] = {}
+        self.coords_or_offsets: dict[Coord[int] | Vector2[int], int] = {}
 
     def __str__(self):
         return f"LightMap=" + list(self.coords_or_offsets.keys()).__str__()
@@ -24,21 +24,21 @@ class LightMap:
         clone.coords_or_offsets = self.coords_or_offsets.copy()
         return clone
 
-    def is_lit(self, coord: Coord) -> bool:
+    def is_lit(self, coord: Coord[int]) -> bool:
         return coord in self.coords_or_offsets.keys()
 
-    def light(self, coord: Coord):
+    def light(self, coord: Coord[int]):
         # will silently ignore duplicate coords, which is perfect.
         self.coords_or_offsets[coord] = 1
 
-    def translate(self, centre_coord: Coord) -> Self:
+    def translate(self, centre_coord: Coord[int]) -> Self:
         translated = LightMap()
         for offset in self.coords_or_offsets.keys():
-            translated_coord: Coord = centre_coord + offset
+            translated_coord: Coord[int] = centre_coord + offset
             translated.coords_or_offsets[translated_coord] = 1
         return translated
 
-    def intersect(self, other_coords_or_offsets: set[Coord | Vector2]) -> Self:
+    def intersect(self, other_coords_or_offsets: set[Coord[int] | Vector2[int]]) -> Self:
         intersected = LightMap()
         for coord_or_offset in self.coords_or_offsets.keys():
             if coord_or_offset in other_coords_or_offsets:

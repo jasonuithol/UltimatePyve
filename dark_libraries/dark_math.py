@@ -17,23 +17,29 @@ EIGHTWAY_NEIGHBOURS = FOURWAY_NEIGHBOURS + [
     (-1, -1)  # bottom-right
 ]
 
-class Vector2(tuple):
+def is_numeric(s) -> bool:
+    return isinstance(s, int) or isinstance(s, float)
+
+TOtherNumeric = int | float
+TOtherNumericTuple = tuple[int,int] | tuple[float,float]
+
+class Vector2[TNumeric](tuple):
 
     # NOTE: This does NOT get inherited !
     __slots__ = ()
 
-    def __new__(cls, x: int, y: int):
+    def __new__(cls, x: TNumeric, y: TNumeric):
         return super().__new__(cls, (x, y))
     
     @property
-    def x(self) -> int: return self[0]
+    def x(self) -> TNumeric: return self[0]
 
     @property
-    def y(self) -> int: return self[1]
+    def y(self) -> TNumeric: return self[1]
 
-    def scale(self, s: int | tuple[int,int]) -> Self:
-        if isinstance(s, int) or isinstance(s, float):
-            return self.__class__(int(self.x * s), int(self.y * s))
+    def scale(self, s: TOtherNumeric | TOtherNumericTuple) -> Self:
+        if is_numeric(s):
+            return self.__class__(self.x * s, self.y * s)
         elif isinstance(s, tuple) and len(s) >= 2:
             # hope for the best for now.....
             return self.__class__(self.x * s[0], self.y * s[1])
@@ -45,8 +51,8 @@ class Vector2(tuple):
     def __neg__(self):
         return (0,0) - self
 
-    def floor_div(self, s: int | tuple[int, int]):
-        if isinstance(s, int):
+    def floor_div(self, s: TOtherNumeric | TOtherNumericTuple):
+        if is_numeric(s):
             return self.__class__(self.x // s, self.y // s)
         elif isinstance(s, tuple) and len(s) >= 2:
             # hope for the best for now.....
@@ -56,12 +62,12 @@ class Vector2(tuple):
 
     __floordiv__ = floor_div
 
-    def add(self, other: tuple[int,int]) -> Self:
+    def add(self, other: TOtherNumericTuple) -> Self:
         return self.__class__(self.x + other[0], self.y + other[1])
     
     __add__ = __radd__ = add
 
-    def subtract(self, other: tuple[int,int]) -> Self:
+    def subtract(self, other: TOtherNumericTuple) -> Self:
         return self.__class__(self.x - other[0], self.y - other[1])
 
     __sub__ = subtract
@@ -73,14 +79,14 @@ class Vector2(tuple):
         assert len(other) >= 2, "Argument must have at least two elements."
         return ( ((self[0] - other[0]) ** 2) + ((self[1] - other[1]) ** 2) ) ** 0.5
 
-    def normal(self, other: tuple) -> tuple[float,float]:
+    def normal(self, other: TOtherNumericTuple) -> tuple[float,float]:
         assert len(other) >= 2, "Argument must have at least two elements."
         distance = self.pythagorean_distance(other)
         assert not (distance == 0), "Cannot call normal when self == other"
         return ((other[0] - self[0]) / distance, (other[1] - self[1]) / distance)
 
     # TODO: must be a faster way of doing this.
-    def normal_4way(self, other: tuple) -> Self:
+    def normal_4way(self, other: tuple[int, int]) -> Self:
         assert len(other) >= 2, "Argument must have at least two elements."
         dx, dy = other[0] - self[0], other[1] - self[1]
         assert not(dx == 0 and dy == 0), f"Cannot call normal_4way when self {self} == other {other}"
@@ -101,102 +107,101 @@ class Vector2(tuple):
             else:
                 return self.__class__(0, -1)
 
-    def taxi_distance(self, other: tuple[int,int]) -> int:
+    def taxi_distance(self, other: tuple[int, int]) -> int:
         assert len(other) >= 2, "Argument must have at least two elements."
         return abs(self[0] - other[0]) + abs(self[1] - other[1])
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(x={self.x},y={self.y})"
+        return f"{self.__class__.__name__}[{type(self.x).__name__}](x={self.x},y={self.y})"
 
-    def to_tuple(self) -> tuple[int, int]:
+    def to_tuple(self) -> tuple[TNumeric, TNumeric]:
         return (self[0], self[1])
     
-    def get_4way_neighbours(self):
+    def get_4way_neighbours(self) -> list[Self]:
         return [self.add(neighbour) for neighbour in FOURWAY_NEIGHBOURS]
 
-    def get_8way_neighbours(self):
+    def get_8way_neighbours(self) -> list[Self]:
         return [self.add(neighbour) for neighbour in EIGHTWAY_NEIGHBOURS]
 
-    def translate_polar(self, pythagorean_distance: float, radians: float):
+    def translate_polar(self, pythagorean_distance: float, radians: float) -> Self:
         dx = int(pythagorean_distance * math.cos(radians))
         dy = int(pythagorean_distance * math.sin(radians))
         return self.__class__(self[0] + dx, self[1] + dy)
 
 
-class Coord(Vector2):
+class Coord[TNumeric](Vector2[TNumeric]):
 
     # NOTE: This does NOT get inherited !
     __slots__ = ()
 
-    def to_offset(self) -> Vector2:
-        return Vector2(self.x, self.y)
+    def to_offset(self) -> Vector2[TNumeric]:
+        return Vector2[TNumeric](self.x, self.y)
 
-class Size(Vector2):
+class Size[TNumeric](Vector2[TNumeric]):
 
     # NOTE: This does NOT get inherited !
     __slots__ = ()
 
-    def __new__(cls, w: int, h: int):
-        # WARNING: Bypasses Vector2.__new__
+    def __new__(cls, w: TNumeric, h: TNumeric):
         return tuple.__new__(cls, (w, h))
 
     @property
-    def w(self) -> int:
+    def w(self) -> TNumeric:
         return self[0]
 
     @property
-    def h(self) -> int:
+    def h(self) -> TNumeric:
         return self[1]
 
-    def is_in_bounds(self, coord: Coord) -> bool:
+    def is_in_bounds(self, coord: Coord[TNumeric]) -> bool:
         return 0 <= coord.x < self.w and 0 <= coord.y < self.h
     
-    def to_rect(self, minimum_corner: Coord) -> 'Rect':
-        return Rect(minimum_corner, self)
+    def to_rect(self, minimum_corner: Coord[TNumeric]) -> 'Rect[TNumeric]':
+        return Rect[TNumeric](minimum_corner, self)
     
-    def to_offset(self) -> Vector2:
+    def to_offset(self) -> Vector2[TNumeric]:
         return Vector2(self.w, self.h)
 
-    def __iter__(self) -> Iterable[Coord]:
+    def __iter__(self) -> Iterable[Coord[TNumeric]]:
         for y in range(self.h):
             for x in range(self.w):
                 yield Coord(x, y)
 
-class Rect(tuple):
+class Rect[TNumeric](tuple):
 
     # NOTE: This does NOT get inherited !
     __slots__ = ()
 
-    def __new__(cls, minimum_corner: tuple[int,int], size: tuple[int,int]):
+    def __new__(cls, minimum_corner: tuple[TNumeric ,TNumeric], size: tuple[TNumeric, TNumeric]):
         return super().__new__(cls, (minimum_corner[0], minimum_corner[1], size[0], size[1]))
 
     @property
-    def x(self) -> int: return self[0]
+    def x(self) -> TNumeric: return self[0]
 
     @property
-    def y(self) -> int: return self[1]
+    def y(self) -> TNumeric: return self[1]
 
     @property
-    def w(self) -> int: return self[2]
+    def w(self) -> TNumeric: return self[2]
 
     @property
-    def h(self) -> int: return self[3]
+    def h(self) -> TNumeric: return self[3]
 
     @property
-    def size(self) -> Size: return Size(self.w, self.h)
+    def size(self) -> Size[TNumeric]: return Size[TNumeric](self.w, self.h)
 
     @property
-    def minimum_corner(self) -> Coord: return Coord(self.x, self.y)
+    def minimum_corner(self) -> Coord[TNumeric]: return Coord[TNumeric](self.x, self.y)
 
-    def is_in_bounds(self, coord: tuple[int,int]) -> bool:
+    def is_in_bounds(self, coord: tuple[TNumeric,TNumeric]) -> bool:
         return self.x <= coord[0] < self.w + self.x and self.y <= coord[1] < self.h + self.y
 
-    def __iter__(self) -> Iterable[Coord]:
+    def __iter__(self) -> Iterable[Coord[TNumeric]]:
         for y in range(self.y, self.y + self.h):
             for x in range(self.x, self.x + self.w):
-                yield Coord(x, y)
+                yield Coord[TNumeric](x, y)
 
-    def to_tuple(self):
+    def to_tuple(self) -> tuple[TNumeric, TNumeric]:
         return self.x, self.y, self.w, self.h
 
 #
@@ -258,10 +263,10 @@ if __name__ == "__main__":
     assert len(list(s)) == s.w * s.h, "Wrong number of iterated coords in Rect"
 
 
-    r = Rect(Coord(3,3), Size(4,4))
+    r = Rect[int](Coord[int](3,3), Size(4,4))
 
-    assert r.is_in_bounds(Coord(5,5)), "Rect failed is in bounds"
-    assert not r.is_in_bounds(Coord(50,50)), "Rect failed not in bounds"
+    assert r.is_in_bounds(Coord[int](5,5)), "Rect failed is in bounds"
+    assert not r.is_in_bounds(Coord[int](50,50)), "Rect failed not in bounds"
 
     for coord in r:
         assert r.is_in_bounds(coord), "Rect generated an out of bounds iteratant"

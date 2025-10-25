@@ -12,16 +12,16 @@ class FieldOfViewCalculator:
     def calculate_fov_visibility(
         self, 
         fov_centre_location: GlobalLocation,
-        view_rect: Rect          # must be in world co-ordinates.
-    ) -> set[Coord]:
+        view_rect: Rect[int]          # must be in world co-ordinates.
+    ) -> set[Coord[int]]:
 
         # these are the coords you can be on to make windows transparent to light.
         windowed_coords = fov_centre_location.coord.get_4way_neighbours()
 
         # I'm pretty sure set.copy() is broken af.
-        queued:  set[Coord] = {fov_centre_location.coord}
-        visited: set[Coord] = {fov_centre_location.coord}
-        result:  set[Coord] = set()
+        queued:  set[Coord[int]] = {fov_centre_location.coord}
+        visited: set[Coord[int]] = {fov_centre_location.coord}
+        result:  set[Coord[int]] = set()
 
         map_level_contents = self.map_cache_service.get_map_level_contents(fov_centre_location.location_index, fov_centre_location.level_index)
 

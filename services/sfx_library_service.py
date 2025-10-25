@@ -4,6 +4,7 @@ import random
 from dark_libraries.dark_math import Coord
 from dark_libraries.dark_wave import DarkNote
 
+from models.enums.projectile_type import ProjectileType
 from services.display_service import DisplayService
 from services.sound_service import SoundService
 
@@ -32,7 +33,11 @@ class SfxLibraryService:
         while channel_handle.get_busy():
             self.display_service.render()
 
-    def emit_projectile(self):
+    def emit_projectile(self): #, projectile_type: ProjectileType):
+
+        # ANIMATION: Kick-off a projectile
+
+
 
         generator = self.sound_service.get_generator()
 
@@ -54,7 +59,7 @@ class SfxLibraryService:
         while channel_handle.get_busy():
             self.display_service.render()
 
-    def damage(self, coord: Coord):
+    def damage(self, coord: Coord[int]):
         # ANIMATION: Show The flashy explody tile.
         self.view_port.set_damage_blast_at(coord)
 

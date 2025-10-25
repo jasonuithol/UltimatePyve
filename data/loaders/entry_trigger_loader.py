@@ -22,7 +22,7 @@ class EntryTriggerLoader(LoggerMixin):
         for trigger_index, (x, y) in enumerate(zip(xs, ys)):
 
             entry_map: U5Map = self.global_registry.maps.get(0)
-            entry_coord = Coord(x,y)
+            entry_coord = Coord[int](x,y)
 
             entry_point = None
             for checkable_level_index in [

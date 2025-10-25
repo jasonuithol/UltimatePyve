@@ -9,7 +9,7 @@ class ScalableComponent:
     # Injectable
     surface_factory: SurfaceFactory
 
-    def __init__(self, unscaled_size_in_pixels: Size, scale_factor: int):
+    def __init__(self, unscaled_size_in_pixels: Size[int], scale_factor: int):
         super().__init__()
         self._unscaled_size_in_pixels = unscaled_size_in_pixels
         self._scale_factor = scale_factor
@@ -23,10 +23,10 @@ class ScalableComponent:
         self._scaled_surface.fill(self._back_color)
         self._unscaled_surface.fill(self._back_color)
 
-    def unscaled_size(self) -> Size:
+    def unscaled_size(self) -> Size[int]:
         return self._unscaled_size_in_pixels
     
-    def scaled_size(self) -> Size:
+    def scaled_size(self) -> Size[int]:
         return self._unscaled_size_in_pixels.scale(self._scale_factor)
 
     def get_input_surface(self) -> pygame.Surface:

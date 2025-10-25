@@ -26,24 +26,24 @@ BOTTOM_BORDER_Y = START_Y + MAXIMUM_PARTY_SIZE + 1 + FOOD_GOLD_HEIGHT
 
 # scroll
 
-SCROLL_RECT = Rect(
+SCROLL_RECT = Rect[int](
     (START_X, START_Y),
     (ORIGINAL_PANEL_WIDTH, MAXIMUM_PARTY_SIZE + FOOD_GOLD_HEIGHT + 1)
 )
 
-SCROLL_CONTENT_RECT = Rect(
+SCROLL_CONTENT_RECT = Rect[int](
     (SCROLL_RECT.x + 1, SCROLL_RECT.y + 1),
     (SCROLL_RECT.w - 2, SCROLL_RECT.h - 2)
 )
 
 # Split
 
-TOP_CONTENT_SPLIT_RECT = Rect(
+TOP_CONTENT_SPLIT_RECT = Rect[int](
     (START_X, START_Y),
     (ORIGINAL_PANEL_WIDTH, MAXIMUM_PARTY_SIZE)
 )
 
-BOTTOM_CONTENT_RECT = Rect(
+BOTTOM_CONTENT_RECT = Rect[int](
     (START_X, START_Y + MAXIMUM_PARTY_SIZE + 1),
     (ORIGINAL_PANEL_WIDTH, FOOD_GOLD_HEIGHT)
 )
@@ -112,7 +112,7 @@ class InfoPanel(ScalableComponent):
             self._top_content_rect = UNSPLIT_UNSCROLL_CONTENT_RECT
             self._bottom_content_rect = None
 
-    def get_viewable_size(self) -> Size:
+    def get_viewable_size(self) -> Size[int]:
         return self._top_content_rect.size
 
     def _create_border_inset(self, glyphs: Iterable[U5Glyph]) -> Iterable[U5Glyph]:
@@ -147,20 +147,20 @@ class InfoPanel(ScalableComponent):
 
     # This ignores all cursor state and just plasters the glyphs at the given coord.
     # It will not wrap, scroll, or update any state.
-    def _print_glyphs_at(self, glyphs: Iterable[U5Glyph], char_coord: Coord, vertikal = False):
+    def _print_glyphs_at(self, glyphs: Iterable[U5Glyph], char_coord: Coord[int], vertikal = False):
         target = self.get_input_surface()
-        direction = Vector2(1, 0)
+        direction = Vector2[int](1, 0)
         if vertikal:
-            direction = Vector2(0,1)
+            direction = Vector2[int](0,1)
         for glyph in glyphs:
             glyph.blit_to_surface(char_coord, target)
             char_coord = char_coord + direction
 
     def _draw_border(self, y: int, border_glyphs: Iterable[U5Glyph], inset_glyphs: Iterable[U5Glyph]):
-        self._print_glyphs_at(border_glyphs, Coord(0, y))
+        self._print_glyphs_at(border_glyphs, Coord[int](0, y))
         if inset_glyphs:
             x = (ORIGINAL_PANEL_WIDTH // 2) - (len(inset_glyphs) // 2)
-            self._print_glyphs_at(inset_glyphs, Coord(x, y))
+            self._print_glyphs_at(inset_glyphs, Coord[int](x, y))
 
     def _draw_top_border(self):
         self._draw_border(y = 0, border_glyphs = self._top_border_glyphs, inset_glyphs = self._panel_title_glyphs)
@@ -176,10 +176,10 @@ class InfoPanel(ScalableComponent):
         x, y, w, h = SCROLL_RECT.to_tuple() 
         left, top, right, bottom = x, y, x + w - 1, y + h - 1
 
-        self._print_glyphs_at(self._scroll_top,    Coord(left , top    )                 )
-        self._print_glyphs_at(self._scroll_side,   Coord(left , top + 1), vertikal = True) # left
-        self._print_glyphs_at(self._scroll_side,   Coord(right, top + 1), vertikal = True) # right
-        self._print_glyphs_at(self._scroll_bottom, Coord(left , bottom )                 )
+        self._print_glyphs_at(self._scroll_top,    Coord[int](left , top    )                 )
+        self._print_glyphs_at(self._scroll_side,   Coord[int](left , top + 1), vertikal = True) # left
+        self._print_glyphs_at(self._scroll_side,   Coord[int](right, top + 1), vertikal = True) # right
+        self._print_glyphs_at(self._scroll_bottom, Coord[int](left , bottom )                 )
 
     def init(self):
         # Cache a bunch of useful glyph sequences.
@@ -229,12 +229,12 @@ class InfoPanel(ScalableComponent):
         for index, glyph_row in enumerate(self._glyph_rows_top):
             if index == self._highlighted_item_index:
                 glyph_row = [glyph.invert_colors() for glyph in glyph_row]
-            self._print_glyphs_at(glyph_row, self._top_content_rect.minimum_corner + Vector2(0, index))
+            self._print_glyphs_at(glyph_row, self._top_content_rect.minimum_corner + Vector2[int](0, index))
 
         if self._split:
             # draw_bottom_content
             for index, glyph_row in enumerate(self._glyph_rows_bottom):
-                self._print_glyphs_at(glyph_row, self._bottom_content_rect.minimum_corner + Vector2(0, index))
+                self._print_glyphs_at(glyph_row, self._bottom_content_rect.minimum_corner + Vector2[int](0, index))
 
             self._draw_middle_border()
 

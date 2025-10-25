@@ -25,10 +25,10 @@ class NpcAgent(LoggerMixin):
     def current_tile(self) -> Tile: ...
 
     @property
-    def coord(self) -> Coord: ...
+    def coord(self) -> Coord[int]: ...
     
     @coord.setter
-    def coord(self, value: Coord): ...
+    def coord(self, value: Coord[int]): ...
 
     @property
     def dexterity(self) -> int: ...
@@ -49,7 +49,7 @@ class NpcAgent(LoggerMixin):
     #
     # AI Moves
     #
-    def _move_generator(self, target_coord: Coord) -> Iterable[Coord]:
+    def _move_generator(self, target_coord: Coord[int]) -> Iterable[Coord[int]]:
 
         # First of all, try the obvious move.
         yield self.coord + self.coord.normal_4way(target_coord)
@@ -60,10 +60,10 @@ class NpcAgent(LoggerMixin):
         yield from alternative_moves
 
     def _find_next_move(self, 
-                            target_coord:      Coord, 
-                            forbidden_coords:  set[Coord],
-                            boundary_rect:     Rect | None
-                        ) -> Coord:
+                            target_coord:      Coord[int], 
+                            forbidden_coords:  set[Coord[int]],
+                            boundary_rect:     Rect[int] | None
+                        ) -> Coord[int]:
      
         for next_move_coord in self._move_generator(target_coord):
 
@@ -79,9 +79,9 @@ class NpcAgent(LoggerMixin):
         return None
     
     def move_towards(self, 
-                        target_coord:      Coord, 
-                        forbidden_coords:  set[Coord],
-                        boundary_rect:     Rect
+                        target_coord:      Coord[int], 
+                        forbidden_coords:  set[Coord[int]],
+                        boundary_rect:     Rect[int]
                      ):
 
         next_move_coord = self._find_next_move(

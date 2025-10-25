@@ -9,7 +9,7 @@ from .combat_agent import CombatAgent
 
 class MonsterAgent(CombatAgent):
     
-    def __init__(self, coord: Coord, sprite: Sprite[Tile], npc_metadata: NpcMetadata):
+    def __init__(self, coord: Coord[int], sprite: Sprite[Tile], npc_metadata: NpcMetadata):
         super().__init__(coord, sprite)
         self._npc_metadata = npc_metadata
         self._current_hitpoints = self.maximum_hitpoints

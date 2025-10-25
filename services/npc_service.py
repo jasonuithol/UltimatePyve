@@ -58,7 +58,7 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
         self._party_location = party_location
     # IMPLEMENTATION END: DarkEventListenerMixin
 
-    def get_npcs(self) -> dict[Coord, NpcAgent]:
+    def get_npcs(self) -> dict[Coord[int], NpcAgent]:
         registered = {npc.coord: npc for npc in self._active_npcs}
         if self._party_location.location_index != COMBAT_MAP_LOCATION_INDEX:
             registered[self._party_location.coord] = self.party_agent

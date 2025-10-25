@@ -186,7 +186,7 @@ while running:
     # Cursor rectangle
     cursor_x = MARGIN + active_profile.active_col * active_profile.object_scaled_size().w
     cursor_y = MARGIN + active_profile.active_row * active_profile.object_scaled_size().h
-    cursor_rect = pygame.Rect(
+    cursor_rect = pygame.Rect[int](
         cursor_x, cursor_y, active_profile.object_scaled_size().w, active_profile.object_scaled_size().h
     )
     pygame.draw.rect(active_profile.screen, (255, 0, 0), cursor_rect, width=3)

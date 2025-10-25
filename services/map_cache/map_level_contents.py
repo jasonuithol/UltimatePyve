@@ -14,18 +14,18 @@ class MapLevelContents:
     def set_out_of_bounds_coord_content(cls, coord_contents: CoordContents):
         __class__._out_of_bounds_tile_grass = coord_contents
 
-    def __init__(self, coord_contents_dict: dict[Coord, CoordContents]):
+    def __init__(self, coord_contents_dict: dict[Coord[int], CoordContents]):
         self._coord_contents_dict = coord_contents_dict
 
     def load_interactables(self, interactables: Iterable[Interactable]):
         for interactable in interactables:
             self._coord_contents_dict[interactable.coord].set_terrain_interactable(interactable)
 
-    def remove_interactable(self, coord: Coord):
+    def remove_interactable(self, coord: Coord[int]):
         self._coord_contents_dict[coord].set_terrain_interactable(None)
 
-    def get_coord_contents(self, coord: Coord) -> CoordContents:
+    def get_coord_contents(self, coord: Coord[int]) -> CoordContents:
         return self._coord_contents_dict.get(coord,  __class__._out_of_bounds_tile_grass)
 
-    def __iter__(self) -> Iterable[tuple[Coord, CoordContents]]:
+    def __iter__(self) -> Iterable[tuple[Coord[int], CoordContents]]:
         return self._coord_contents_dict.items().__iter__()

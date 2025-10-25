@@ -5,7 +5,7 @@ from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 class GlobalLocation(tuple):
     __slots__ = ()
 
-    def __new__(cls, location_index: int, level_index: int, coord: Coord):
+    def __new__(cls, location_index: int, level_index: int, coord: Coord[int]):
         assert not coord is None, "coord cannot be None"
         return tuple.__new__(cls, (location_index, level_index, coord))
 
@@ -18,7 +18,7 @@ class GlobalLocation(tuple):
         return self[1]
 
     @property
-    def coord(self) -> Coord:
+    def coord(self) -> Coord[int]:
         return self[2]
     
     def __add__(self, offset: tuple[int,int]) -> Self:
@@ -30,7 +30,7 @@ class GlobalLocation(tuple):
     def is_in_town(self) -> bool:
         return 1 <= self.location_index < 27
 
-    def move_to_coord(self, coord: Coord) -> Self:
+    def move_to_coord(self, coord: Coord[int]) -> Self:
         return GlobalLocation(
             self.location_index,
             self.level_index,

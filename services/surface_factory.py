@@ -12,7 +12,7 @@ class SurfaceFactory:
         self._build_palette_rgbs()
 
     def _build_palette_rgbs(self):
-        s = self.create_surface(Size(1,1))
+        s = self.create_surface(Size[int](1,1))
         self._rgb_color_map = {
             color : s.map_rgb(color.value)
             for color in EgaPaletteValues
@@ -22,7 +22,7 @@ class SurfaceFactory:
             for index, color in enumerate(EgaPaletteValues)
         }
     
-    def create_surface(self, size_in_pixels: Size) -> pygame.Surface:
+    def create_surface(self, size_in_pixels: Size[int]) -> pygame.Surface:
         return pygame.Surface(size_in_pixels.to_tuple())
     
     def get_rgb_mapped_color(self, color: EgaPaletteValues | int):

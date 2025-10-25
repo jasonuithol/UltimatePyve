@@ -72,7 +72,7 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
             return True
         return False
 
-    def obtain_action_direction(self) -> Vector2:
+    def obtain_action_direction(self) -> Vector2[int]:
 
         self.console_service.print_ascii("Direction ? ", include_carriage_return = False)
 
@@ -88,7 +88,7 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
                 # Pressing escape will just cancel the action.
                 return None
 
-            direction: Vector2 = DIRECTION_MAP.get(event.key, None)
+            direction: Vector2[int] = DIRECTION_MAP.get(event.key, None)
 
             if not direction is None:
                 self.console_service.print_ascii(DIRECTION_NAMES[direction] + " !")
@@ -96,7 +96,7 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
 
         return None
             
-    def obtain_cursor_position(self, starting_coord: Coord, boundary_rect: Rect, range_: int) -> Coord:
+    def obtain_cursor_position(self, starting_coord: Coord[int], boundary_rect: Rect[int], range_: int) -> Coord[int]:
 
         assert not starting_coord is None, "starting_coord cannot be None"
         assert range_ > 0, "range_ cannot be zero"
@@ -126,7 +126,7 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
                 is_aiming = False
 
             else:
-                direction: Vector2 = DIRECTION_MAP.get(event.key, None)
+                direction: Vector2[int] = DIRECTION_MAP.get(event.key, None)
 
                 if direction is None:
                     continue

@@ -18,7 +18,7 @@ class Tile:
     # WARNING: Not the fastest ever.
     # WARNING: This will break if called on flame sprite tiles or other generated tiles !
     def _get_size(self):
-        return Size(len(self.pixels[0]), len(self.pixels))
+        return Size[int](len(self.pixels[0]), len(self.pixels))
 
     def set_surface(self, surface: pygame.Surface):
         self.surface = surface
@@ -36,5 +36,5 @@ class Tile:
         else:
             return self.surface
 
-    def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord = Coord(0,0), inverted = False):
+    def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord[int] = Coord[int](0,0), inverted = False):
         target_surface.blit(self.get_surface(inverted), pixel_offset.to_tuple())

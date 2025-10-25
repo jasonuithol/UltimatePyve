@@ -51,7 +51,7 @@ class WorldLootService(LoggerMixin):
                 item_id  = hidden_object_qualities[index]
 
             location_ix = hidden_object_locations[index]
-            world_coord = Coord(
+            world_coord = Coord[int](
                 hidden_object_x_coords[index],
                 hidden_object_y_coords[index]
             )

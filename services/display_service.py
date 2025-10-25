@@ -52,11 +52,11 @@ class DisplayService(LoggerMixin):
             vsync = 1
         )
         self.clock = pygame.time.Clock()
-        self._cursors = dict[int, tuple[Coord, Sprite[Tile]]]()
+        self._cursors = dict[int, tuple[Coord[int], Sprite[Tile]]]()
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
-    def set_cursor(self, cursor_type: int, cursor_coord: Coord, cursor_sprite: Sprite[Tile]):
+    def set_cursor(self, cursor_type: int, cursor_coord: Coord[int], cursor_sprite: Sprite[Tile]):
         assert not cursor_coord is None, "cursor_coord cannot be None"
         assert not cursor_sprite is None, "cursor_sprite cannot be None"
         self._cursors[cursor_type] = (cursor_coord, cursor_sprite)
@@ -69,7 +69,7 @@ class DisplayService(LoggerMixin):
     #
     # TODO: move to ViewPortDataProvider
     #
-    def _get_map_tiles(self) -> dict[Coord, Tile]:
+    def _get_map_tiles(self) -> dict[Coord[int], Tile]:
 
         player_location = self.party_agent.get_current_location()
 
@@ -92,7 +92,7 @@ class DisplayService(LoggerMixin):
         npcs = self.npc_service.get_npcs()
         assert len(npcs) > 0, "Must have at least 1 NPC (the player) to draw"
 
-        def get_frame(world_coord: Coord) -> Tile:
+        def get_frame(world_coord: Coord[int]) -> Tile:
             if not world_coord in visible_coords.intersection(lit_coords):
                 return None
             npc: NpcAgent = npcs.get(world_coord, None)

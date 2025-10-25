@@ -5,12 +5,12 @@ from dark_libraries.registry import Registry
 from models.tile import TILE_ID_GRASS, Tile
 
 class U5MapLevel:
-    def __init__(self, data: dict[Coord, int], size: Size):
+    def __init__(self, data: dict[Coord[int], int], size: Size[int]):
 
         self._data = data
         self._size = size
 
-    def get_tile_id(self, coord: Coord):
+    def get_tile_id(self, coord: Coord[int]):
         # Allow out-of-bounds queries.
         return self._data.get(coord, None)
     
@@ -20,7 +20,7 @@ class U5MapLevel:
     def coords(self):
         for y in range(self._size.h):
             for x in range(self._size.w):
-                yield Coord(x,y)
+                yield Coord[int](x,y)
 
     def __iter__(self):
         return self._data.items().__iter__()
@@ -30,7 +30,7 @@ class U5MapLevel:
         if tiles:
             scale = list(tiles.values())[0]._get_size()
         else:
-            scale = Size(1,1)
+            scale = Size[int](1,1)
 
         surf = pygame.Surface(self._size.scale(scale).to_tuple())
 
@@ -76,7 +76,7 @@ class U5MapLevel:
         for x in range(self._size.x):
             for y in range(self._size.y):
 
-                map_coord = Coord(x, y)
+                map_coord = Coord[int](x, y)
                 tile_id = self.get_tile_id(map_coord)
                 tile: Tile = tile_loader.global_registry.tiles.get(tile_id)
 

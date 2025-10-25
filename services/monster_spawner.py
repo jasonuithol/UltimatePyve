@@ -33,7 +33,7 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
     def loaded(self, party_location: GlobalLocation):
         self._party_location = party_location
 
-    def _spawn_monster(self, npc_tile_id: int, monster_coord: Coord):
+    def _spawn_monster(self, npc_tile_id: int, monster_coord: Coord[int]):
         sprite = self.global_registry.sprites.get(npc_tile_id)
         npc_metadata = self.global_registry.npc_metadata.get(npc_tile_id)
         npc_agent = MonsterAgent(monster_coord, sprite, npc_metadata)

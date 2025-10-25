@@ -14,11 +14,11 @@ class LightMapBuilder(LoggerMixin):
     global_registry: GlobalRegistry
     
     # Builds an unbaked lightmap of specified radius
-    def _build_light_map(self, radius: int, light_emitter_view_offset: Vector2) -> LightMap:
+    def _build_light_map(self, radius: int, light_emitter_view_offset: Vector2[int]) -> LightMap:
         light_map_centre = 0,0
         light_map = LightMap()
         for view_coord in self.display_config.VIEW_PORT_SIZE.__iter__():
-            light_map_offset: Vector2 = view_coord.to_offset() - light_emitter_view_offset
+            light_map_offset: Vector2[int] = view_coord.to_offset() - light_emitter_view_offset
 
             # This tweak makes the lightmaps the right shape
             biblically_accurate_radius_offset = 0.5
@@ -31,7 +31,7 @@ class LightMapBuilder(LoggerMixin):
     # all unbaked light maps are built in coords relative to the light emitter.
     def build_light_maps(self):
 
-        light_emitter_view_offset = Vector2(self.display_config.VIEW_PORT_SIZE.w // 2, self.display_config.VIEW_PORT_SIZE.h // 2)
+        light_emitter_view_offset = Vector2[int](self.display_config.VIEW_PORT_SIZE.w // 2, self.display_config.VIEW_PORT_SIZE.h // 2)
 
         max_dimension_size = max(self.display_config.VIEW_PORT_SIZE.w, self.display_config.VIEW_PORT_SIZE.h)
         max_lit_tiles = self.display_config.VIEW_PORT_SIZE.w * self.display_config.VIEW_PORT_SIZE.h
