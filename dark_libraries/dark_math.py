@@ -37,7 +37,7 @@ class Vector2[TNumeric](tuple):
     @property
     def y(self) -> TNumeric: return self[1]
 
-    def scale(self, s: TOtherNumeric | TOtherNumericTuple) -> Self:
+    def scale(self, s: TOtherNumeric | TOtherNumericTuple) -> 'Vector2[TOtherNumeric]':
         if is_numeric(s):
             return self.__class__(self.x * s, self.y * s)
         elif isinstance(s, tuple) and len(s) >= 2:
@@ -51,7 +51,7 @@ class Vector2[TNumeric](tuple):
     def __neg__(self):
         return (0,0) - self
 
-    def floor_div(self, s: TOtherNumeric | TOtherNumericTuple):
+    def floor_div(self, s: TOtherNumeric | TOtherNumericTuple) -> 'Vector2[int, int]':
         if is_numeric(s):
             return self.__class__(self.x // s, self.y // s)
         elif isinstance(s, tuple) and len(s) >= 2:
@@ -62,12 +62,12 @@ class Vector2[TNumeric](tuple):
 
     __floordiv__ = floor_div
 
-    def add(self, other: TOtherNumericTuple) -> Self:
+    def add(self, other: TOtherNumericTuple) -> 'Vector2[TOtherNumeric]':
         return self.__class__(self.x + other[0], self.y + other[1])
     
     __add__ = __radd__ = add
 
-    def subtract(self, other: TOtherNumericTuple) -> Self:
+    def subtract(self, other: TOtherNumericTuple) -> 'Vector2[TOtherNumeric]':
         return self.__class__(self.x - other[0], self.y - other[1])
 
     __sub__ = subtract
@@ -86,7 +86,7 @@ class Vector2[TNumeric](tuple):
         return ((other[0] - self[0]) / distance, (other[1] - self[1]) / distance)
 
     # TODO: must be a faster way of doing this.
-    def normal_4way(self, other: tuple[int, int]) -> Self:
+    def normal_4way(self, other: tuple[int, int]) -> 'Vector2[int, int]':
         assert len(other) >= 2, "Argument must have at least two elements."
         dx, dy = other[0] - self[0], other[1] - self[1]
         assert not(dx == 0 and dy == 0), f"Cannot call normal_4way when self {self} == other {other}"
@@ -117,17 +117,19 @@ class Vector2[TNumeric](tuple):
     def to_tuple(self) -> tuple[TNumeric, TNumeric]:
         return (self[0], self[1])
     
-    def get_4way_neighbours(self) -> list[Self]:
+    def get_4way_neighbours(self) -> list['Vector2[int]']:
         return [self.add(neighbour) for neighbour in FOURWAY_NEIGHBOURS]
 
-    def get_8way_neighbours(self) -> list[Self]:
+    def get_8way_neighbours(self) -> list['Vector2[int]']:
         return [self.add(neighbour) for neighbour in EIGHTWAY_NEIGHBOURS]
 
-    def translate_polar(self, pythagorean_distance: float, radians: float) -> Self:
+    def translate_polar(self, pythagorean_distance: float, radians: float) -> 'Vector2[float]':
         dx = int(pythagorean_distance * math.cos(radians))
         dy = int(pythagorean_distance * math.sin(radians))
-        return self.__class__(self[0] + dx, self[1] + dy)
+        return self.__class__[float](self[0] + dx, self[1] + dy)
 
+    def intify(self) -> 'Vector2[int]':
+        return self.__class__[int](int(self[0]), int(self[1]))
 
 class Coord[TNumeric](Vector2[TNumeric]):
 
@@ -209,34 +211,34 @@ class Rect[TNumeric](tuple):
 #
 if __name__ == "__main__":
 
-    a = Coord(1, 2)
-    b = Coord(1, 2)
+    a = Coord[int](1, 2)
+    b = Coord[int](1, 2)
     assert a == b, "__eq__ has a problem"
     assert hash(a) == hash(b), "__hash__ has a problem"
     assert {a: "one"}[b] == "one", "Being a stable dictionary key is a problem" 
 
-    assert a.subtract(b) == Coord(0,0), f"subtract bokrne: expected 0,0 got {a.subtract(b)}"
+    assert a.subtract(b) == Coord[int](0,0), f"subtract bokrne: expected 0,0 got {a.subtract(b)}"
 
-    x = Vector2(10, 10)
+    x = Vector2[int](10, 10)
 
-    assert x + (10,10) == Vector2(20,20), "__add__ is broken"
+    assert x + (10,10) == Vector2[int](20,20), "__add__ is broken"
     assert isinstance((x + (3,3)).x, int), "__add__(int) doesn't return Vector2[int,int]"
-    assert (10,10) + x == Vector2(20,20), "__radd__ is broken"
+    assert (10,10) + x == Vector2[int](20,20), "__radd__ is broken"
     
-    assert x - (10,10) == Vector2(0,0), "__sub__ is broken"
-    assert (5, 5) - x == Vector2(-5, -5), f"__rsub broken, expected Vector2(-5,-5), got {(5, 5) - x!r}"
+    assert x - (10,10) == Vector2[int](0,0), "__sub__ is broken"
+    assert (5, 5) - x == Vector2[int](-5, -5), f"__rsub broken, expected Vector2(-5,-5), got {(5, 5) - x!r}"
 
-    assert x // 2 == Vector2(5,5), "Floor div broken"
-    assert x * 3 == Vector2(30,30), "__mul__(int) broke"
+    assert x // 2 == Vector2[int](5,5), "Floor div broken"
+    assert x * 3 == Vector2[int](30,30), "__mul__(int) broke"
     assert isinstance((x * 3).x, int), "__mul__(int) doesn't return Vector2[int,int]"
-    assert 3 * x == Vector2(30,30), "__rmul__(int) broke"
-    assert x * (3,4) == Vector2(30,40), "__mul__(int) broke"
-    assert (3,4) * x == Vector2(30,40), "__rmul__(int) broke"
+    assert 3 * x == Vector2[int](30,30), "__rmul__(int) broke"
+    assert x * (3,4) == Vector2[int](30,40), "__mul__(int) broke"
+    assert (3,4) * x == Vector2[int](30,40), "__rmul__(int) broke"
 
-    assert -x == Vector2(-10,-10), "__neg__ broke"
+    assert -x == Vector2[int](-10,-10), "__neg__ broke"
 
-    assert Vector2(10,10).pythagorean_distance((13,14)) == 5, "Pythagorean distance broken"
-    assert Vector2(10,10).taxi_distance((13,14)) == 7, "Taxi distance broken"
+    assert Vector2[int](10,10).pythagorean_distance((13,14)) == 5, "Pythagorean distance broken"
+    assert Vector2[int](10,10).taxi_distance((13,14)) == 7, "Taxi distance broken"
 
     try:
         immutable = False

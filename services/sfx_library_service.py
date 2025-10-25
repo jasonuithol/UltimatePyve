@@ -4,7 +4,9 @@ import random
 from dark_libraries.dark_math import Coord
 from dark_libraries.dark_wave import DarkNote
 
+from data.global_registry import GlobalRegistry
 from models.enums.projectile_type import ProjectileType
+from models.motion import Motion
 from services.display_service import DisplayService
 from services.sound_service import SoundService
 
@@ -12,6 +14,7 @@ from view.view_port import ViewPort
 
 class SfxLibraryService:
 
+    global_registry: GlobalRegistry
     sound_service:   SoundService
     display_service: DisplayService
     view_port:       ViewPort
@@ -33,10 +36,10 @@ class SfxLibraryService:
         while channel_handle.get_busy():
             self.display_service.render()
 
-    def emit_projectile(self): #, projectile_type: ProjectileType):
+    def emit_projectile(self, projectile_type: ProjectileType):
 
         # ANIMATION: Kick-off a projectile
-
+        sprite = self.global_registry.projectiles.get(projectile_type)
 
 
         generator = self.sound_service.get_generator()

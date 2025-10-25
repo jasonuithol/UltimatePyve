@@ -13,6 +13,7 @@ from data.loaders.equipable_item_type_loader  import EquipableItemTypeLoader
 from data.loaders.flame_sprite_loader         import FlameSpriteLoader
 from data.loaders.light_map_builder           import LightMapBuilder
 from data.loaders.npc_metadata_loader import NpcMetadataLoader
+from data.loaders.projectile_loader import ProjectileLoader
 from data.loaders.save_game_loader import SavedGameLoader
 from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
 from data.loaders.spell_rune_loader import SpellRuneLoader
@@ -63,3 +64,5 @@ def compose(provider: ServiceProvider):
     provider.register(SavedGameLoader)
     provider.register(SpellRuneLoader)
     provider.register(SpellTypeLoader)
+
+    provider.register(ProjectileLoader)

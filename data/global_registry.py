@@ -71,7 +71,7 @@ class GlobalRegistry:
         # magic
         self.runes = Registry[str, str]()               # e.g. "a"  -> "AN",   "b"  -> "BET",   ...
         self.spell_types = Registry[str, SpellType]()   # e.g. "an" -> An Nox, "rh" -> Rel Hur, ...
-        self.projectiles = Registry[ProjectileType, Sprite[U5Glyph]]
+        self.projectiles = Registry[ProjectileType, Sprite[U5Glyph]]()
 
         # populated by InitialisationController
         self.saved_game: SavedGame = None

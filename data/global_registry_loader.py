@@ -9,6 +9,7 @@ from data.loaders.cursor_loader import CursorLoader
 from data.loaders.data_ovl_loader import DataOVLLoader
 from data.loaders.entry_trigger_loader  import EntryTriggerLoader
 from data.loaders.npc_metadata_loader   import NpcMetadataLoader
+from data.loaders.projectile_loader import ProjectileLoader
 from data.loaders.save_game_loader      import SavedGameLoader
 
 from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
@@ -75,6 +76,7 @@ class GlobalRegistryLoader(LoggerMixin):
     spell_rune_loader: SpellRuneLoader
     spell_type_loader: SpellTypeLoader
 
+    projectile_loader: ProjectileLoader
 
     modding: ModdingService
 
@@ -133,6 +135,8 @@ class GlobalRegistryLoader(LoggerMixin):
         # magic
         self.spell_rune_loader.load()
         self.spell_type_loader.load()
+
+        self.projectile_loader.load()
 
         self.saved_game_loader.load_existing(u5_path)
 

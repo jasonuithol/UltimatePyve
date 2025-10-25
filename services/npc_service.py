@@ -102,7 +102,7 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
         
         result = random.choice(dex_candidates)
         self.log(
-            f"Choosing {result.name} at {result.coord} with {result.spent_action_points} spent action points for next turn"
+            f"DEBUG: Choosing {result.name} at {result.coord} with {result.spent_action_points} spent action points for next turn"
             +
             f", out of {len(ap_candidates)} action candidates and {len(dex_candidates)} DEX candidates."
         )

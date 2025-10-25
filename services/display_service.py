@@ -60,11 +60,11 @@ class DisplayService(LoggerMixin):
         assert not cursor_coord is None, "cursor_coord cannot be None"
         assert not cursor_sprite is None, "cursor_sprite cannot be None"
         self._cursors[cursor_type] = (cursor_coord, cursor_sprite)
-        self.log(f"Set cursor ({cursor_type}) to {cursor_coord}")
+        self.log(f"DEBUG: Set cursor ({cursor_type}) to {cursor_coord}")
 
     def remove_cursor(self, cursor_type: int):
         del self._cursors[cursor_type]
-        self.log(f"Removed cursor {cursor_type}")
+        self.log(f"DEBUG: Removed cursor {cursor_type}")
 
     #
     # TODO: move to ViewPortDataProvider

@@ -17,6 +17,7 @@ from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 from models.enums.cursor_type import CursorType
 from models.enums.direction_map import DIRECTION_MAP
 from models.enums.hit_point_level import get_hp_level_text
+from models.enums.projectile_type import ProjectileType
 from models.global_location import GlobalLocation
 
 from models.location_metadata import LocationMetadata
@@ -166,7 +167,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 #
                 # FIRING / SWINGING
                 #
-                self.sfx_library_service.emit_projectile()
+                self.sfx_library_service.emit_projectile(projectile_type = ProjectileType.ThrowingAxe)
 
                 target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
 
