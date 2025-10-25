@@ -2,6 +2,7 @@ from dark_libraries.dark_math      import Coord
 from dark_libraries.registry import Registry
 
 from models.combat_map import CombatMap, DungeonRoom
+from models.data_ovl import DataOVL
 from models.door_type import DoorType
 from models.glyph_key import GlyphKey
 from models.spell_type import SpellType
@@ -26,6 +27,8 @@ class GlobalRegistry:
 
     def __init__(self):
         
+        self.data_ovl: DataOVL = None
+
         # map oriented features.
         self.maps     = Registry[int, U5Map]()    # location_index
         self.terrains = Registry[int, Terrain]()  # tile_id

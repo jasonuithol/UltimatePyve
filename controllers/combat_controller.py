@@ -48,6 +48,7 @@ def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
 
             num_levels    = 0,       # how many levels the location contains
             default_level = 0,       # which level the player spawns in when entering the location.
+            has_basement  = False,
             trigger_index = None,    # the index the entry triggers for this location are at.
             sound_track   = None     # an absolute path to the soundtrack                
         )

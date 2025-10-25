@@ -122,6 +122,10 @@ class PartyAgent(NpcAgent):
         self.location_stack.clear()
 
     def change_level(self, level_index: int):
+        if level_index == 256:
+            level_index = 0
+        elif level_index == -1:
+            level_index = 255
         self.location_stack[-1] = self.location_stack[-1].move_to_level(level_index)
 
     def change_coord(self, coord: Coord):

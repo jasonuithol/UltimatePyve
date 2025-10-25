@@ -15,10 +15,11 @@ ItemContainerDict = dict[GlobalLocation, ItemContainer]
 class WorldLootService(LoggerMixin):
 
     # Injectable
-    dataOvl: DataOVL
     global_registry: GlobalRegistry
 
     def _build_item_containers(self) -> ItemContainerDict:
+
+        self.dataOvl = self.global_registry.data_ovl
 
         TILE_ID_OFFSET = 256 # technically - the tile that is a circle of white dots on a black background.
 
@@ -84,36 +85,3 @@ class WorldLootService(LoggerMixin):
     def unregister_loot_container(self, global_location: GlobalLocation):
         self.global_registry.world_loot.unregister(global_location)
         self.log(f"Removed empty world loot container at {global_location}")
-
-'''
-#
-# MAIN
-#         
-if __name__ == "__main__":
-
-    from data.loaders.equipable_item_type_loader import EquipableItemTypeLoader
-
-    dataOvl = DataOVL.load()
-
-    global_registry = GlobalRegistry()
-
-    item_type_factory = EquipableItemTypeLoader()
-    item_type_factory.global_registry = global_registry
-    item_type_factory.dataOvl = dataOvl
-    item_type_factory.build()
-
-    print(f"Item Types Registered: {len(global_registry.item_types)}")
-
-    loader = WorldLootLoader()
-    loader.dataOvl = dataOvl
-    loader.global_registry = global_registry
-    loader.register_loot_containers()
-
-    for global_location, item_container in global_registry.world_loot.items():
-        print(f"World Loot at location {global_location}:")
-        item_container.open()
-        while item_container.has_items():
-            world_item: WorldItem = item_container.pop()
-            print(f"    Item: item_id={world_item.item_type.item_id}, tile_id={world_item.item_type.tile_id}, name={world_item.item_type.name}, quantity={world_item.quantity}")
-
-'''

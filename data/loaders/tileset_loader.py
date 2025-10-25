@@ -110,8 +110,8 @@ class TileLoader(LoggerMixin):
             # Set the pixel color on the rendered surface
             surface_pixels[pixel_coord.add(target_pixel_offset).to_tuple()] = rgb_color
 
-    def load_tiles(self):
-        path = Path("u5/TILES.16")
+    def load_tiles(self, u5_path: Path):
+        path = u5_path.joinpath("TILES.16")
         raw = path.read_bytes()
         (uncomp_len,) = struct.unpack("<I", raw[:4])
         data = lzw_decompress(raw[4:])

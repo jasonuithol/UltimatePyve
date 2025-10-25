@@ -143,7 +143,7 @@ class CombatMapLoader(LoggerMixin):
             map_index += 1
         self.log(f"Registered {map_index} {'dungeon rooms' if are_dungeon_rooms else 'combat maps'} from {path}")
 
-    def load(self):
-        self._load_file(Path("u5/BRIT.CBT"   ), self.global_registry.combat_maps,   are_dungeon_rooms = False)
-        self._load_file(Path("u5/DUNGEON.CBT"), self.global_registry.dungeon_rooms, are_dungeon_rooms = True)
+    def load(self, u5_path: Path):
+        self._load_file(u5_path.joinpath("BRIT.CBT"),    self.global_registry.combat_maps,   are_dungeon_rooms = False)
+        self._load_file(u5_path.joinpath("DUNGEON.CBT"), self.global_registry.dungeon_rooms, are_dungeon_rooms = True)
         

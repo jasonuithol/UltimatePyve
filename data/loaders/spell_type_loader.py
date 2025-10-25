@@ -24,14 +24,13 @@ T_DIR = SpellTargetType.T_DIRECTION
 
 class SpellTypeLoader(LoggerMixin):
 
-    data_ovl:        DataOVL
     global_registry: GlobalRegistry
 
     def load(self):
 
         self._spell_names = {
             "".join([rune[0].lower() for rune in spell_name.split(" ")]) : spell_name
-            for spell_name in DataOVL.to_strs(self.data_ovl.spell_names) if len(spell_name) > 0
+            for spell_name in DataOVL.to_strs(self.global_registry.data_ovl.spell_names) if len(spell_name) > 0
         }
 
         self._level = 1

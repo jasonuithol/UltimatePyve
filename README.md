@@ -27,27 +27,13 @@ It uses the original game data files but runs them through a modern, Python‑ba
    OR
    Download this link https://github.com/jasonuithol/UltimatePyve/archive/refs/heads/master.zip
    
-## Monkeypatching
+## IMPORTANT REASSURANCE: This program does NOT alter your u5 or Ultima V directory or file contents.
 
-    Right now - you'll need to copy your Ultima V directory to a folder under UltimatePyve and name that copy of Ultima v directory "u5"
+Currently, this program looks for your Ultima V installation at:
 
-    e.g.
+"%ProgramFiles(x86)%\GOG Galaxy\Games\Ultima 5"
 
-    UltimatePyve
-    |
-    |- (a bunch of UltimatPyve subfolders)
-    |- main.py
-    |- (more crap)
-    |
-    | ...
-    |
-    |      ***********************************
-    \- u5  <== COPY IT TO THIS ONE RIGHT HERE
-           ***********************************
-
-    I hope to get rid of this requirement later but for now, it is what it is.
-
-### IMPORTANT REASSURANCE: This program does NOT alter your u5 or Ultima V directory or file contents.
+This value lives in configure.py
 
 ## Running
 

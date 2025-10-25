@@ -5,6 +5,7 @@ from data.loaders.blue_border_glyph_factory import BlueBorderGlyphFactory
 from data.loaders.combat_map_loader import CombatMapLoader
 from data.loaders.consumable_item_type_loader import ConsumableItemTypeLoader
 from data.loaders.cursor_loader import CursorLoader
+from data.loaders.data_ovl_loader import DataOVLLoader
 from data.loaders.door_type_loader            import DoorTypeLoader
 from data.loaders.entry_trigger_loader        import EntryTriggerLoader
 
@@ -30,6 +31,8 @@ from data.loaders.location_metadata_builder import LocationMetadataBuilder
 from data.loaders.u5_map_loader     import U5MapLoader
 
 def compose(provider: ServiceProvider):
+
+    provider.register(DataOVLLoader)
 
     provider.register(AnimatedTileLoader)
     provider.register(ConsumableItemTypeLoader)

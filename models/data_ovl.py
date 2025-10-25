@@ -11,8 +11,8 @@ class DataOVL:
     def to_strs(cls, bytes: bytearray):
         return [ba.decode('ascii') for ba in bytes.split(b"\0")]
 
-    def __init__(self, path: Path):
-        raw = path.read_bytes()
+    def __init__(self, u5_path: Path):
+        raw = u5_path.joinpath("DATA.OVL").read_bytes()
         def slice_at(offset, length):
             return raw[offset:offset+length]
 
@@ -235,11 +235,6 @@ class DataOVL:
 
         # 0x7252 0x32 Wishing well horse keywords
         self.wishing_well_horse_keywords = slice_at(0x7252, 0x32)
-
-    @classmethod
-    def load(cls):
-        return cls(Path("u5/DATA.OVL"))
-
 
 if __name__ == "__main__":
 

@@ -1,3 +1,4 @@
+from pathlib import Path
 from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
@@ -5,6 +6,7 @@ from data.global_registry import GlobalRegistry
 from data.loaders.blue_border_glyph_factory import BlueBorderGlyphFactory
 from data.loaders.combat_map_loader     import CombatMapLoader
 from data.loaders.cursor_loader import CursorLoader
+from data.loaders.data_ovl_loader import DataOVLLoader
 from data.loaders.entry_trigger_loader  import EntryTriggerLoader
 from data.loaders.npc_metadata_loader   import NpcMetadataLoader
 from data.loaders.save_game_loader      import SavedGameLoader
@@ -40,6 +42,8 @@ class GlobalRegistryLoader(LoggerMixin):
     # Injectable
     global_registry: GlobalRegistry
 
+    data_ovl_loader: DataOVLLoader
+
     tile_loader:                 TileLoader
     terrain_loader:              TerrainLoader
     u5map_loader:                U5MapLoader
@@ -71,6 +75,7 @@ class GlobalRegistryLoader(LoggerMixin):
     spell_rune_loader: SpellRuneLoader
     spell_type_loader: SpellTypeLoader
 
+
     modding: ModdingService
 
     def _post_load_check(self) -> bool:
@@ -88,21 +93,23 @@ class GlobalRegistryLoader(LoggerMixin):
 
         return all_registries_loaded
 
-    def load(self):
+    def load(self, u5_path: Path):
+
+        self.data_ovl_loader.load(u5_path)
 
         # Map
-        self.tile_loader.load_tiles()
+        self.tile_loader.load_tiles(u5_path)
         self.terrain_loader.register_terrains()
-        self.u5map_loader.register_maps()
+        self.u5map_loader.register_maps(u5_path)
         self.entry_trigger_loader.load()
 
         self.animated_tile_loader.register_sprites()
         self.flame_sprite_loader.register_sprites()
 
-        self.combat_map_loader.load()
+        self.combat_map_loader.load(u5_path)
 
         # font
-        self.u5_font_loader.register_fonts()
+        self.u5_font_loader.register_fonts(u5_path)
         self.u5_glyph_loader.register_glyphs()
         self.blue_border_glyph_factory.load()
         self.scroll_border_glyph_factory.load()
@@ -127,7 +134,7 @@ class GlobalRegistryLoader(LoggerMixin):
         self.spell_rune_loader.load()
         self.spell_type_loader.load()
 
-        self.saved_game_loader.load_existing()
+        self.saved_game_loader.load_existing(u5_path)
 
         #
         # TODO: LOAD REGISTRY SPECIFIC MODS AFTER EACH OG REGISTRY IS LOADED.

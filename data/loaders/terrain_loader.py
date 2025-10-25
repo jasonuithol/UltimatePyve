@@ -134,7 +134,9 @@ class TerrainLoader(LoggerMixin):
         ]:
             terrains[i].windowed = True
 
+        # Enterable (i.e. can be entry triggers)
         for i in [
+
             16, # hut
             17, # codex
 
@@ -149,8 +151,8 @@ class TerrainLoader(LoggerMixin):
             25, # shrine
 
             27, # lighthouse
-            73, # Blackthorn castle entrance 
-            78  # Castle Britannia entrance
+            57, # Blackthorn castle entrance 
+            62  # Castle Britannia entrance
         ]:
             terrains[i].entry_point = True
 

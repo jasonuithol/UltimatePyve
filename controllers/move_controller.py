@@ -89,28 +89,22 @@ class MoveController(LoggerMixin):
 
         # ladders                
         if target_terrain.move_up == True:
-            new_level_index = target_location.level_index + 1
+            return MoveOutcome(move_up=True)
 
         if target_terrain.move_down == True:
-            new_level_index = target_location.level_index - 1
+            return MoveOutcome(move_down=True)
 
         # stairs
         if target_terrain.stairs == True:
             # NOTE: This is just a guess, but seems to be working out ok.
             # Stairs always lead from the default spawn level to the one above it, and then back again.
             if current_location.level_index == current_map.default_level_index:
-                new_level_index = current_map.default_level_index + 1
+                return MoveOutcome(move_up=True)
             else:
-                new_level_index = current_map.default_level_index
+                return MoveOutcome(move_down=True)
 
-        # update level if changed.
-        if new_level_index > current_location.level_index:
-            return MoveOutcome(move_up=True)
-        elif new_level_index < current_location.level_index:
-            return MoveOutcome(move_down=True)
-        else:
-            self.log(f"DEBUG: Move to {target_location} succeeded.")
-            return MoveOutcome(success=True)
+        self.log(f"DEBUG: Move to {target_location} succeeded.")
+        return MoveOutcome(success=True)
         
     def _try_move_into(self, current_location: GlobalLocation, target: Coord, transport_mode_name: str) -> MoveIntoResult:
 

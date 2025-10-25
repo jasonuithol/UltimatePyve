@@ -1,7 +1,7 @@
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
-from models.data_ovl            import DataOVL
+from models.data_ovl import DataOVL
 from models.enums.equipable_item_rune_id import EquipableItemRuneId
 from models.enums.equipable_item_slot import EquipableItemSlot
 from models.enums.equipable_item_tile_id import EquipableItemTileId
@@ -12,10 +12,11 @@ from models.equipable_item_type import EquipableItemType
 class EquipableItemTypeLoader(LoggerMixin):
 
     # Injectable
-    dataOvl: DataOVL
     global_registry: GlobalRegistry
         
     def build(self):
+
+        self.dataOvl = self.global_registry.data_ovl
 
         before = len(self.global_registry.item_types)
 
@@ -159,10 +160,14 @@ class EquipableItemTypeLoader(LoggerMixin):
 #
 if __name__ == "__main__":
 
+    from configure import get_u5_path
+
+    u5_path = get_u5_path()
+
     registry = GlobalRegistry()
 
     loader = EquipableItemTypeLoader()
-    loader.dataOvl = DataOVL.load()
+    loader.dataOvl = DataOVL()
     loader.global_registry = registry
 
     loader.build()

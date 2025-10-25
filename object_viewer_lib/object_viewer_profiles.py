@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 import pygame, base64
 
 from dark_libraries.dark_math import Size
@@ -20,26 +21,8 @@ from models.u5_map_level import U5MapLevel
 from services.surface_factory import SurfaceFactory
 
 from view.display_config import DisplayConfig
-'''
-display_config = DisplayConfig()
 
-surface_factory = SurfaceFactory()
-surface_factory.display_config = display_config
-surface_factory._after_inject()
-
-data_ovl = DataOVL.load()
-
-tile_loader = TileLoader()
-tile_loader.display_config  = display_config
-tile_loader.global_registry = GlobalRegistry()
-tile_loader.surface_factory = surface_factory
-
-tile_loader.load_tiles()
-
-
-MARGIN = 20  # padding around grid
-'''
-
+u5_path:         Path           = None
 display_config:  DisplayConfig  = None
 surface_factory: SurfaceFactory = None
 data_ovl:        DataOVL        = None
@@ -47,12 +30,16 @@ tile_loader:     TileLoader     = None
 margin:          int            = None
 
 def configure_profiles(
+    u5_path_:         Path,
     display_config_:  DisplayConfig,
     surface_factory_: SurfaceFactory,
     data_ovl_:        DataOVL,
     tile_loader_:     TileLoader,
     margin_:          int
 ):
+    global u5_path
+    u5_path = u5_path_
+
     global display_config
     display_config  = display_config_
 
@@ -187,10 +174,11 @@ class FontViewerProfile(ViewerProfile[tuple[str,int], U5Glyph]):
         super().__init__(font_name)
         self.font_name = font_name
         self.global_registry = GlobalRegistry()
+        self.global_registry.data_ovl = data_ovl
 
         f_loader = U5FontLoader()
         f_loader.global_registry = self.global_registry
-        f_loader.register_fonts()
+        f_loader.register_fonts(u5_path)
 
         g_loader = U5GlyphLoader()
         g_loader.display_config = display_config
@@ -269,16 +257,16 @@ class MapViewerProfile(ViewerProfile[tuple[str,int], U5MapLevel]):
 
         super().__init__(option_label)
         self.global_registry = GlobalRegistry()
+        self.global_registry.data_ovl = data_ovl
         self.tile_set = tile_set
 
         loader = U5MapLoader()
-        loader.builder = LocationMetadataBuilder()
-        loader.builder.dataOvl = data_ovl
         loader.global_registry = self.global_registry
-        loader.data_ovl = data_ovl
+        loader.builder = LocationMetadataBuilder()
+        loader.builder.global_registry = self.global_registry
+        loader.builder.init()
 
-        loader._after_inject()
-        loader.register_maps()
+        loader.register_maps(u5_path)
         
         level_tuples = [
             (level_index,  map_)

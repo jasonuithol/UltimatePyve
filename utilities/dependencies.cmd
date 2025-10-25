@@ -1,1 +1,0 @@
-python.exe .\utilities\dependencies.py --exclude the_ugly_corner dark_libraries service_composition game.service_composition loaders.service_composition animation.service_composition display.service_composition utilities

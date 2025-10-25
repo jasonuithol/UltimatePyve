@@ -11,6 +11,10 @@ from view.display_config import DisplayConfig
 from object_viewer_lib.object_viewer_menu_bar import ObjectViewerMenuBar
 from object_viewer_lib.object_viewer_profiles import FontViewerProfile, MapViewerProfile, TileViewerProfile, ViewerProfile, configure_profiles
 
+from configure import get_u5_path
+
+u5_path = get_u5_path()
+
 pygame.init()
 pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
 screen = pygame.display.set_mode(
@@ -27,19 +31,24 @@ surface_factory = SurfaceFactory()
 surface_factory.display_config = display_config
 surface_factory._after_inject()
 
-data_ovl = DataOVL.load()
+data_ovl = DataOVL(u5_path)
 
 tile_loader = TileLoader()
 tile_loader.display_config  = display_config
 tile_loader.global_registry = GlobalRegistry()
 tile_loader.surface_factory = surface_factory
 
-tile_loader.load_tiles()
+tile_loader.load_tiles(u5_path)
 
 MARGIN = 20  # padding around grid
 
 configure_profiles(
-    display_config, surface_factory, data_ovl, tile_loader, MARGIN
+    u5_path,
+    display_config, 
+    surface_factory, 
+    data_ovl, 
+    tile_loader, 
+    MARGIN
 )
 
 profiles = list[ViewerProfile]([

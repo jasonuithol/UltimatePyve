@@ -11,7 +11,6 @@ from data.global_registry import GlobalRegistry
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
 from models.combat_map import CombatMap
-from models.data_ovl import DataOVL
 from models.enums.spell_target_type import SpellTargetType
 from models.spell_type import SpellType
 
@@ -30,7 +29,6 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     party_agent:       PartyAgent
     global_registry:   GlobalRegistry
     main_loop_service: MainLoopService
-    data_ovl:          DataOVL
     
     info_panel_service:       InfoPanelService
     info_panel_data_provider: InfoPanelDataProvider

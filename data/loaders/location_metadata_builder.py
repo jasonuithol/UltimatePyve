@@ -1,12 +1,15 @@
 from dark_libraries.logging import LoggerMixin
-from models.data_ovl import DataOVL
+from data.global_registry import GlobalRegistry
 from models.location_metadata import LocationMetadata
 
 
 class LocationMetadataBuilder(LoggerMixin):
 
     # Injectable
-    dataOvl: DataOVL
+    global_registry: GlobalRegistry
+
+    def init(self):
+        self.dataOvl = self.global_registry.data_ovl
 
     '''
     LOCATION_METADATA
@@ -76,6 +79,15 @@ class LocationMetadataBuilder(LoggerMixin):
         # TODO: DUNGEONS
     ]
 
+    # These are location indexes - NOT TRIGGER INDEXES, and not LOCATION NAME INDEXES
+    # Use the object viewer if in doubt.
+    BASEMENT_LOCATIONS = [
+         4, # YEW
+        17, # LORD BRITISH CASTLE
+        18, # BLACKTHORN CASTLE
+        32, # SERPENTS HOLD
+    ]
+
     def build_location_names(self) -> list[str]:
         location_names = [p.decode('ascii') for p in self.dataOvl.city_names_caps.split(b'\x00') if p]
 
@@ -98,6 +110,7 @@ class LocationMetadataBuilder(LoggerMixin):
         ]
 
     def build_metadata(self) -> list[LocationMetadata]:
+
         #
         # Build sorted metadata list so metadata[trigger_index] works
         #
@@ -123,9 +136,10 @@ class LocationMetadataBuilder(LoggerMixin):
                 next_map_offset += num_levels
 
             default_level = default_level_lists[files_index][group_index] - map_index_offset
+            location_index = trigger_index + 1
 
             meta = LocationMetadata(
-                location_index = trigger_index + 1,
+                location_index = location_index,
                 name           = location_names[name_index],
                 name_index     = name_index,
                 files_index    = files_index,
@@ -134,6 +148,7 @@ class LocationMetadataBuilder(LoggerMixin):
                 map_index_offset= map_index_offset,
                 num_levels      = num_levels,
                 default_level   = default_level,
+                has_basement    = location_index in __class__.BASEMENT_LOCATIONS,
                 trigger_index   = trigger_index,
                 sound_track     = None
             )
@@ -157,8 +172,9 @@ class LocationMetadataBuilder(LoggerMixin):
             group_index    = None,
             
             map_index_offset= None,
-            num_levels      = 255,
+            num_levels      = 2,
             default_level   = 0,
+            has_basement    = True,
             trigger_index   = None,
             sound_track     = None
         )

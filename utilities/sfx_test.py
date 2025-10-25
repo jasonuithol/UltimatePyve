@@ -9,14 +9,3 @@ sound = pygame.sndarray.make_sound(stereo)
 sound.play()
 pygame.time.wait(600)
 
-from gensound.signals import WhiteNoise
-from gensound import Sine, ADSR
-
-# A sine thump with ADSR envelope
-thump = ADSR(attack=0.01, decay=0.5, sustain=0, release=0.5)(Sine(60))
-
-# Broadband noise burst with ADSR envelope
-hiss = ADSR(attack=0.005, decay=1.0, sustain=0, release=0.5)(WhiteNoise())
-
-
-boom = thump + hiss

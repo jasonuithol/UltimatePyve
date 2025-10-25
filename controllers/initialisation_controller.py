@@ -1,3 +1,4 @@
+from pathlib import Path
 from dark_libraries.logging   import LoggerMixin
 
 from data.loaders.save_game_loader import SavedGameLoader
@@ -47,18 +48,18 @@ class InitialisationController(LoggerMixin):
     sound_service: SoundService
 
 
-    def init(self):
+    def init(self, u5_path: Path):
 
         # Set's pygame screen/video mode.
         self.display_service.init()
 
-        self.global_registry_loader.load()
+        self.global_registry_loader.load(u5_path)
 
         # --------------------------------------------------
         #
         # LOAD A SAVED GAME
         #
-        saved_game = self.saved_game_loader.load_existing()
+        saved_game = self.saved_game_loader.load_existing(u5_path)
         self.global_registry.saved_game = saved_game
         #
         # --------------------------------------------------

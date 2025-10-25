@@ -6,7 +6,6 @@ from data.global_registry import GlobalRegistry
 
 from models.u5_map import U5Map
 from models.u5_map_level import U5MapLevel
-from models.data_ovl import DataOVL
 
 from .location_metadata_builder import LocationMetadataBuilder
 
@@ -15,7 +14,6 @@ class U5MapLoader(LoggerMixin):
     # Injectable
     builder: LocationMetadataBuilder
     global_registry: GlobalRegistry
-    data_ovl: DataOVL
 
     FILES = [
         "TOWNE.DAT",
@@ -23,9 +21,6 @@ class U5MapLoader(LoggerMixin):
         "CASTLE.DAT",
         "KEEP.DAT"
     ]
-
-    def _after_inject(self):
-        self.metadata = self.builder.build_metadata()
 
     def get_number_locations(self) -> int:
         return len(self.metadata)
@@ -49,7 +44,7 @@ class U5MapLoader(LoggerMixin):
         meta = self.metadata[trigger_index]
         filename = U5MapLoader.FILES[meta.files_index]
 
-        path = Path("u5") / filename
+        path = self._u5_path.joinpath(filename)
         if not path.exists():
             raise FileNotFoundError(f"Map file not found: {filename!r}")
 
@@ -65,9 +60,22 @@ class U5MapLoader(LoggerMixin):
                 map_level = __class__.convert_tilearray_to_map_level(tile_ids, map_size)
                 levels.append(map_level)
 
+        def level_index(ordinal_index: int, has_basement: bool) -> int:
+            if has_basement:
+                if ordinal_index == 0:
+                    self.log(f"DEBUG: Performing basement override for {meta.name} location_index=({meta.location_index})")
+                    return 255
+                else:
+                    return ordinal_index - 1
+            else:
+                return ordinal_index
+
         return U5Map(
-            levels              = dict(enumerate(levels)),
-            location_metadata   = meta
+            levels = {
+                level_index(ordinal_index, meta.has_basement) : level
+                for ordinal_index, level in enumerate(levels)
+            },
+            location_metadata = meta
         )
 
     def load_britannia(self) -> U5MapLevel:
@@ -78,9 +86,9 @@ class U5MapLoader(LoggerMixin):
         MAP_DIM     = GRID_DIM * CHUNK_DIM
         VOID_MARKER = 0xFF
 
-        ovl = self.data_ovl
+        ovl = self.global_registry.data_ovl
         chunk_map = list(ovl.britannia_chunking_info)
-        chunks_data = Path(r".\u5\BRIT.DAT").read_bytes()
+        chunks_data = self._u5_path.joinpath("BRIT.DAT").read_bytes()
         chunk_list = [chunks_data[i*256:(i+1)*256] for i in range(len(chunks_data)//256)]
         
         # The overworld has a lot of empty ocean, so Origin decided to compress it.
@@ -100,15 +108,14 @@ class U5MapLoader(LoggerMixin):
         map_size = Size(MAP_DIM, MAP_DIM)
         return __class__.convert_tilearray_to_map_level(tiles, map_size)
 
-    @classmethod
-    def load_underworld(cls) -> U5MapLevel:
+    def load_underworld(self) -> U5MapLevel:
 
         # === CONSTANTS ===
         GRID_DIM   = 16       # 16×16 chunks
         CHUNK_DIM  = 16       # 16×16 tiles per chunk
         MAP_DIM    = GRID_DIM * CHUNK_DIM  # 256×256 tiles
 
-        raw = Path(r".\u5\UNDER.DAT").read_bytes()
+        raw = self._u5_path.joinpath("UNDER.DAT").read_bytes()
         # UNDER.DAT is exactly 256 chunks × 256 bytes each
         chunks = [raw[i*256:(i+1)*256] for i in range(len(raw)//256)]
         tiles = bytearray(MAP_DIM * MAP_DIM)
@@ -128,7 +135,7 @@ class U5MapLoader(LoggerMixin):
 
         levels: dict[int, U5MapLevel] = {}
         levels[0]   = self.load_britannia()
-        levels[255] = __class__.load_underworld()
+        levels[255] = self.load_underworld()
 
         world = U5Map(
             levels = levels,
@@ -137,7 +144,11 @@ class U5MapLoader(LoggerMixin):
 
         return world
 
-    def register_maps(self):
+    def register_maps(self, u5_path: Path):
+        self.builder.init()
+        self.metadata = self.builder.build_metadata()
+
+        self._u5_path = u5_path
         for trigger_index in range(self.get_number_locations()):
             u5map: U5Map = self.load_location_map(trigger_index)
             self.global_registry.maps.register(u5map.location_index, u5map)
@@ -148,27 +159,4 @@ class U5MapLoader(LoggerMixin):
         self.global_registry.maps.register(world.location_index, world)
         self.log(f"Loaded {len(self.global_registry.maps)} maps.")
 
-if __name__ == "__main__":
-
-    from models.data_ovl import DataOVL
-
-    dataOvl = DataOVL.load()
-
-    # Injectable
-    builder = LocationMetadataBuilder()
-    builder.dataOvl = dataOvl
-
-    registry = GlobalRegistry()
-
-    loader = U5MapLoader()
-    loader.builder = builder
-    loader.global_registry = registry
-    loader.data_ovl = dataOvl
-    loader._after_inject()
-
-    loader.register_maps()
-
-    for u5map in registry.maps.values():
-        surf = u5map.render_to_disk()
-    print("All maps dumped.")
 

@@ -1,5 +1,8 @@
+import os
+from pathlib import Path
 import colorama
 
+from configure import get_u5_path
 from controllers.party_controller import PartyController
 # Makes best effort to turn on ANSI support for console error messages.
 # Warning: Activates colorize in python 3.13+.  If you don't like it, set environment variable PYTHON_COLORS=0
@@ -9,6 +12,10 @@ colorama.init()
 
 # 3rd party messages will stand out (i.e. pygame, package deprecation warnings.)
 print(colorama.Fore.CYAN)
+
+u5_path: Path = get_u5_path()
+
+print(f"(main) Found legal copy of Ultima V at '{u5_path}'")
 
 # Set up pygame
 import gc
@@ -30,7 +37,7 @@ provider.inject_all()
 print("(main) Service provider injection finished.")
 
 init: InitialisationController = provider.resolve(InitialisationController)
-init.init()
+init.init(u5_path)
 
 # finished initialising, tidy up.
 gc.collect()
@@ -40,3 +47,6 @@ pygame.mixer.init()
 
 party_controller: PartyController = provider.resolve(PartyController)
 party_controller.run()
+
+
+

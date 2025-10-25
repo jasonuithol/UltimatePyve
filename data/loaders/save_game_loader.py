@@ -8,20 +8,31 @@ class SavedGameLoader(LoggerMixin):
     # Injectable
     global_registry: GlobalRegistry
 
-    def _load(self, load_name: str, save_name: str) -> SavedGame:
+    def _load(self, u5_path: Path, load_name: str, save_name: str) -> SavedGame:
 
-        load_path = Path(f'u5/{load_name}.GAM')
+        # Detect GOG cloud_save
+        cloud_path = u5_path.joinpath("cloud_saves")
+
+        #
+        # TODO: Remember this when saving a game.
+        #
+        if cloud_path.exists():
+            use_this_folder = cloud_path
+        else:
+            use_this_folder = u5_path
+
+        load_path = use_this_folder.joinpath(f"{load_name}.GAM")
         bytes = bytearray(load_path.read_bytes())
         self.log(f"Loaded {len(bytes)} bytes from {load_path}")
 
-        save_path = Path(f'u5/{save_name}.GAM')
+        save_path = use_this_folder.joinpath(f"{save_name}.GAM")
         return SavedGame(bytes, save_path)
 
-    def load_existing(self, save_name="SAVED") -> SavedGame:
-        return self._load(save_name, save_name)
+    def load_existing(self, u5_path: Path, save_name="SAVED") -> SavedGame:
+        return self._load(u5_path, save_name, save_name)
 
-    def load_new(self, save_name="SAVED") -> SavedGame:
-        return self._load("INIT", save_name)
+    def load_new(self, u5_path: Path, save_name="SAVED") -> SavedGame:
+        return self._load(u5_path, "INIT", save_name)
 
 #
 # MAIN
