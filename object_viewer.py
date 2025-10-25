@@ -1,3 +1,8 @@
+from configure import get_u5_path, check_python_version
+
+check_python_version()
+u5_path = get_u5_path()
+
 import math
 import pygame
 
@@ -10,10 +15,6 @@ from view.display_config import DisplayConfig
 
 from object_viewer_lib.object_viewer_menu_bar import ObjectViewerMenuBar
 from object_viewer_lib.object_viewer_profiles import FontViewerProfile, MapViewerProfile, TileViewerProfile, ViewerProfile, configure_profiles
-
-from configure import get_u5_path
-
-u5_path = get_u5_path()
 
 pygame.init()
 pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms

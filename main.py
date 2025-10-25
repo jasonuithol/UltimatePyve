@@ -2,7 +2,10 @@ import os
 from pathlib import Path
 import colorama
 
-from configure import get_u5_path
+from configure import get_u5_path, check_python_version
+
+check_python_version()
+
 from controllers.party_controller import PartyController
 # Makes best effort to turn on ANSI support for console error messages.
 # Warning: Activates colorize in python 3.13+.  If you don't like it, set environment variable PYTHON_COLORS=0
