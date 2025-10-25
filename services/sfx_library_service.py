@@ -127,7 +127,6 @@ class SfxLibraryService:
         self.bubbling_of_reality()
 
         # SOUND: Whooshing of projectile.
-        self.emit_projectile()
 
         # ANIMATION: Animate the movement of a glyph to the target.
 
