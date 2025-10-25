@@ -22,7 +22,9 @@ It uses the original game data files but runs them through a modern, Python‑ba
 2. **Install Python libraries**
     Run this command:
 
-    `pip install -r requirements.txt`
+    ```
+    pip install -r requirements.txt
+    ```
 
 3. **Clone this repository**  
 
@@ -39,7 +41,9 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
 Currently, this program looks for your Ultima V installation at:
 
-`%ProgramFiles(x86)%\GOG Galaxy\Games\Ultima 5`
+```
+%ProgramFiles(x86)%\GOG Galaxy\Games\Ultima 5
+```
 
 This value lives in configure.py
 
@@ -47,13 +51,16 @@ This value lives in configure.py
 
 Running the main engine:
 
-`python main.py`
+```
+python main.py
+```
 
 ---
 
 ## Legal
     
 This project does not include any copyrighted game data.
+
 You must supply your own legal copy of Ultima V: Warriors of Destiny.
     
 ## Notes
