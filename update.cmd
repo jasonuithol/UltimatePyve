@@ -1,4 +1,5 @@
 @echo off
+
 IF EXIST ".git" (
     echo Updating UltimatePyve via git pull
     git pull
@@ -15,6 +16,9 @@ IF EXIST ".git" (
     rem del "%TMP%\UltimatePyve.zip"
     rem rmdir /S /Q "%TMP%\UltimatePyve"
 )
+
+rem This actually updates log/last_commit.txt
+py -3.13 utilities\update_checker.py --non-interactive --silent
 
 echo "Update complete"
 

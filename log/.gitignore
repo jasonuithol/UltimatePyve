@@ -3,6 +3,8 @@ u5/
 __pycache__/
 .vscode/
 
+last_commit.txt
+
 dependencies.svg
 dependencies.txt
 dependencies.dot

@@ -9,5 +9,6 @@ if errorlevel 1 (
     pause
     exit
 )
+py -3.13 utilities\check_for_updates.py --check-only
 py -3.13 main.py
 pause
