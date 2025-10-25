@@ -6,7 +6,7 @@ from models.glyph_key import GlyphKey
 from models.sprite import Sprite
 from models.u5_glyph import U5Glyph
 
-class ProjectileLoader(LoggerMixin):
+class ProjectileSpriteLoader(LoggerMixin):
 
     global_registry: GlobalRegistry
 
@@ -23,7 +23,7 @@ class ProjectileLoader(LoggerMixin):
             f.get_surface().set_colorkey((0,0,0))
 
         axe_sprite = Sprite(frames, frame_duration_seconds = 0.25)
-        self.global_registry.projectiles.register(ProjectileType.ThrowingAxe, axe_sprite)
+        self.global_registry.projectile_sprites.register(ProjectileType.ThrowingAxe, axe_sprite)
 
         #
         # Fireball

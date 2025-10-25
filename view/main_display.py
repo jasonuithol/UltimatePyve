@@ -127,14 +127,14 @@ class MainDisplay(ScalableComponent):
 
         for cursor, glyph_code in enumerate(self.world_clock.get_celestial_panorama()):
             glyph = self.celestial_glyphs[glyph_code]
-            glyph.blit_to_surface(Coord[int](self.celestial_char_offset + cursor + 1, 0), surf)
+            glyph.blit_at_char_coord(Coord[int](self.celestial_char_offset + cursor + 1, 0), surf)
 
     def draw_wind_direction(self):
         surf = self.get_input_surface()
         char_y_bottom = self.size_in_glyphs.h - 1
 
         for cursor, glyph in enumerate(self.font_mapper.map_ascii_string("East  Winds")):
-            glyph.blit_to_surface(Coord[int](self.celestial_char_offset + cursor + 2, char_y_bottom), surf)
+            glyph.blit_at_char_coord(Coord[int](self.celestial_char_offset + cursor + 2, char_y_bottom), surf)
 
     def set_info_panel_split_state(self, split: bool):
         self._info_panel_split = split

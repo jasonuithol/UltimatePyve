@@ -153,7 +153,7 @@ class InfoPanel(ScalableComponent):
         if vertikal:
             direction = Vector2[int](0,1)
         for glyph in glyphs:
-            glyph.blit_to_surface(char_coord, target)
+            glyph.blit_at_char_coord(char_coord, target)
             char_coord = char_coord + direction
 
     def _draw_border(self, y: int, border_glyphs: Iterable[U5Glyph], inset_glyphs: Iterable[U5Glyph]):

@@ -3,9 +3,10 @@ import pygame
 from typing import Self
 
 from dark_libraries.dark_math import Coord
+from dark_libraries.dark_surface import DarkSurface
 from models.enums.ega_palette_values import EgaPaletteValues
 
-class U5Glyph(tuple):
+class U5Glyph(tuple, DarkSurface):
 
     @classmethod
     def from_surface(cls, surface: pygame.Surface) -> Self:
@@ -18,15 +19,22 @@ class U5Glyph(tuple):
     def _surface(self) -> pygame.Surface:
         return self[0]
 
-    def get_surface(self) -> pygame.Surface:
+    # IMPLEMENTATION START: DarkSurface
+    #
+    def get_surface(self, inverted = False) -> pygame.Surface:
         return self._surface
 
-    def blit_to_surface(self, char_coord: Coord[int], target: pygame.Surface):
-        origin_x, origin_y = char_coord.x * self._surface.get_width(), char_coord.y * self._surface.get_height()
-        target.blit(
+    def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord[int], inverted = False):
+        target_surface.blit(
             source = self._surface,
-            dest   = (origin_x, origin_y)
+            dest   = pixel_offset.to_tuple()
         )
+    #
+    # IMPLEMENTATION FINISH: DarkSurface
+
+    def blit_at_char_coord(self, char_coord: Coord[int], target: pygame.Surface):
+        pixel_coord: Coord[int] = char_coord * self._surface.get_size()
+        self.blit_to_surface(target, pixel_coord)
 
     def rotate_90(self) -> Self:
         new_surface = pygame.transform.rotate(self._surface, 90)

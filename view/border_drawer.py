@@ -12,7 +12,7 @@ class BorderDrawer:
         self._target_surface = target_surface
 
     def _blit_at(self, glyph: U5Glyph, x: int, y: int):
-        glyph.blit_to_surface(Coord[int](x, y), self._target_surface)
+        glyph.blit_at_char_coord(Coord[int](x, y), self._target_surface)
 
     def _blit(self, glyph: U5Glyph, coords: Iterable[tuple[int,int]]):
         for coord in coords:

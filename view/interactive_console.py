@@ -45,7 +45,7 @@ class InteractiveConsole(ScalableComponent):
                 self._scroll()
                 self._return()
             char_coord = Coord[int](self._cursor_x, self._cursor_y)
-            glyph.blit_to_surface(char_coord, target)
+            glyph.blit_at_char_coord(char_coord, target)
             self._advance()
 
         if include_carriage_return:
@@ -76,13 +76,13 @@ class InteractiveConsole(ScalableComponent):
     def _erase_cursor(self):
         target = self.get_input_surface()
         coord = Coord[int](self._cursor_x, self._cursor_y)
-        self._blank_glyph.blit_to_surface(coord, target)
+        self._blank_glyph.blit_at_char_coord(coord, target)
 
     def _draw_cursor(self):
         target = self.get_input_surface()
         coord = Coord[int](self._cursor_x, self._cursor_y)
         current_frame: U5Glyph = self._cursor_sprite.get_current_frame(0.0)
-        current_frame.blit_to_surface(coord, target)
+        current_frame.blit_at_char_coord(coord, target)
 
     def draw(self):
         #

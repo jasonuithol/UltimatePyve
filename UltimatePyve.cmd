@@ -10,3 +10,4 @@ if errorlevel 1 (
     exit
 )
 py -3.13 main.py
+pause

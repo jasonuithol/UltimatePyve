@@ -2,22 +2,43 @@ import math
 import random
 
 from dark_libraries.dark_math import Coord
-from dark_libraries.dark_wave import DarkNote
+from dark_libraries.dark_wave import DarkNote, DarkWave, DarkWaveStereo
 
 from data.global_registry import GlobalRegistry
 from models.enums.projectile_type import ProjectileType
 from models.motion import Motion
+from models.projectile import Projectile
 from services.display_service import DisplayService
 from services.sound_service import SoundService
 
+from view.display_config import DisplayConfig
 from view.view_port import ViewPort
+
+# This can be anything we want really.
+PROJECTILE_UNSCALED_PIXELS_PER_SECOND = 16 # 11 * 16
 
 class SfxLibraryService:
 
+    display_config:  DisplayConfig
     global_registry: GlobalRegistry
     sound_service:   SoundService
     display_service: DisplayService
     view_port:       ViewPort
+
+    def _play_and_wait(self, dark_wave: DarkWave | DarkWaveStereo):
+
+        _, channel_handle = self.sound_service.play_sound(dark_wave)
+
+        # Keep rendering until the sound finished, but don't take any more input
+        while channel_handle.get_busy():
+            self.display_service.render()
+
+    def _create_motion(self, start_tile_coord: Coord[int], finish_tile_coord: Coord[int]) -> Motion:
+        return Motion(
+            start_tile_coord * self.display_config.TILE_SIZE, 
+            finish_tile_coord * self.display_config.TILE_SIZE, 
+            PROJECTILE_UNSCALED_PIXELS_PER_SECOND
+        )
 
     def bubbling_of_reality(self):
         # SOUND: The bubbling of the fabric of reality
@@ -29,19 +50,18 @@ class SfxLibraryService:
         ]
 
         cast_wave = generator.square_wave().sequence(bubbling_sequence).clamp(-0.4, +0.6).to_stereo()
+        self._play_and_wait(cast_wave)
 
-        _, channel_handle = self.sound_service.play_sound(cast_wave)
-
-        # Keep program alive long enough to hear it
-        while channel_handle.get_busy():
-            self.display_service.render()
-
-    def emit_projectile(self, projectile_type: ProjectileType):
+    def emit_projectile(self, projectile_type: ProjectileType, start: Coord[int], finish: Coord[int]):
 
         # ANIMATION: Kick-off a projectile
-        sprite = self.global_registry.projectiles.get(projectile_type)
+        sprite = self.global_registry.projectile_sprites.get(projectile_type)
+        motion = self._create_motion(start, finish)
+        projectile = Projectile(sprite, motion)
 
+        self.view_port.start_projectile(projectile)
 
+        # SOUND: Pee yow !
         generator = self.sound_service.get_generator()
 
         start_hz = 1400.0
@@ -56,11 +76,7 @@ class SfxLibraryService:
             deviation_hz = start_hz - end_hz
         ).to_stereo()
 
-        _, channel_handle = self.sound_service.play_sound(whoosh_wave)
-
-        # Keep program alive long enough to hear it
-        while channel_handle.get_busy():
-            self.display_service.render()
+        self._play_and_wait(whoosh_wave)
 
     def damage(self, coord: Coord[int]):
         # ANIMATION: Show The flashy explody tile.
@@ -70,11 +86,7 @@ class SfxLibraryService:
         generator = self.sound_service.get_generator()
         noise_wave = generator.white_noise(hz = 1600.0, sec = 0.25).to_stereo()
 
-        _, channel_handle = self.sound_service.play_sound(noise_wave)
-
-        # Keep program alive long enough to hear it
-        while channel_handle.get_busy():
-            self.display_service.render()
+        self._play_and_wait(noise_wave)
 
         # ANIMATION: Hide The flashy explody tile.
         self.view_port.set_damage_blast_at(None)
@@ -104,11 +116,7 @@ class SfxLibraryService:
 
         spell_wave = spell_wave_mixed.to_stereo().haas_widen(delay_seconds=0.02).stereo_phaser()        
 
-        _, channel_handle = self.sound_service.play_sound(spell_wave)
-
-        # Keep program alive long enough to hear it
-        while channel_handle.get_busy():
-            self.display_service.render()
+        self._play_and_wait(spell_wave)
 
         # VISUAL: Restore all colors of the viewport.
         self.view_port.invert_colors(False)

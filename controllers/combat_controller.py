@@ -167,7 +167,11 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 #
                 # FIRING / SWINGING
                 #
-                self.sfx_library_service.emit_projectile(projectile_type = ProjectileType.ThrowingAxe)
+                self.sfx_library_service.emit_projectile(
+                    projectile_type = ProjectileType.ThrowingAxe,
+                    start  = party_member.coord,
+                    finish = target_coord
+                )
 
                 target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
 
