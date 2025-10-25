@@ -150,7 +150,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 #
                 # AIMING
                 #
-                target_enemy = self._last_attacked_monster.get(party_member.name, None)
+                target_enemy = None# self._last_attacked_monster.get(party_member.name, None)
                 if target_enemy is None:
                     starting_coord = party_member.coord
                 else:
