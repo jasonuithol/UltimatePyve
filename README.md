@@ -35,7 +35,7 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
     Download this link https://github.com/jasonuithol/UltimatePyve/archive/refs/heads/master.zip
    
-## IMPORTANT REASSURANCE: This program does NOT alter your u5 or Ultima V directory or file contents.
+# IMPORTANT REASSURANCE: This program does NOT alter your u5 or Ultima V directory or file contents.
 
 Currently, this program looks for your Ultima V installation at:
 
@@ -45,24 +45,26 @@ This value lives in configure.py
 
 ## Running
 
-    Running the main engine:
+Running the main engine:
 
-    `python main.py`
+`python main.py`
 
 ---
 
 ## Legal
     
-    This project does not include any copyrighted game data.
-    You must supply your own legal copy of Ultima V: Warriors of Destiny.
+This project does not include any copyrighted game data.
+You must supply your own legal copy of Ultima V: Warriors of Destiny.
     
 ## Notes
 
-    - This engine is designed to be fully compatible with the original PC data files.
-    - It’s also built with modding and debugging in mind — you will once again soon be able to extend maps, add triggers, or inspect raw data without touching the original files
+- This engine is designed to be fully compatible with the original PC data files.
+- It’s also built with modding and debugging in mind — you will once again soon be able to extend maps, add triggers, or inspect raw data without touching the original files
 
 ## Acknowledgements
 
-    - https://wiki.ultimacodex.com the source of much wisdom especially around file formats, and various other stats and data.
-    - ChatGPT5 - for fearlessness in the face of custom file formats, sound processing algorithms and deep knowledge of python and pygame.
-    - Origin - for making the best computer game of 1987.
+- https://wiki.ultimacodex.com the source of much wisdom especially around file formats, 
+  and various other stats and data.
+- ChatGPT5 - for fearlessness in the face of custom file formats, sound processing algorithms 
+  and deep knowledge of python and pygame.
+- Origin - for making the best computer game of 1987.
