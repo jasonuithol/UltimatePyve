@@ -15,5 +15,7 @@ IF EXIST ".git" (
     rem del "%TMP%\UltimatePyve.zip"
     rem rmdir /S /Q "%TMP%\UltimatePyve"
 )
-echo Update complete
+
+echo "Update complete"
+
 pause
