@@ -11,21 +11,23 @@ class SavedGameLoader(LoggerMixin):
     def _load(self, u5_path: Path, load_name: str, save_name: str) -> SavedGame:
 
         # Detect GOG cloud_save
-        cloud_path = u5_path.joinpath("cloud_saves")
+        cloud_save = u5_path.joinpath("cloud_saves").joinpath(f"{load_name}.GAM")
 
         #
         # TODO: Remember this when saving a game.
         #
-        if cloud_path.exists():
-            use_this_folder = cloud_path
+        if cloud_save.exists():
+            load_path = cloud_save
         else:
-            use_this_folder = u5_path
+            load_path = u5_path.joinpath(f"{load_name}.GAM")
 
-        load_path = use_this_folder.joinpath(f"{load_name}.GAM")
         bytes = bytearray(load_path.read_bytes())
         self.log(f"Loaded {len(bytes)} bytes from {load_path}")
 
-        save_path = use_this_folder.joinpath(f"{save_name}.GAM")
+        #
+        # TODO: this shit
+        #
+        save_path = None
         return SavedGame(bytes, save_path)
 
     def load_existing(self, u5_path: Path, save_name="SAVED") -> SavedGame:
