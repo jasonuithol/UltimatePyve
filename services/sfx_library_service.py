@@ -59,7 +59,7 @@ class SfxLibraryService:
         motion = self._create_motion(start, finish)
         projectile = Projectile(sprite, motion)
 
-        self.view_port.start_projectile(projectile)
+#        self.view_port.start_projectile(projectile)
 
         # SOUND: Pee yow !
         generator = self.sound_service.get_generator()
