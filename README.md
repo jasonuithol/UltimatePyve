@@ -7,6 +7,8 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
 ## Requirements
 
+- This has been tested on Windows 10 and Windows 11.  
+
 - **A legal copy of the PC version of Ultima V**  
   You can purchase a DRM‑free copy from [GOG.com](https://www.gog.com/en/game/ultima_4_5_6).
 - **Python 3.13 or newer**  
@@ -50,7 +52,7 @@ Double-click on **UltimatePyve.cmd**
 
 ## Updating
 
-Double-click on **update.cmd** (Windows 10 onwards)
+Double-click on **update.cmd** (Windows 10 onwards - for earlier versions, [install curl](https://curl.se/download.html) and add it to the system PATH)
 
 ## Legal
     
