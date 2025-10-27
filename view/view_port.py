@@ -17,6 +17,8 @@ from .scalable_component import ScalableComponent
 
 ActiveCursor = tuple[Coord[int], Sprite[Tile]]
 
+BIBLICALLY_ACCURATE_PROJECILE_OFFSET = -3,1
+
 class ViewPort(ScalableComponent, LoggerMixin):
 
     # Injectable Properties
@@ -91,7 +93,7 @@ class ViewPort(ScalableComponent, LoggerMixin):
                 self.log(f"DEBUG: Terminating projectile {self._projectile} at {current_ticks}")
                 self._projectile = None
             else:
-                projectile_unscaled_pixel_coord = (projectile_world_coord + (3,-1)) * self.display_config.TILE_SIZE 
+                projectile_unscaled_pixel_coord = (projectile_world_coord + BIBLICALLY_ACCURATE_PROJECILE_OFFSET) * self.display_config.TILE_SIZE 
                 print(f"BILL ODDIE: projectile_world_coord={projectile_world_coord}, projectile_unscaled_pixel_coord={projectile_unscaled_pixel_coord}")
 #                self.draw_object_at_unscaled_coord(projectile_coord, glyph)
                 self.draw_object_at_unscaled_coord(projectile_unscaled_pixel_coord, self.global_registry.tiles.get(0))
