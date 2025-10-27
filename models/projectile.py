@@ -29,7 +29,7 @@ class Projectile[TSpriteType](tuple):
     def ticks_at_creation(self) -> int:
         return self[2]
     
-    def get_current_position(self) -> Coord[int]:
+    def get_current_position(self) -> Coord[float]:
         current_ticks = pygame.time.get_ticks()
         time_offset_seconds = (current_ticks - self.ticks_at_creation) / 1000
         return self.motion.get_current_position(time_offset_seconds)

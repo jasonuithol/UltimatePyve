@@ -1,8 +1,8 @@
 import pygame
 
-from dark_libraries.dark_math import Size
+from dark_libraries.dark_math        import Size
 from models.enums.ega_palette_values import EgaPaletteValues
-from services.surface_factory import SurfaceFactory
+from services.surface_factory        import SurfaceFactory
 
 class ScalableComponent:
 
@@ -13,13 +13,16 @@ class ScalableComponent:
         super().__init__()
         self._unscaled_size_in_pixels = unscaled_size_in_pixels
         self._scale_factor = scale_factor
+        self._unscaled_surface: pygame.Surface = None
 
-    def _after_inject(self):
-        self._unscaled_surface = self.surface_factory.create_surface(self._unscaled_size_in_pixels)
-        self._scaled_surface   = self.surface_factory.create_surface(self._unscaled_size_in_pixels.scale(self._scale_factor))
-        self._back_color       = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
+    def _create_surfaces(self):
+        if not self._unscaled_surface:
+            self._unscaled_surface = self.surface_factory.create_surface(self._unscaled_size_in_pixels)
+            self._scaled_surface   = self.surface_factory.create_surface(self._unscaled_size_in_pixels.scale(self._scale_factor))
+            self._back_color       = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
 
     def _clear(self):
+        self._create_surfaces()
         self._scaled_surface.fill(self._back_color)
         self._unscaled_surface.fill(self._back_color)
 
@@ -30,6 +33,7 @@ class ScalableComponent:
         return self._unscaled_size_in_pixels.scale(self._scale_factor)
 
     def get_input_surface(self) -> pygame.Surface:
+        self._create_surfaces()
         return self._unscaled_surface
 
     def get_output_surface(self) -> pygame.Surface:

@@ -22,7 +22,6 @@ class InteractiveConsole(ScalableComponent):
 
     def _after_inject(self):
         super().__init__(self.display_config.CONSOLE_SIZE * self.display_config.FONT_SIZE, self.display_config.SCALE_FACTOR)
-        super()._after_inject()
         self._cursor_y = self.display_config.CONSOLE_SIZE.h - 1
 
     def init(self):
