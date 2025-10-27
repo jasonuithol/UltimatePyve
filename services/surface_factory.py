@@ -8,7 +8,7 @@ class SurfaceFactory:
     display_config: DisplayConfig
 
     # must be called after pygame.init()
-    def _after_inject(self):
+    def init(self):
         self._build_palette_rgbs()
 
     def _build_palette_rgbs(self):
@@ -23,7 +23,7 @@ class SurfaceFactory:
         }
     
     def create_surface(self, size_in_pixels: Size[int]) -> pygame.Surface:
-        return pygame.Surface(size_in_pixels.to_tuple())
+        return pygame.Surface(size_in_pixels.to_tuple()).convert()
     
     def get_rgb_mapped_color(self, color: EgaPaletteValues | int):
         if isinstance(color, EgaPaletteValues):

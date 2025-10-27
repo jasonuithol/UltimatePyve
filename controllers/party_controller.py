@@ -9,7 +9,7 @@ from controllers.combat_controller import CombatController
 from controllers.move_controller import MoveController, MoveOutcome
 from controllers.ready_controller import ReadyController
 from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
-from dark_libraries.dark_math   import Vector2
+from dark_libraries.dark_math   import Rect, Vector2
 from dark_libraries.logging     import LoggerMixin
 
 from data.global_registry     import GlobalRegistry
@@ -23,10 +23,13 @@ from models.enums.inventory_offset import InventoryOffset
 # singletons
 from models.agents.party_agent import PartyAgent
 
+from services.display_service import DisplayService
 from services.main_loop_service import MainLoopService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
 from services.world_clock import WorldClock
+from view.display_config import DisplayConfig
+from view.view_port import ViewPort
 
 PASS_TIME      = True
 DONT_PASS_TIME = False
@@ -48,8 +51,13 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
     cast_controller: CastController
+    view_port: ViewPort
+    display_config: DisplayConfig
+    display_service: DisplayService
 
     def run(self):
+
+        self._update_view_coords()
 
         self.npc_service.add_npc(self.party_agent)
 
@@ -77,6 +85,19 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
                     #
                     self.combat_controller.enter_combat(enemy_npc)
 
+    def _update_view_coords(self):
+        # the centre of the viewport
+        party_location = self.party_agent.get_current_location()
+
+        minimum_corner = party_location.coord - self.display_config.VIEW_PORT_SIZE // 2
+
+        # the window into the world coordinate system that the viewport will represent
+        window = Rect[int](minimum_corner, self.display_config.VIEW_PORT_SIZE)
+
+        self.view_port.set_window(window)
+        self.display_service.set_fov_centre(party_location)
+        self.display_service.set_map_level(map_level_key = (party_location.location_index, party_location.level_index))
+
     def dispatch_input(self) -> bool:
         
         event = self.main_loop_service.get_next_event()
@@ -91,6 +112,19 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         direction_vector = DIRECTION_MAP.get(event.key, None)
         if not direction_vector is None:
             self.move(direction_vector)
+            self._update_view_coords()
+
+            active_map: U5Map = self.global_registry.maps.get(self.party_agent.get_current_location().location_index)
+
+            # Update window title with current location/world of player.
+            pygame.display.set_caption(
+                f"{active_map.name} [{self.party_agent.get_current_location().coord}]" 
+                +
+                f" fps={int(self.display_service.clock.get_fps())}"
+                +
+                f" time={self.world_clock.get_daylight_savings_time()}"
+            )
+
             return PASS_TIME
 
         elif event.key == pygame.K_SPACE:
@@ -163,9 +197,11 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
             f", last_nesw_dir={self.party_agent.last_nesw_dir}"
         )
 
+    '''
     def load_party_inventory(self, inventory: Iterable[tuple[InventoryOffset, int]]):
         for inventory_offset, additional_quantity in inventory:
             self.party_inventory.add(inventory_offset, additional_quantity)
+    '''
 
     # TODO: Choose a better name for this method
 

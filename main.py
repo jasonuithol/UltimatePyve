@@ -29,8 +29,6 @@ from service_composition import compose
 
 from controllers.initialisation_controller import InitialisationController
 
-pygame.init()
-
 provider = ServiceProvider()
 
 compose(provider)

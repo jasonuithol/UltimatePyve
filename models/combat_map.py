@@ -1,4 +1,5 @@
 from dark_libraries.dark_math import Coord, Size
+from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 from models.u5_map_level      import U5MapLevel
 
 SpawnCoordinates = tuple[Coord[int],...]
@@ -13,7 +14,7 @@ NESWSpawnCoordinateTuple = tuple[
 
 class CombatMap(U5MapLevel):
     def __init__(self, data: dict[Coord[int], int], size: Size[int], party_spawn_coords: NESWSpawnCoordinateTuple, monster_spawn_coords: SpawnCoordinates):
-        super().__init__(data, size)
+        super().__init__(data, size, COMBAT_MAP_LOCATION_INDEX, 0)
 
         self._party_spawn_coords   = party_spawn_coords    
         self._monster_spawn_coords = monster_spawn_coords

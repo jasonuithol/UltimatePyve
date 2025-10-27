@@ -19,8 +19,11 @@ class ProjectileSpriteLoader(LoggerMixin):
         axe3 = axe2.rotate_90()
         axe4 = axe3.rotate_90()
         frames = list[U5Glyph]([axe1,axe2,axe3,axe4])
+
+        '''
         for f in frames:
             f.get_surface().set_colorkey((0,0,0))
+        '''
 
         axe_sprite = Sprite(frames, frame_duration_seconds = 0.25)
         self.global_registry.projectile_sprites.register(ProjectileType.ThrowingAxe, axe_sprite)

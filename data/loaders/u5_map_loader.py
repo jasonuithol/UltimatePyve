@@ -26,14 +26,16 @@ class U5MapLoader(LoggerMixin):
         return len(self.metadata)
 
     @classmethod
-    def convert_tilearray_to_map_level(cls, tiledata: bytearray, map_size: Size) -> U5MapLevel:
+    def convert_tilearray_to_map_level(cls, tiledata: bytearray, map_size: Size, location_index: int, level_index: int) -> U5MapLevel:
         tiles_dict = {
             coord : tiledata[(map_size.w * coord.y) + coord.x]
             for coord in map_size
         }
         return U5MapLevel(
             data = tiles_dict,
-            size = map_size
+            size = map_size,
+            location_index = location_index,
+            level_index = level_index
         )
     
     def load_location_map(self, trigger_index: int) -> U5Map:
@@ -52,14 +54,6 @@ class U5MapLoader(LoggerMixin):
         map_byte_length = LOCATION_WIDTH * LOCATION_HEIGHT
         offset = meta.map_index_offset * map_byte_length
 
-        levels = list[U5MapLevel]()
-        with open(path, "rb") as f:
-            f.seek(offset)
-            for _ in range(meta.num_levels):
-                tile_ids = bytearray(f.read(map_byte_length))
-                map_level = __class__.convert_tilearray_to_map_level(tile_ids, map_size)
-                levels.append(map_level)
-
         def level_index(ordinal_index: int, has_basement: bool) -> int:
             if has_basement:
                 if ordinal_index == 0:
@@ -70,11 +64,22 @@ class U5MapLoader(LoggerMixin):
             else:
                 return ordinal_index
 
+        levels = list[U5MapLevel]()
+
+        with open(path, "rb") as f:
+            f.seek(offset)
+            for ordinal_index in range(meta.num_levels):
+                tile_ids = bytearray(f.read(map_byte_length))
+                map_level = __class__.convert_tilearray_to_map_level(tile_ids, map_size, meta.location_index, level_index(ordinal_index, meta.has_basement))
+                levels.append(map_level)
+
+        levels_dict = {
+            level._level_index : level
+            for level in levels
+        }
+
         return U5Map(
-            levels = {
-                level_index(ordinal_index, meta.has_basement) : level
-                for ordinal_index, level in enumerate(levels)
-            },
+            levels = levels_dict,
             location_metadata = meta
         )
 
@@ -106,7 +111,7 @@ class U5MapLoader(LoggerMixin):
         
         # Convert to U5MapLevel compatible format.                    
         map_size = Size(MAP_DIM, MAP_DIM)
-        return __class__.convert_tilearray_to_map_level(tiles, map_size)
+        return __class__.convert_tilearray_to_map_level(tiles, map_size, 0 , 0)
 
     def load_underworld(self) -> U5MapLevel:
 
@@ -129,7 +134,7 @@ class U5MapLoader(LoggerMixin):
 
                 # Convert to U5MapLevel compatible format.                    
         map_size = Size(MAP_DIM, MAP_DIM)
-        return __class__.convert_tilearray_to_map_level(tiles, map_size)
+        return __class__.convert_tilearray_to_map_level(tiles, map_size, 0, 255)
     
     def build_world_map(self):
 

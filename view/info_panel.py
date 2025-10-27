@@ -75,7 +75,6 @@ class InfoPanel(ScalableComponent):
 
     def _after_inject(self):
         super().__init__(self.display_config.INFO_PANEL_SIZE * self.display_config.FONT_SIZE, self.display_config.SCALE_FACTOR)
-        super()._after_inject()
 
     def _clear(self):
         self.get_input_surface().fill((0,0,0))

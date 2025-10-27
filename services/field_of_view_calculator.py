@@ -12,7 +12,7 @@ class FieldOfViewCalculator:
     def calculate_fov_visibility(
         self, 
         fov_centre_location: GlobalLocation,
-        view_rect: Rect[int]          # must be in world co-ordinates.
+        view_rect: Rect[int] # must be in world co-ordinates.
     ) -> set[Coord[int]]:
 
         # these are the coords you can be on to make windows transparent to light.
@@ -41,6 +41,10 @@ class FieldOfViewCalculator:
 
             if allows_light or world_coord == fov_centre_location.coord:
                 for neighbour_coord in world_coord.get_8way_neighbours():
+
+                    # In combat mode, this would spill outside the map until it hits the actual viewport boundary.
+                    # This is not a problem in itself.  Just worth noting that you're going to get coords returned
+                    # that are outside the world-coord bounday
                     if view_rect.is_in_bounds(neighbour_coord) and not neighbour_coord in visited:
 
                         # this square is in view, and has a neighbour that is visible, and doesn't block light.

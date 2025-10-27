@@ -112,6 +112,7 @@ class ServiceProvider(LoggerMixin):
         for instance in self._instances.values():
             if hasattr(instance, '_after_inject'):
                 self.log(f"DEBUG: Found _after_inject handler for {instance.__class__.__name__}, invoking...")
+                self.log(f"WARNING: _after_inject is more trouble than it's worth and is now SCHEDULED FOR DEMOLITION")
                 instance._after_inject()
 
     def resolve(self, type_):

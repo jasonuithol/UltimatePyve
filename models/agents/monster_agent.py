@@ -1,6 +1,7 @@
 from dark_libraries.dark_math import Coord
 
 from models.agents.combat_agent import CombatAgent
+from models.equipable_item_type import EquipableItemType
 from models.npc_metadata        import NpcMetadata
 from models.sprite              import Sprite
 from models.tile import Tile
@@ -52,7 +53,7 @@ class MonsterAgent(CombatAgent):
     def hitpoints(self, val: int):
         self._current_hitpoints = val
 
-    def get_damage(self, attack_type: chr) -> int:
+    def get_damage(self, weapon: EquipableItemType) -> int:
         if self._npc_metadata.damage == 0:
             self.log(f"ERROR: monster {self.name} has zero damage")
         return self._npc_metadata.damage

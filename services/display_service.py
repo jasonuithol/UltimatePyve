@@ -7,11 +7,11 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.agents.npc_agent import NpcAgent
-from models.agents.party_agent import PartyAgent
+from models.global_location import GlobalLocation
 from models.sprite import Sprite
 from models.tile   import Tile
-from models.u5_map import U5Map
 
+from models.u5_map_level import U5MapLevel
 from view.display_config      import DisplayConfig
 from view.info_panel import InfoPanel
 from view.interactive_console import InteractiveConsole
@@ -42,8 +42,6 @@ class DisplayService(LoggerMixin):
     lighting_service:  LightingService
     npc_service:       NpcService
 
-    party_agent: PartyAgent
-
     def init(self):
 
         self.screen = pygame.display.set_mode(
@@ -53,6 +51,8 @@ class DisplayService(LoggerMixin):
         )
         self.clock = pygame.time.Clock()
         self._cursors = dict[int, tuple[Coord[int], Sprite[Tile]]]()
+        self._map_level_key: tuple[int, int] = None
+        self._fov_centre: Coord[int] = None
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
@@ -66,34 +66,55 @@ class DisplayService(LoggerMixin):
         del self._cursors[cursor_type]
         self.log(f"DEBUG: Removed cursor {cursor_type}")
 
+    def get_viewable_coords(self) -> set[Coord[int]]:
+
+        if self._fov_centre is None:
+            return None
+
+        visible_coords = self.fov_calculator.calculate_fov_visibility(
+            self._fov_centre,
+            self.view_port.window
+        )
+
+        lit_coords = self.lighting_service.calculate_lighting(
+            self._fov_centre,
+            self.lighting_service.get_player_light_radius(),
+            visible_coords
+        )
+
+        return lit_coords.intersection(visible_coords)
+
+    def set_map_level(self, map_level_key: tuple[int,int]): # location_index, level_index
+        self._map_level_key = map_level_key
+        self.log(f"DEBUG: New map level set: {map_level_key}")
+
+    def set_fov_centre(self, fov_centre: Coord[int]):
+        self._fov_centre = fov_centre
+        self.log(f"DEBUG: New fov_centre set: {fov_centre}")
+
     #
     # TODO: move to ViewPortDataProvider
     #
     def _get_map_tiles(self) -> dict[Coord[int], Tile]:
 
-        player_location = self.party_agent.get_current_location()
+        assert self._map_level_key, "No _map_level_key set"
+
+        #
+        # EMERGENCY TODO: just no. FOR A START - it relies on party_agent. enough said for now I guess
+        #
+
+        viewable_coords = self.get_viewable_coords()
 
         map_level_contents: MapLevelContents = self.map_cache_service.get_map_level_contents(
-            player_location.location_index,
-            player_location.level_index
-        )
-
-        visible_coords = self.fov_calculator.calculate_fov_visibility(
-            player_location,
-            self.view_port.view_rect
-        )
-
-        lit_coords = self.lighting_service.calculate_lighting(
-            player_location,
-            self.lighting_service.get_player_light_radius(),
-            visible_coords
+            location_index = self._map_level_key[0],
+            level_index    = self._map_level_key[1]
         )
 
         npcs = self.npc_service.get_npcs()
         assert len(npcs) > 0, "Must have at least 1 NPC (the player) to draw"
 
         def get_frame(world_coord: Coord[int]) -> Tile:
-            if not world_coord in visible_coords.intersection(lit_coords):
+            if viewable_coords and (not world_coord in viewable_coords):
                 return None
             npc: NpcAgent = npcs.get(world_coord, None)
             if not npc is None:
@@ -106,22 +127,10 @@ class DisplayService(LoggerMixin):
         return {
             world_coord:
             get_frame(world_coord)
-            for world_coord in self.view_port.view_rect
+            for world_coord in self.view_port.window
         }
 
     def render(self):
-
-        party_location = self.party_agent.get_current_location()
-        active_map: U5Map = self.global_registry.maps.get(party_location.location_index)
-
-        # Update window title with current location/world of player.
-        pygame.display.set_caption(
-            f"{active_map.name} [{party_location.coord}]" 
-            +
-            f" fps={int(self.clock.get_fps())}"
-            +
-            f" time={self.world_clock.get_daylight_savings_time()}"
-        )
 
         scaled_border_thiccness = self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR
 
@@ -152,8 +161,6 @@ class DisplayService(LoggerMixin):
         vp_scaled_surface = self.view_port.get_output_surface()
         vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)
         self.screen.blit(vp_scaled_surface, vp_scaled_pixel_offset)
-
-
 
         right_hand_element_x = vp_scaled_surface.get_width() + scaled_border_thiccness * 2
 

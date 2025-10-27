@@ -15,7 +15,7 @@ from view.display_config import DisplayConfig
 from view.view_port import ViewPort
 
 # This can be anything we want really.
-PROJECTILE_UNSCALED_PIXELS_PER_SECOND = 16 # 11 * 16
+PROJECTILE_SPATIAL_UNITS_PER_SECOND = 11
 
 class SfxLibraryService:
 
@@ -33,12 +33,13 @@ class SfxLibraryService:
         while channel_handle.get_busy():
             self.display_service.render()
 
-    def _create_motion(self, start_tile_coord: Coord[int], finish_tile_coord: Coord[int]) -> Motion:
-        return Motion(
-            start_tile_coord * self.display_config.TILE_SIZE, 
-            finish_tile_coord * self.display_config.TILE_SIZE, 
-            PROJECTILE_UNSCALED_PIXELS_PER_SECOND
+    def _create_motion(self, start_world_coord: Coord[int], finish_world_coord: Coord[int]) -> Motion:
+        motion = Motion(
+            start_world_coord, 
+            finish_world_coord, 
+            PROJECTILE_SPATIAL_UNITS_PER_SECOND
         )
+        return motion
 
     def bubbling_of_reality(self):
         # SOUND: The bubbling of the fabric of reality
@@ -52,14 +53,14 @@ class SfxLibraryService:
         cast_wave = generator.square_wave().sequence(bubbling_sequence).clamp(-0.4, +0.6).to_stereo()
         self._play_and_wait(cast_wave)
 
-    def emit_projectile(self, projectile_type: ProjectileType, start: Coord[int], finish: Coord[int]):
+    def emit_projectile(self, projectile_type: ProjectileType, start_world_coord: Coord[int], finish_world_coord: Coord[int]):
 
         # ANIMATION: Kick-off a projectile
         sprite = self.global_registry.projectile_sprites.get(projectile_type)
-        motion = self._create_motion(start, finish)
+        motion = self._create_motion(start_world_coord, finish_world_coord)
         projectile = Projectile(sprite, motion)
 
-#        self.view_port.start_projectile(projectile)
+        self.view_port.start_projectile(projectile)
 
         # SOUND: Pee yow !
         generator = self.sound_service.get_generator()
@@ -77,6 +78,10 @@ class SfxLibraryService:
         ).to_stereo()
 
         self._play_and_wait(whoosh_wave)
+
+        # wait for project to do .... what it does.
+        while not projectile.can_stop():
+            pass
 
     def damage(self, coord: Coord[int]):
         # ANIMATION: Show The flashy explody tile.
@@ -139,4 +144,18 @@ class SfxLibraryService:
             # SOUND: "WHOOIIIP !"
             # ANIMATION: n/a
 
-        return
+    def action_blocked(self):
+
+        # SOUND: make an annoying tone.
+        pass
+
+    def combat_victory(self):
+
+        # SOUND: play a short victorious musical exclamation !
+        pass
+
+
+    def whoooeeep(self):
+
+        # SOUND: short whoooeeep for missing an attack, failing a spell cast, break a key or escaping combat.
+        pass

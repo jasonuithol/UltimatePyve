@@ -1,4 +1,6 @@
 from pathlib import Path
+
+import pygame
 from dark_libraries.logging   import LoggerMixin
 
 from data.loaders.save_game_loader import SavedGameLoader
@@ -17,6 +19,7 @@ from services.info_panel_service import InfoPanelService
 from services.light_map_level_baker import LightMapLevelBaker
 from services.map_cache.map_cache_service import MapCacheService
 from services.sound_service import SoundService
+from services.surface_factory import SurfaceFactory
 from services.world_clock           import WorldClock
 from services.world_loot.world_loot_service import WorldLootService
 from view.info_panel import InfoPanel
@@ -46,12 +49,13 @@ class InitialisationController(LoggerMixin):
     info_panel: InfoPanel
     interactive_console: InteractiveConsole
     sound_service: SoundService
-
+    surface_factory: SurfaceFactory
 
     def init(self, u5_path: Path):
 
         # Set's pygame screen/video mode.
         self.display_service.init()
+        self.surface_factory.init()
 
         self.global_registry_loader.load(u5_path)
 

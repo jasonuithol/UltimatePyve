@@ -100,6 +100,7 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
 
         assert not starting_coord is None, "starting_coord cannot be None"
         assert range_ > 0, "range_ cannot be zero"
+        assert boundary_rect.is_in_bounds(starting_coord), "starting_coord must be in bounds."
 
         self.console_service.print_ascii("Aim !")
         cursor = starting_coord

@@ -1,30 +1,48 @@
 import colorsys
 import pygame
+
+from typing import Generator, Iterator
 from dark_libraries.dark_math import Coord, Size
 from dark_libraries.registry import Registry
 from models.tile import TILE_ID_GRASS, Tile
 
 class U5MapLevel:
-    def __init__(self, data: dict[Coord[int], int], size: Size[int]):
+    def __init__(self, data: dict[Coord[int], int], size: Size[int], location_index: int, level_index: int):
 
         self._data = data
         self._size = size
+        self._location_index = location_index
+        self._level_index = level_index
 
-    def get_tile_id(self, coord: Coord[int]):
+    def get_tile_id(self, coord: Coord[int]) -> int:
         # Allow out-of-bounds queries.
         return self._data.get(coord, None)
     
-    def get_size(self):
+    def get_size(self) -> int:
+        print("(u5_map_level) get_size is DEPRECATED")
         return self._size
 
-    def coords(self):
+    @property
+    def size(self):
+        return self._size
+
+    @property
+    def location_index(self):
+        return self._location_index
+
+    @property
+    def level_index(self):
+        return self._level_index
+
+    def coords(self) -> Generator[Coord[int]]:
         for y in range(self._size.h):
             for x in range(self._size.w):
                 yield Coord[int](x,y)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[Coord[int], int]]:
         return self._data.items().__iter__()
 
+    # This is more for the object viewer than anything else.
     def render_to_surface(self, tiles: Registry[int, Tile]) -> pygame.Surface:
 
         if tiles:
