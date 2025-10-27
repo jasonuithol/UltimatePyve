@@ -17,6 +17,7 @@ from data.global_registry     import GlobalRegistry
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.global_location     import GlobalLocation
 from models.interactable        import Interactable
+from models.tile import TILE_ID_GRASS
 from models.u5_map              import U5Map
 from models.enums.inventory_offset import InventoryOffset
 
@@ -27,7 +28,9 @@ from services.display_service import DisplayService
 from services.main_loop_service import MainLoopService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
+from services.view_port_data_provider import ViewPortDataProvider
 from services.world_clock import WorldClock
+from view.view_port import PARTY_MODE, ViewPort
 
 PASS_TIME      = True
 DONT_PASS_TIME = False
@@ -51,6 +54,9 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     ready_controller: ReadyController
     cast_controller: CastController
 
+    view_port_data_provider: ViewPortDataProvider
+    view_port: ViewPort
+    
     def run(self):
 
         self.npc_service.add_npc(self.party_agent)
@@ -59,6 +65,10 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         self.dark_event_service.loaded(self.party_agent.get_current_location())
 
         self._set_window_title()
+        self.view_port.set_default_tile(
+            self.global_registry.tiles.get(TILE_ID_GRASS)
+        )
+        self.view_port_data_provider.set_mode(PARTY_MODE)
 
         while not self._has_quit:
 
@@ -167,12 +177,6 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
             +
             f", last_nesw_dir={self.party_agent.last_nesw_dir}"
         )
-
-    '''
-    def load_party_inventory(self, inventory: Iterable[tuple[InventoryOffset, int]]):
-        for inventory_offset, additional_quantity in inventory:
-            self.party_inventory.add(inventory_offset, additional_quantity)
-    '''
 
     def _update_transport_state(self, move_offset: Vector2[int]):
         if move_offset.x == 1:

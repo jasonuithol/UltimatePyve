@@ -1,8 +1,10 @@
-from dark_libraries.dark_math import Coord, Rect
+from dark_libraries.dark_math import Coord, Rect, Vector2
 
 from data.global_registry import GlobalRegistry
 from models.global_location import GlobalLocation
+from models.terrain import Terrain
 from services.map_cache.map_cache_service import MapCacheService
+from services.map_cache.map_level_contents import MapLevelContents
 
 class FieldOfViewCalculator:
 
@@ -30,16 +32,26 @@ class FieldOfViewCalculator:
 
             result.add(world_coord)
 
+            #
+            # Calculate allows_light
+            #
+
             interactable = self.global_registry.interactables.get(world_coord)
             if interactable is None:
                 coord_contents = map_level_contents.get_coord_contents(world_coord)
-                terrain = coord_contents.get_terrain()
+                if coord_contents is None:
+                    allows_light = False
+                else:
+                    terrain = coord_contents.get_terrain()
+                    allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)        
             else:
                 terrain = self.global_registry.terrains.get(interactable.get_current_tile_id())
-            
-            allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)
+                allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)        
 
             if allows_light or world_coord == fov_centre_location.coord:
+                #
+                # Propogate the fill algorithm
+                #
                 for neighbour_coord in world_coord.get_8way_neighbours():
                     if view_rect.is_in_bounds(neighbour_coord) and not neighbour_coord in visited:
 

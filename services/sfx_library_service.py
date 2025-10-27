@@ -8,6 +8,7 @@ from data.global_registry import GlobalRegistry
 from models.enums.projectile_type import ProjectileType
 from models.motion import Motion
 from models.projectile import Projectile
+from services.console_service import ConsoleService
 from services.display_service import DisplayService
 from services.sound_service import SoundService
 
@@ -24,6 +25,7 @@ class SfxLibraryService:
     sound_service:   SoundService
     display_service: DisplayService
     view_port:       ViewPort
+    console_service: ConsoleService
 
     def _play_and_wait(self, dark_wave: DarkWave | DarkWaveStereo):
 
@@ -60,6 +62,8 @@ class SfxLibraryService:
         sprite = self.global_registry.projectile_sprites.get(projectile_type)
         motion = self._create_motion(start_world_coord, finish_world_coord)
         projectile = Projectile(sprite, motion)
+
+#        self.console_service.print_glyphs(sprite.frames)
 
         self.view_port.start_projectile(projectile)
 

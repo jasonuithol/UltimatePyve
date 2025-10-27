@@ -6,10 +6,11 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
+#from models.agents.party_agent import PartyAgent
 from models.agents.party_agent import PartyAgent
 from models.projectile import Projectile
 from models.sprite import Sprite
-from models.tile import Tile, TILE_ID_BLACK
+from models.tile import Tile
 from models.u5_glyph import U5Glyph
 
 from .display_config import DisplayConfig
@@ -17,7 +18,10 @@ from .scalable_component import ScalableComponent
 
 ActiveCursor = tuple[Coord[int], Sprite[Tile]]
 
-BIBLICALLY_ACCURATE_PROJECILE_OFFSET = -3,1
+BIBLICALLY_ACCURATE_PROJECILE_OFFSET = 3.25,3
+
+PARTY_MODE  = 123
+COMBAT_MODE = 456
 
 class ViewPort(ScalableComponent, LoggerMixin):
 
@@ -34,6 +38,7 @@ class ViewPort(ScalableComponent, LoggerMixin):
 
         self._cursors = dict[int, ActiveCursor]()
         self._default_tile: Tile = None
+        self._mode: int = None
 
     def _after_inject(self):
         ScalableComponent.__init__(
@@ -42,6 +47,7 @@ class ViewPort(ScalableComponent, LoggerMixin):
             scale_factor            = self.display_config.SCALE_FACTOR
         )
         super()._after_inject()
+        self._combat_view_rect = Rect(Coord(-3,-3), self.display_config.VIEW_PORT_SIZE)
 
     def invert_colors(self, value: bool):
         self.log(f"Invert colors: {value}")
@@ -67,6 +73,21 @@ class ViewPort(ScalableComponent, LoggerMixin):
     def set_default_tile(self, tile: Tile):
         self._default_tile = tile
 
+    def set_mode(self, value: int):
+        self.log(f"Setting mode to {value}")
+        self._mode = value
+
+    @property
+    def view_rect(self) -> Rect[int]:
+        if self._mode == PARTY_MODE:
+            #
+            # TODO: Use a Viewport Service
+            #
+            minimum_corner = self.party_agent.coord - (self.display_config.VIEW_PORT_SIZE // 2)
+            return Rect[int](minimum_corner, self.display_config.VIEW_PORT_SIZE)
+        else:
+            return self._combat_view_rect            
+
     # TODO: We have returned to view_port coords now
     def draw_map(self, tiles: dict[Coord[int], Tile]) -> None:
 
@@ -77,7 +98,6 @@ class ViewPort(ScalableComponent, LoggerMixin):
 
         if self._damage_blast_coord:
             self.draw_tile(self._damage_blast_coord, self.global_registry.tiles.get(0))
-
 
         #
         # TODO: Move into ViewportService ?
@@ -94,9 +114,9 @@ class ViewPort(ScalableComponent, LoggerMixin):
                 self._projectile = None
             else:
                 projectile_unscaled_pixel_coord = (projectile_world_coord + BIBLICALLY_ACCURATE_PROJECILE_OFFSET) * self.display_config.TILE_SIZE 
-                print(f"BILL ODDIE: projectile_world_coord={projectile_world_coord}, projectile_unscaled_pixel_coord={projectile_unscaled_pixel_coord}")
-#                self.draw_object_at_unscaled_coord(projectile_coord, glyph)
-                self.draw_object_at_unscaled_coord(projectile_unscaled_pixel_coord, self.global_registry.tiles.get(0))
+#                print(f"BILL ODDIE: projectile_world_coord={projectile_world_coord}, projectile_unscaled_pixel_coord={projectile_unscaled_pixel_coord}")
+                self.draw_object_at_unscaled_coord(projectile_unscaled_pixel_coord, glyph)
+#                self.draw_object_at_unscaled_coord(projectile_unscaled_pixel_coord, self.global_registry.tiles.get(0))
 
         #
         # TODO: Move into ViewportService ?
@@ -110,16 +130,11 @@ class ViewPort(ScalableComponent, LoggerMixin):
                 cursor_sprite.get_current_frame(0.0)
             )
 
-    @property
-    def view_rect(self) -> Rect[int]:
-        party_location = self.party_agent.get_current_location()
-        minimum_corner = party_location.coord - self.display_config.VIEW_PORT_SIZE // 2
-        return Rect[int](minimum_corner, self.display_config.VIEW_PORT_SIZE)
 
     def draw_tile(self, world_coord: Coord[int], tile: Tile):
 
         if tile is None:
-            tile = self.global_registry.tiles.get(TILE_ID_BLACK)
+            tile = self._default_tile
 
         unscaled_pixel_coord = (world_coord - self.view_rect.minimum_corner).scale(self.display_config.TILE_SIZE)
         self.draw_object_at_unscaled_coord(unscaled_pixel_coord, tile)

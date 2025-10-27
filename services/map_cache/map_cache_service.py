@@ -25,6 +25,7 @@ class MapCacheService(LoggerMixin, DarkEventListenerMixin):
 
     # Call this AFTER mods have loaded.
     def init(self):
+        '''
         MapLevelContents.set_out_of_bounds_coord_content(
             CoordContents(
                 tile         = self.global_registry.tiles.get(TILE_ID_GRASS),
@@ -32,6 +33,7 @@ class MapCacheService(LoggerMixin, DarkEventListenerMixin):
                 sprite       = None
             )            
         )
+        '''
 
         # cache every map
         for u5_map in self.global_registry.maps.values():
