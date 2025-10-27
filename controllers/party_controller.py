@@ -23,6 +23,7 @@ from models.enums.inventory_offset import InventoryOffset
 # singletons
 from models.agents.party_agent import PartyAgent
 
+from services.display_service import DisplayService
 from services.main_loop_service import MainLoopService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
@@ -42,6 +43,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     console_service:    ConsoleService
     npc_service:        NpcService
     world_clock:        WorldClock
+    display_service:    DisplayService
 
     combat_controller:  CombatController
     move_controller:    MoveController
@@ -55,6 +57,8 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
         # Propogate the 'loaded' event to listeners.
         self.dark_event_service.loaded(self.party_agent.get_current_location())
+
+        self._set_window_title()
 
         while not self._has_quit:
 
@@ -91,6 +95,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         direction_vector = DIRECTION_MAP.get(event.key, None)
         if not direction_vector is None:
             self.move(direction_vector)
+            self._set_window_title()
             return PASS_TIME
 
         elif event.key == pygame.K_SPACE:
@@ -163,12 +168,11 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
             f", last_nesw_dir={self.party_agent.last_nesw_dir}"
         )
 
+    '''
     def load_party_inventory(self, inventory: Iterable[tuple[InventoryOffset, int]]):
         for inventory_offset, additional_quantity in inventory:
             self.party_inventory.add(inventory_offset, additional_quantity)
-
-    # TODO: Choose a better name for this method
-
+    '''
 
     def _update_transport_state(self, move_offset: Vector2[int]):
         if move_offset.x == 1:
@@ -275,3 +279,16 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     def rotate_transport(self):
         transport_mode = (self.party_agent.transport_mode + 1) % len(self.global_registry.transport_modes)
         self.party_agent.set_transport_state(transport_mode, self.party_agent.last_east_west, self.party_agent.last_nesw_dir)
+
+    def _set_window_title(self):
+        party_location = self.party_agent.get_current_location()
+        active_map: U5Map = self.global_registry.maps.get(party_location.location_index)
+
+        # Update window title with current location/world of player.
+        self.display_service.set_window_title(
+            f"{active_map.name} [{party_location.coord}]" 
+            +
+            f" time={self.world_clock.get_daylight_savings_time()}"
+        )
+
+

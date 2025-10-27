@@ -12,6 +12,8 @@ class Motion(tuple):
         end_coord:   Coord[int],
         spatial_units_per_second: float
     ):
+        assert start_coord != end_coord, "That's not very dark_engine of you"
+
         normal_x, normal_y = start_coord.normal(end_coord)
 
         return tuple.__new__(cls, (
@@ -44,8 +46,7 @@ class Motion(tuple):
 
     def get_current_position(self, time_offset_seconds: float) -> Coord[int]:
         spatial_units_travelled = time_offset_seconds * self.spatial_units_per_second
-        current_coord_float: Coord[float] = self.start_coord + (self.direction_normal * spatial_units_travelled)
-        return current_coord_float.intify()    
+        return self.start_coord + (self.direction_normal * spatial_units_travelled)
 
     def __str__(self) -> str:
         return (

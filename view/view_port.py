@@ -1,15 +1,21 @@
 import pygame
+
 from dark_libraries.dark_math import Coord, Rect
 from dark_libraries.dark_surface import DarkSurface
 from dark_libraries.logging import LoggerMixin
+
 from data.global_registry import GlobalRegistry
+
 from models.agents.party_agent import PartyAgent
 from models.projectile import Projectile
+from models.sprite import Sprite
 from models.tile import Tile, TILE_ID_BLACK
 from models.u5_glyph import U5Glyph
 
 from .display_config import DisplayConfig
 from .scalable_component import ScalableComponent
+
+ActiveCursor = tuple[Coord[int], Sprite[Tile]]
 
 class ViewPort(ScalableComponent, LoggerMixin):
 
@@ -23,6 +29,9 @@ class ViewPort(ScalableComponent, LoggerMixin):
         self.invert_colors(False)
         self.set_damage_blast_at(None)
         self._projectile: Projectile = None
+
+        self._cursors = dict[int, ActiveCursor]()
+        self._default_tile: Tile = None
 
     def _after_inject(self):
         ScalableComponent.__init__(
@@ -43,6 +52,19 @@ class ViewPort(ScalableComponent, LoggerMixin):
         self._projectile = projectile
         self.log(f"DEBUG: Starting projectile={projectile}")
 
+    def set_cursor(self, cursor_type: int, cursor_coord: Coord[int], cursor_sprite: Sprite[Tile]):
+        assert not cursor_coord is None, "cursor_coord cannot be None"
+        assert not cursor_sprite is None, "cursor_sprite cannot be None"
+        self._cursors[cursor_type] = (cursor_coord, cursor_sprite)
+        self.log(f"DEBUG: Set cursor ({cursor_type}) to {cursor_coord}")
+
+    def remove_cursor(self, cursor_type: int):
+        del self._cursors[cursor_type]
+        self.log(f"DEBUG: Removed cursor {cursor_type}")
+
+    def set_default_tile(self, tile: Tile):
+        self._default_tile = tile
+
     # TODO: We have returned to view_port coords now
     def draw_map(self, tiles: dict[Coord[int], Tile]) -> None:
 
@@ -54,22 +76,37 @@ class ViewPort(ScalableComponent, LoggerMixin):
         if self._damage_blast_coord:
             self.draw_tile(self._damage_blast_coord, self.global_registry.tiles.get(0))
 
+
         #
-        # TODO: Really should be managing SOME of this in SfxLibraryService
+        # TODO: Move into ViewportService ?
         #
+
         if self._projectile:
             # Coords are in unscaled pixels.
             current_ticks = pygame.time.get_ticks()
             glyph = self._projectile.sprite.get_current_frame(current_ticks)
-            projectile_coord = self._projectile.get_current_position()
+            projectile_world_coord = self._projectile.get_current_position()
 
             if self._projectile.can_stop() == True:
                 self.log(f"DEBUG: Terminating projectile {self._projectile} at {current_ticks}")
                 self._projectile = None
             else:
-                print(f"BILL ODDIE: {projectile_coord}")
+                projectile_unscaled_pixel_coord = (projectile_world_coord + (3,-1)) * self.display_config.TILE_SIZE 
+                print(f"BILL ODDIE: projectile_world_coord={projectile_world_coord}, projectile_unscaled_pixel_coord={projectile_unscaled_pixel_coord}")
 #                self.draw_object_at_unscaled_coord(projectile_coord, glyph)
-                self.draw_object_at_unscaled_coord(projectile_coord, self.global_registry.tiles.get(TILE_ID_BLACK))
+                self.draw_object_at_unscaled_coord(projectile_unscaled_pixel_coord, self.global_registry.tiles.get(0))
+
+        #
+        # TODO: Move into ViewportService ?
+        #
+
+        # draw overlays e.g. cursors
+        for active_cursor in self._cursors.values():
+            cursor_coord, cursor_sprite = active_cursor
+            self.draw_tile( 
+                cursor_coord,
+                cursor_sprite.get_current_frame(0.0)
+            )
 
     @property
     def view_rect(self) -> Rect[int]:

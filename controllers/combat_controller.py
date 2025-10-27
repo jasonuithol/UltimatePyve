@@ -33,6 +33,7 @@ from services.main_loop_service import MainLoopService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
 from services.sfx_library_service import SfxLibraryService
+from view.view_port import ViewPort
 
 
 def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
@@ -77,6 +78,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     ready_controller: ReadyController
     cast_controller: CastController
     sfx_library_service: SfxLibraryService
+    view_port: ViewPort
 
     _last_attacked_monster = dict[str, MonsterAgent]()
 
@@ -168,9 +170,9 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 # FIRING / SWINGING
                 #
                 self.sfx_library_service.emit_projectile(
-                    projectile_type = ProjectileType.ThrowingAxe,
-                    start  = party_member.coord,
-                    finish = target_coord
+                    projectile_type    = ProjectileType.ThrowingAxe,
+                    start_world_coord  = party_member.coord,
+                    finish_world_coord = target_coord
                 )
 
                 target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
@@ -240,7 +242,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
         self.log(f"Exiting combat with {enemy_party.name}")
 
-        self.display_service.remove_cursor(CursorType.OUTLINE)
+        self.view_port.remove_cursor(CursorType.OUTLINE)
 
         for party_member in self.party_agent.get_party_members_in_combat():
             party_member.exit_combat()
@@ -286,7 +288,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 self.console_service.print_ascii(f"{party_member.name}, armed with {party_member.armed_with_description()}")
 
                 cursor_sprite = self.global_registry.cursors.get(CursorType.OUTLINE.value)
-                self.display_service.set_cursor(CursorType.OUTLINE, party_member.coord, cursor_sprite)
+                self.view_port.set_cursor(CursorType.OUTLINE, party_member.coord, cursor_sprite)
                 #
                 # -- R E N D E R --
                 #
