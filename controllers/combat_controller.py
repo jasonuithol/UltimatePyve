@@ -187,7 +187,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                     self._last_attacked_monster[party_member.name] = target_enemy
 
                     self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
-                    did_attack_hit = party_member.attack(target_enemy)
+                    did_attack_hit = party_member.attack(target_enemy, weapon)
                     if did_attack_hit:
                         #
                         # INFLICT DAMAGE

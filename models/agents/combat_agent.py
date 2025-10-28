@@ -5,6 +5,7 @@ from typing import Self
 from dark_libraries.dark_math import Coord
 from models.sprite import Sprite
 from models.tile import Tile
+from models.equipable_item_type import EquipableItemType
 
 from .npc_agent import NpcAgent
 
@@ -45,7 +46,7 @@ class CombatAgent(NpcAgent):
     @hitpoints.setter
     def hitpoints(self, val: int): ...
 
-    def get_damage(self, attack_type: chr) -> int: ...
+    def get_damage(self, weapon: EquipableItemType) -> int: ...
 
     def calculate_hit_probability(self, target: Self) -> float:
         to_hit   = 0.5 + (0.5 * self.dexterity / 30) 
@@ -53,9 +54,9 @@ class CombatAgent(NpcAgent):
         return to_hit * to_dodge    
 
     # Attack Type = L, R or B for handedness
-    def calculate_damage(self, attack_type: str) -> int:
+    def calculate_damage(self, weapon: EquipableItemType) -> int:
         damage_penalty = 0.5 + (0.5 * self.strength / 30)
-        return int(self.get_damage(attack_type) * damage_penalty)
+        return int(self.get_damage(weapon) * damage_penalty)
         
     def take_damage(self, damage: int) -> bool:
         self.hitpoints = self.hitpoints - damage
@@ -65,12 +66,12 @@ class CombatAgent(NpcAgent):
 
         self.log(f"{self.name} took damage={damage} to change hitpoints {self.hitpoints} -> {self.hitpoints}")
 
-    def attack(self, other: Self) -> bool:
+    def attack(self, other: Self, weapon: EquipableItemType) -> bool:
         if random.uniform(0.0, 1.0) < self.calculate_hit_probability(other):
             #
             # TODO: Get both hands involved.
             #
-            damage = self.calculate_damage(attack_type="R")
+            damage = self.calculate_damage(weapon)
             other.take_damage(damage)
 
             # Attack succeeded

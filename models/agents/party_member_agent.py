@@ -184,20 +184,11 @@ class PartyMemberAgent(CombatAgent):
     def hitpoints(self, val: int):
         self._character_record.current_hp = val
 
-    def get_damage(self, attack_type: chr) -> int:
-        if attack_type in ['R','B']:
-            item_id = self._character_record.right_hand
-        else: 
-            item_id = self._character_record.left_hand
-        equipable_item_type: EquipableItemType = self.global_registry.item_types.get(item_id)
-        if equipable_item_type is None:
-            self.log(f"WARNING: Could not obtain equipable_item_type for item_id={item_id}")
-            return 1
-        else:
-            damage = equipable_item_type.attack
-            if damage == 0:
-                self.log(f"ERROR: equipable_item_type={equipable_item_type.name} for item_id={item_id} has zero damage.")
-            return damage
+    def get_damage(self, weapon: EquipableItemType) -> int:
+        damage = weapon.attack
+        if damage == 0:
+            self.log(f"WARNING: weapon '{weapon.name}' (item_id={weapon.item_id}) has zero damage.")
+        return damage
 
     #
     # COMBAT_AGENT IMPLEMENTATION: End
