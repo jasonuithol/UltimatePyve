@@ -11,6 +11,7 @@ from data.global_registry import GlobalRegistry
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
 from models.combat_map import CombatMap
+from models.enums.projectile_type import ProjectileType
 from models.enums.spell_target_type import SpellTargetType
 from models.spell_type import SpellType
 
@@ -145,6 +146,8 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         insufficient_mana  = spell_caster.mana < spell_type.level
         insufficient_level = spell_caster.level < spell_type.level
 
+        spell_caster.spend_action_quanta()
+
         if insufficient_mana or insufficient_level:
             self.console_service.print_ascii("Failed !")
             self.log(f"Spell failed: caster_mana={spell_caster.mana}, caster_level={spell_caster.level}, spell_level={spell_type.level}")
@@ -168,7 +171,9 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
                 boundary_rect   = combat_map.get_size().to_rect(Coord(0,0)),
                 range_          = 255
             )
-            self.sfx_library_service.cast_spell_projectile()
+
+            self.sfx_library_service.bubbling_of_reality()
+            self.sfx_library_service.emit_projectile(ProjectileType.MagicMissile, spell_caster.coord, spell_coord)
 
             #
             # TODO: Did the magic spell hit ?

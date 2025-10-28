@@ -82,6 +82,9 @@ class SfxLibraryService:
 
         self._play_and_wait(whoosh_wave)
 
+        while not projectile.can_stop():
+            self.display_service.render()
+
     def damage(self, coord: Coord[int]):
         # ANIMATION: Show The flashy explody tile.
         self.view_port_service.set_damage_blast_at(coord)
@@ -126,25 +129,6 @@ class SfxLibraryService:
         self.view_port_service.invert_colors(False)
         return
 
-    def cast_spell_projectile(self):
-        # SOUND: The bubbling of the fabric of reality
-        self.bubbling_of_reality()
-
-        # SOUND: Whooshing of projectile.
-
-        # ANIMATION: Animate the movement of a glyph to the target.
-
-        # if hit:
-
-#            self._do_special_effects_impact()
-
-        # else (a miss):
-
-            # SOUND: "WHOOIIIP !"
-            # ANIMATION: n/a
-
-        return
-    
     def victory(self):
         generator = self.sound_service.get_generator()
         victory_wave = generator.square_wave().sequence([
