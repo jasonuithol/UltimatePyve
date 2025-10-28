@@ -22,7 +22,7 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
         self._party_location: GlobalLocation = None
 
     MONSTER_SPAWN_RADIUS: float = 10
-    MONSTER_SPAWN_PROBABILITY: float = 0.1
+    MONSTER_SPAWN_PROBABILITY: float = 0.02
     MAXIMUM_MONSTER_COUNT = 10
 
     npc_service: NpcService
