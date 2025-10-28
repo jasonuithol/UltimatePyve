@@ -78,9 +78,6 @@ class PartyAgent(NpcAgent):
     def get_party_member(self, party_member_index: int) -> PartyMemberAgent:
         return self.party_members[party_member_index]
 
-    def get_party_members_in_combat(self) -> list[PartyMemberAgent]:
-        return [party_member for party_member in self.party_members if party_member.is_in_combat()]
-
     # NPC_AGENT IMPLEMENTATION: start
     #
     @property

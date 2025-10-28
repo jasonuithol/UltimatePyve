@@ -3,7 +3,9 @@ from dark_libraries.dark_math   import Coord
 from dark_libraries.logging     import LoggerMixin
 from dark_libraries.dark_events import DarkEventListenerMixin
 
+from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
+from models.agents.party_member_agent import PartyMemberAgent
 from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 from models.global_location    import GlobalLocation
 from models.agents.npc_agent   import NpcAgent
@@ -107,3 +109,16 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
             f", out of {len(ap_candidates)} action candidates and {len(dex_candidates)} DEX candidates."
         )
         return result
+
+    def get_party_members(self) -> list[PartyMemberAgent]:
+        return [npc for npc in self._active_npcs if isinstance(npc, PartyMemberAgent)]
+
+    def get_party_member_count(self) -> int:
+        return sum(1 for npc in self._active_npcs if isinstance(npc, PartyMemberAgent))
+
+    def get_monsters(self) -> list[MonsterAgent]:
+        return [npc for npc in self._active_npcs if isinstance(npc, MonsterAgent)]
+
+    def get_monster_count(self) -> int:
+        return sum(1 for npc in self._active_npcs if isinstance(npc, MonsterAgent))
+    

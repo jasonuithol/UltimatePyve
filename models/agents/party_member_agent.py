@@ -74,9 +74,6 @@ class PartyMemberAgent(CombatAgent):
     def exit_combat(self):
         self.coord = None
 
-    def is_in_combat(self):
-        return not self.coord is None
-
     def get_equipped_item_codes(self) -> list[int]:
         return [
             int(getattr(self._character_record, name))

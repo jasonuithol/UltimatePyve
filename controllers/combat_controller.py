@@ -223,7 +223,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 party_member.exit_combat()
                 self.npc_service.remove_npc(party_member)
                 self.log(f"Party member {party_member.name} exited !")
-                if not any(self.party_agent.get_party_members_in_combat()):
+                if not any(self.npc_service.get_party_members()):
                     # Exit combat
                     return COMBAT_OVER
                 else:
@@ -246,7 +246,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
         self.view_port_service.remove_cursor(CursorType.OUTLINE)
 
-        for party_member in self.party_agent.get_party_members_in_combat():
+        for party_member in self.npc_service.get_party_members():
             party_member.exit_combat()
 
         self.party_agent.pop_location()
@@ -286,8 +286,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 #
                 party_member: PartyMemberAgent = next_turn_npc
 
-                if not party_member.is_in_combat():
-                    continue
+                assert party_member.coord, "Party member has likely left combat, but was given a combat turn"
 
                 self.console_service.print_ascii(f"{party_member.name}, armed with {party_member.armed_with_description()}")
 
@@ -300,15 +299,21 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
                 in_combat = self._dispatch_player_event(combat_map, party_member, event)
 
+            elif self.npc_service.get_party_member_count() == 0:
+
+                # All party members have left the combat map.
+                in_combat = COMBAT_OVER
+                break
+
             else:
     
                 # All members moved - give the monsters a turn
-                if any(self.party_agent.get_party_members_in_combat()):
+                if self.npc_service.get_party_member_count() > 0:
 
                     #
                     # TODO: More sophisticated AI can come later.
                     #
-                    monster_target_coord = self.party_agent.get_party_members_in_combat()[0].coord
+                    monster_target_coord = self.npc_service.get_party_members()[0].coord
 
                     self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, monster_target_coord))
 
