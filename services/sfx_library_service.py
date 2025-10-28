@@ -12,8 +12,8 @@ from services.console_service import ConsoleService
 from services.display_service import DisplayService
 from services.sound_service import SoundService
 
+from services.view_port_service import ViewPortService
 from view.display_config import DisplayConfig
-from view.view_port import ViewPort
 
 # This can be anything we want really.
 PROJECTILE_SPATIAL_UNITS_PER_SECOND = 11 # in tiles
@@ -24,7 +24,7 @@ class SfxLibraryService:
     global_registry: GlobalRegistry
     sound_service:   SoundService
     display_service: DisplayService
-    view_port:       ViewPort
+    view_port_service: ViewPortService
     console_service: ConsoleService
 
     def _play_and_wait(self, dark_wave: DarkWave | DarkWaveStereo):
@@ -37,8 +37,6 @@ class SfxLibraryService:
 
     def _create_motion(self, start_tile_coord: Coord[int], finish_tile_coord: Coord[int]) -> Motion:
         return Motion(
-#            start_tile_coord  * self.display_config.TILE_SIZE, 
-#            finish_tile_coord * self.display_config.TILE_SIZE, 
             start_tile_coord, 
             finish_tile_coord, 
             PROJECTILE_SPATIAL_UNITS_PER_SECOND
@@ -65,7 +63,7 @@ class SfxLibraryService:
 
 #        self.console_service.print_glyphs(sprite.frames)
 
-        self.view_port.start_projectile(projectile)
+        self.view_port_service.start_projectile(projectile)
 
         # SOUND: Pee yow !
         generator = self.sound_service.get_generator()
@@ -86,7 +84,7 @@ class SfxLibraryService:
 
     def damage(self, coord: Coord[int]):
         # ANIMATION: Show The flashy explody tile.
-        self.view_port.set_damage_blast_at(coord)
+        self.view_port_service.set_damage_blast_at(coord)
 
         # SOUND: "BBRRERRRKKCH"
         generator = self.sound_service.get_generator()
@@ -95,7 +93,7 @@ class SfxLibraryService:
         self._play_and_wait(noise_wave)
 
         # ANIMATION: Hide The flashy explody tile.
-        self.view_port.set_damage_blast_at(None)
+        self.view_port_service.set_damage_blast_at(None)
 
     def cast_spell_normal(self):
 
@@ -104,7 +102,7 @@ class SfxLibraryService:
         generator = self.sound_service.get_generator()
 
         # VISUAL: Invert all colors of the viewport
-        self.view_port.invert_colors(True)
+        self.view_port_service.invert_colors(True)
 
         # SOUND: The searing of the energy plane.
 

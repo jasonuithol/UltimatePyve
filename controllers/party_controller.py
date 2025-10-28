@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing   import Iterable
 
 import pygame
 
@@ -17,7 +16,6 @@ from data.global_registry     import GlobalRegistry
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.global_location     import GlobalLocation
 from models.interactable        import Interactable
-from models.tile import TILE_ID_GRASS
 from models.u5_map              import U5Map
 from models.enums.inventory_offset import InventoryOffset
 
@@ -28,9 +26,8 @@ from services.display_service import DisplayService
 from services.main_loop_service import MainLoopService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
-from services.view_port_data_provider import ViewPortDataProvider
+from services.view_port_service import ViewPortService
 from services.world_clock import WorldClock
-from view.view_port import PARTY_MODE, ViewPort
 
 PASS_TIME      = True
 DONT_PASS_TIME = False
@@ -54,8 +51,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     ready_controller: ReadyController
     cast_controller: CastController
 
-    view_port_data_provider: ViewPortDataProvider
-    view_port: ViewPort
+    view_port_service: ViewPortService
     
     def run(self):
 
@@ -65,10 +61,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         self.dark_event_service.loaded(self.party_agent.get_current_location())
 
         self._set_window_title()
-        self.view_port.set_default_tile(
-            self.global_registry.tiles.get(TILE_ID_GRASS)
-        )
-        self.view_port_data_provider.set_mode(PARTY_MODE)
+        self.view_port_service.set_party_mode()
 
         while not self._has_quit:
 

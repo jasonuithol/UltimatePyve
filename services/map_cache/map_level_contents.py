@@ -8,7 +8,7 @@ from models.interactable               import Interactable
 class MapLevelContents:
 
     # This cannot be set until initialisation is over.
-    _out_of_bounds_tile_grass: CoordContents = None
+#    _out_of_bounds_tile_grass: CoordContents = None
 
     '''
     @classmethod
@@ -28,7 +28,7 @@ class MapLevelContents:
 
     def get_coord_contents(self, coord: Coord[int]) -> CoordContents:
         return self._coord_contents_dict.get(coord,  None)
-        return self._coord_contents_dict.get(coord,  __class__._out_of_bounds_tile_grass)
+#        return self._coord_contents_dict.get(coord,  __class__._out_of_bounds_tile_grass)
 
     def __iter__(self) -> Iterable[tuple[Coord[int], CoordContents]]:
         return self._coord_contents_dict.items().__iter__()

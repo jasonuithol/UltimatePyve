@@ -24,6 +24,7 @@ from services.sfx_library_service import SfxLibraryService
 from services.sound_service import SoundService
 from services.surface_factory import SurfaceFactory
 from services.view_port_data_provider import ViewPortDataProvider
+from services.view_port_service import ViewPortService
 from services.world_clock import WorldClock
 
 from .map_cache.service_composition  import compose as compose_map_cache
@@ -50,6 +51,7 @@ def compose(provider: ServiceProvider):
 
     provider.register(DisplayService)
     provider.register(ViewPortDataProvider)
+    provider.register(ViewPortService)
     provider.register(MainLoopService)
     provider.register(MonsterService)
     provider.register(InfoPanelService)

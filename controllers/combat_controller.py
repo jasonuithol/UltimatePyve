@@ -23,7 +23,6 @@ from models.global_location import GlobalLocation
 from models.location_metadata import LocationMetadata
 from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
-from models.tile import TILE_ID_GRASS
 from models.u5_map import U5Map
 from models.equipable_item_type import EquipableItemType # for syntax highlighting
 
@@ -34,8 +33,7 @@ from services.main_loop_service import MainLoopService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
 from services.sfx_library_service import SfxLibraryService
-from services.view_port_data_provider import ViewPortDataProvider
-from view.view_port import COMBAT_MODE, PARTY_MODE, ViewPort
+from services.view_port_service import ViewPortService
 
 
 def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
@@ -71,7 +69,6 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     map_cache_service: MapCacheService
     console_service: ConsoleService
     
-    # Idea #1
     main_loop_service: MainLoopService
     dark_event_service: DarkEventService
     display_service: DisplayService
@@ -80,12 +77,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     ready_controller: ReadyController
     cast_controller: CastController
     sfx_library_service: SfxLibraryService
-
-    #
-    # TODO: DisplayService
-    #
-    view_port: ViewPort
-    view_port_data_provider: ViewPortDataProvider
+    view_port_service: ViewPortService
 
     _last_attacked_monster = dict[str, MonsterAgent]()
 
@@ -100,14 +92,12 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
         combat_map_wrapper = wrap_combat_map_in_u5map(combat_map)
 
-        # TODO: Remove this
+        # We have dynamically loaded a map with no location index.
+        # Register and cache it under location_index -666, level_index = 0, overwriting any previously registered/cached combat map.
         self.global_registry.maps.register(combat_map_wrapper.location_index, combat_map_wrapper)
         self.map_cache_service.cache_u5map(combat_map_wrapper)
 
-        self.view_port.set_default_tile(
-            self.global_registry.tiles.get(255) # Black tile
-        )
-        self.view_port_data_provider.set_mode(COMBAT_MODE)
+        self.view_port_service.set_combat_mode()
 
         self.party_agent.push_location(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, Coord(5, 9)))
 
@@ -254,18 +244,14 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
         self.log(f"Exiting combat with {enemy_party.name}")
 
-        self.view_port.remove_cursor(CursorType.OUTLINE)
+        self.view_port_service.remove_cursor(CursorType.OUTLINE)
 
         for party_member in self.party_agent.get_party_members_in_combat():
             party_member.exit_combat()
 
         self.party_agent.pop_location()
 
-        self.view_port_data_provider.set_mode(PARTY_MODE)        
-        self.view_port.set_default_tile(
-            self.global_registry.tiles.get(TILE_ID_GRASS)
-        )
-
+        self.view_port_service.set_party_mode()        
 
         # NPC unfreezing happens here.
         self.dark_event_service.pass_time(self.party_agent.get_current_location())
@@ -306,7 +292,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 self.console_service.print_ascii(f"{party_member.name}, armed with {party_member.armed_with_description()}")
 
                 cursor_sprite = self.global_registry.cursors.get(CursorType.OUTLINE.value)
-                self.view_port.set_cursor(CursorType.OUTLINE, party_member.coord, cursor_sprite)
+                self.view_port_service.set_cursor(CursorType.OUTLINE, party_member.coord, cursor_sprite)
                 #
                 # -- R E N D E R --
                 #

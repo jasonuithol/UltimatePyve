@@ -1,10 +1,8 @@
-from dark_libraries.dark_math import Coord, Rect, Vector2
+from dark_libraries.dark_math import Coord, Rect
 
 from data.global_registry import GlobalRegistry
 from models.global_location import GlobalLocation
-from models.terrain import Terrain
 from services.map_cache.map_cache_service import MapCacheService
-from services.map_cache.map_level_contents import MapLevelContents
 
 class FieldOfViewCalculator:
 
@@ -40,7 +38,10 @@ class FieldOfViewCalculator:
             if interactable is None:
                 coord_contents = map_level_contents.get_coord_contents(world_coord)
                 if coord_contents is None:
-                    allows_light = False
+                    #
+                    # TODO: Review this bullshit
+                    #
+                    allows_light = True # was False, which is wrong
                 else:
                     terrain = coord_contents.get_terrain()
                     allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)        

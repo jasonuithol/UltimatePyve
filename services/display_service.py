@@ -3,6 +3,7 @@ import pygame
 
 from dark_libraries.logging   import LoggerMixin
 
+from services.view_port_service import ViewPortService
 from view.display_config      import DisplayConfig
 from view.info_panel          import InfoPanel
 from view.interactive_console import InteractiveConsole
@@ -18,8 +19,9 @@ class DisplayService(LoggerMixin):
 
     main_display:        MainDisplay
     info_panel:          InfoPanel
-    interactive_console: InteractiveConsole
     view_port:           ViewPort
+    interactive_console: InteractiveConsole
+    view_port_service:   ViewPortService
 
     #
     # TODO: Think about a view_port_service.
@@ -66,8 +68,7 @@ class DisplayService(LoggerMixin):
         #
 
         # Render current viewport from populated map data.
-        map_tiles = self.view_port_data_provider.get_party_map_data()
-        self.view_port.draw_map(map_tiles)
+        self.view_port_service.render()
 
         vp_scaled_surface = self.view_port.get_output_surface()
         vp_scaled_pixel_offset = (scaled_border_thiccness, scaled_border_thiccness)

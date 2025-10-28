@@ -12,7 +12,7 @@ class LightingService:
 
     # Injectable
     world_clock: WorldClock
-    player_state: PartyAgent
+    party_state: PartyAgent
     global_registry: GlobalRegistry
     light_map_level_baker: LightMapLevelBaker
 
@@ -24,20 +24,25 @@ class LightingService:
         current_radius = self.world_clock.get_current_light_radius()
 
         # in case the player has lit a torch or something
-        if not self.player_state.light_radius is None:
-            current_radius = max(current_radius, self.player_state.light_radius)
+        if not self.party_state.light_radius is None:
+            current_radius = max(current_radius, self.party_state.light_radius)
             
         viewable_radius = max(1, min(current_radius, max(self.global_registry.unbaked_light_maps.keys())))
 
         return viewable_radius
 
 
-    def calculate_lighting(self, player_location: GlobalLocation, player_light_radius: int, fov_visible_coords: set[Coord[int]]) -> set[Coord[int]]:
+    def calculate_lighting(self, fov_centre_location: GlobalLocation, player_light_radius: int, fov_visible_coords: set[Coord[int]]) -> set[Coord[int]]:
 
-        player_light_radius = self.get_player_light_radius()
+        #
+        # TODO: Since this service already accesses party_state, do we actually need to pass in party_location ?  
+        # ANSWER: No not really, but we currently need to pass it into FovCalculator, so we do it anyway.
+        #
 
-        baked_player_light_map: LightMap = self.global_registry.unbaked_light_maps.get(player_light_radius).translate(player_location.coord).intersect(fov_visible_coords)
-        baked_level_light_maps = self.global_registry.baked_light_level_maps.get((player_location.location_index, player_location.level_index))
+#        player_light_radius = self.get_player_light_radius()
+
+        baked_player_light_map: LightMap = self.global_registry.unbaked_light_maps.get(player_light_radius).translate(fov_centre_location.coord).intersect(fov_visible_coords)
+        baked_level_light_maps = self.global_registry.baked_light_level_maps.get((fov_centre_location.location_index, fov_centre_location.level_index))
 
         # Make a set of lit coords in the view_rect
         lit_world_coords: set[Coord[int]] = set(baked_player_light_map.coords_or_offsets.keys())

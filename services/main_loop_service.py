@@ -12,8 +12,8 @@ from models.agents.party_agent  import PartyAgent
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
 
+from services.view_port_service import ViewPortService
 from view.info_panel import InfoPanel
-from view.view_port import ViewPort
 
 BIBLICALLY_ACCURATE_RANGE_TWEAK = 0.5
 
@@ -58,7 +58,7 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
     global_registry: GlobalRegistry
     info_panel:      InfoPanel
     dark_event_service: DarkEventService
-    view_port:       ViewPort
+    view_port_service:  ViewPortService
 
 
     def __init__(self):
@@ -108,7 +108,7 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
         cursor = starting_coord
 
         crosshair_cursor_sprite = self.global_registry.cursors.get(CursorType.CROSSHAIR.value)
-        self.view_port.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
+        self.view_port_service.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
 
         is_aiming = True
         while (not self._has_quit) and is_aiming:
@@ -138,10 +138,10 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
                 target = cursor + direction
                 if boundary_rect.is_in_bounds(target) and starting_coord.pythagorean_distance(target) <= range_ + BIBLICALLY_ACCURATE_RANGE_TWEAK:
                     cursor = target
-                    self.view_port.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
+                    self.view_port_service.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
 
         # We're done
-        self.view_port.remove_cursor(CursorType.CROSSHAIR.value)
+        self.view_port_service.remove_cursor(CursorType.CROSSHAIR.value)
         return cursor
             
     def get_next_event(self) -> pygame.event.Event:
