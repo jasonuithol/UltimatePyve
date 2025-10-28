@@ -173,11 +173,12 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
             #
             # FIRING / SWINGING
             #
-            self.sfx_library_service.emit_projectile(
-                projectile_type    = ProjectileType.ThrowingAxe,
-                start_world_coord  = party_member.coord,
-                finish_world_coord = target_coord
-            )
+            if weapon.range_ > 2:
+                self.sfx_library_service.emit_projectile(
+                    projectile_type    = ProjectileType.ThrowingAxe,
+                    start_world_coord  = party_member.coord,
+                    finish_world_coord = target_coord
+                )
 
             target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
 
