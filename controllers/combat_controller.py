@@ -56,9 +56,6 @@ def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
         )
     )    
 
-IN_COMBAT = True
-COMBAT_OVER = False
-
 class CombatController(DarkEventListenerMixin, LoggerMixin):
 
     # Injectable
