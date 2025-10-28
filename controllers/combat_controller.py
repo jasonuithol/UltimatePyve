@@ -7,7 +7,7 @@ from controllers.move_controller import MoveController
 
 from controllers.ready_controller import ReadyController
 from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
-from dark_libraries.dark_math import Coord
+from dark_libraries.dark_math import Coord, Vector2
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
@@ -123,18 +123,12 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
             party_member.enter_combat(spawn_coord)
             self.npc_service.add_npc(party_member)
 
-    def _dispatch_player_event(self, combat_map: CombatMap, party_member: PartyMemberAgent, event: pygame.event.Event) -> bool:
-
-        current_coord = party_member.coord
-
-        if self._has_quit:
-            return COMBAT_OVER
+    def _dispatch_player_event(self, combat_map: CombatMap, party_member: PartyMemberAgent, event: pygame.event.Event):
 
         # Wait dispatch handler
         if event.key == pygame.K_SPACE:
             self.log("DEBUG: Wait command received")
             party_member.spend_action_quanta()
-            return IN_COMBAT
 
         # hand event to sub-controllers
         self.active_member_controller.handle_event(event)
@@ -143,102 +137,101 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
         # Attack dispatch handler
         if event.key == pygame.K_a:
-
-            #
-            # BUG: This causes pressing A to attack with all weapons one after the other without further prompting.
-            #
-            for weapon in party_member.get_weapons():
-
-                self.console_service.print_ascii(weapon.name + " - ", include_carriage_return = False)
-
-                #
-                # AIMING
-                #
-                target_enemy = None# self._last_attacked_monster.get(party_member.name, None)
-                if target_enemy is None:
-                    starting_coord = party_member.coord
-                else:
-                    starting_coord = target_enemy.coord
-
-                target_coord = self.main_loop_service.obtain_cursor_position(
-                    starting_coord = starting_coord,
-                    boundary_rect  = combat_map.get_size().to_rect(Coord(0,0)),
-                    range_         = max(weapon.range_, 1)
-                )
-                if target_coord is None or target_coord == party_member.coord:
-                    continue
-
-                #
-                # FIRING / SWINGING
-                #
-                self.sfx_library_service.emit_projectile(
-                    projectile_type    = ProjectileType.ThrowingAxe,
-                    start_world_coord  = party_member.coord,
-                    finish_world_coord = target_coord
-                )
-
-                target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
-
-                # Cursor positioning over.  Do we have an enemy ?
-
-                if target_enemy is None:
-                    self.log(f"DEBUG: No enemy found at {target_coord}")
-                else:
-                    self._last_attacked_monster[party_member.name] = target_enemy
-
-                    self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
-                    did_attack_hit = party_member.attack(target_enemy, weapon)
-                    if did_attack_hit:
-                        #
-                        # INFLICT DAMAGE
-                        #
-                        enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
-
-                        self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + f"!")
-
-                        self.sfx_library_service.damage(target_coord)
-
-                        if target_enemy.hitpoints <= 0:
-                            self.npc_service.remove_npc(target_enemy)
-                    else:
-                        #
-                        # MISSED 
-                        #
-                        self.console_service.print_ascii("Missed !")
-                party_member.spend_action_quanta()
-            return IN_COMBAT
+            self._attack_handler(combat_map, party_member)
 
         # Move dispatch handler
         move_offset = DIRECTION_MAP.get(event.key, None)
         if not move_offset is None:
-            move_outcome = self.move_controller.move(
-                GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, current_coord), 
-                move_offset, 
-                'walk'
-            )
-
-            party_member.spend_action_quanta()
-
-            if move_outcome.exit_map:
-                party_member.exit_combat()
-                self.npc_service.remove_npc(party_member)
-                self.log(f"Party member {party_member.name} exited !")
-                if not any(self.npc_service.get_party_members()):
-                    # Exit combat
-                    return COMBAT_OVER
-                else:
-                    return IN_COMBAT
-
-            elif move_outcome.success:
-                self.log(f"DEBUG: Combat move received: {move_offset}")
-                party_member.coord = party_member.coord + move_offset
-            else:
-                self.log(f"DEBUG: Combat move command failed: {move_outcome}")
-            return IN_COMBAT
+            self._move_handler(party_member, move_offset)
 
         # No more dispatchers.            
         self.log(f"DEBUG: Received non-processable event: {event.key}")
-        return IN_COMBAT
+
+    def _attack_handler(self, combat_map: CombatMap, party_member: PartyMemberAgent):
+
+        #
+        # BUG: This causes pressing A to attack with all weapons one after the other without further prompting.
+        #
+        for weapon in party_member.get_weapons():
+
+            self.console_service.print_ascii(weapon.name + " - ", include_carriage_return = False)
+
+            #
+            # AIMING
+            #
+            target_enemy = None# self._last_attacked_monster.get(party_member.name, None)
+            if target_enemy is None:
+                starting_coord = party_member.coord
+            else:
+                starting_coord = target_enemy.coord
+
+            target_coord = self.main_loop_service.obtain_cursor_position(
+                starting_coord = starting_coord,
+                boundary_rect  = combat_map.get_size().to_rect(Coord(0,0)),
+                range_         = max(weapon.range_, 1)
+            )
+            if target_coord is None or target_coord == party_member.coord:
+                continue
+
+            #
+            # FIRING / SWINGING
+            #
+            self.sfx_library_service.emit_projectile(
+                projectile_type    = ProjectileType.ThrowingAxe,
+                start_world_coord  = party_member.coord,
+                finish_world_coord = target_coord
+            )
+
+            target_enemy: MonsterAgent = self.npc_service.get_npc_at(target_coord)
+
+            # Cursor positioning over.  Do we have an enemy ?
+
+            if target_enemy is None:
+                self.log(f"DEBUG: No enemy found at {target_coord}")
+            else:
+                self._last_attacked_monster[party_member.name] = target_enemy
+
+                self.console_service.print_ascii(f"Attacking {target_enemy.name} !")
+                did_attack_hit = party_member.attack(target_enemy, weapon)
+                if did_attack_hit:
+                    #
+                    # INFLICT DAMAGE
+                    #
+                    enemy_health_condition = get_hp_level_text(target_enemy.hitpoints / target_enemy.maximum_hitpoints) 
+
+                    self.console_service.print_ascii(target_enemy.name + " " + enemy_health_condition + f"!")
+
+                    self.sfx_library_service.damage(target_coord)
+
+                    if target_enemy.hitpoints <= 0:
+                        self.npc_service.remove_npc(target_enemy)
+                else:
+                    #
+                    # MISSED 
+                    #
+                    self.console_service.print_ascii("Missed !")
+            party_member.spend_action_quanta()
+
+    def _move_handler(self, party_member: PartyMemberAgent, move_offset: Vector2[int]):
+
+        move_outcome = self.move_controller.move(
+            GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, party_member.coord), 
+            move_offset, 
+            'walk'
+        )
+
+        party_member.spend_action_quanta()
+
+        if move_outcome.exit_map:
+            party_member.exit_combat()
+            self.npc_service.remove_npc(party_member)
+            self.log(f"Party member {party_member.name} exited !")
+
+        elif move_outcome.success:
+            self.log(f"DEBUG: Combat move received: {move_offset}")
+            party_member.coord = party_member.coord + move_offset
+        else:
+            self.log(f"DEBUG: Combat move command failed: {move_outcome}")
 
     def _exit_combat_arena(self, enemy_party: MonsterAgent):
 
@@ -275,10 +268,9 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
         # Party member spawning
         self._spawn_party_members(combat_map)
 
-        in_combat = IN_COMBAT
         victory_declared = False
 
-        while in_combat and (not self._has_quit):
+        while not self._has_quit:
 
             if not victory_declared:
                 if self.npc_service.get_monster_count() == 0:
@@ -286,7 +278,16 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                     self.sfx_library_service.victory()
                     victory_declared = True
 
+            if self.npc_service.get_party_member_count() == 0:
+
+                # All party members have left the combat map.
+                break
+
+            #
+            # Combat continues, so give someone a turn
+            #
             next_turn_npc = self.npc_service.get_next_moving_npc()
+
             if isinstance(next_turn_npc, PartyMemberAgent):
                 #
                 # -- PLAYER MEMBER TURN --
@@ -304,14 +305,9 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 #
                 event = self.main_loop_service.get_next_event()
 
-                in_combat = self._dispatch_player_event(combat_map, party_member, event)
+                self._dispatch_player_event(combat_map, party_member, event)
 
-            elif self.npc_service.get_party_member_count() == 0:
-
-                # All party members have left the combat map.
-                in_combat = COMBAT_OVER
-                break
-
+ 
             else:
     
                 # All members moved - give the monsters a turn
