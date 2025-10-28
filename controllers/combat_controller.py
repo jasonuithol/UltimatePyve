@@ -276,8 +276,15 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
         self._spawn_party_members(combat_map)
 
         in_combat = IN_COMBAT
+        victory_declared = False
 
         while in_combat and (not self._has_quit):
+
+            if not victory_declared:
+                if self.npc_service.get_monster_count() == 0:
+                    self.console_service.print_ascii("VICTORY !")
+                    self.sfx_library_service.victory()
+                    victory_declared = True
 
             next_turn_npc = self.npc_service.get_next_moving_npc()
             if isinstance(next_turn_npc, PartyMemberAgent):

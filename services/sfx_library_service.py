@@ -108,7 +108,7 @@ class SfxLibraryService:
 
 
         generator = self.sound_service.get_generator()
-        noise_wave = generator.white_noise(hz = 1600.0, sec = 2.0).clamp(-0.2, +0.2)
+#        noise_wave = generator.white_noise(hz = 1600.0, sec = 2.0).clamp(-0.2, +0.2)
 
         duration = 2.0
         phase_shift = 1 / duration
@@ -123,7 +123,7 @@ class SfxLibraryService:
         self._play_and_wait(spell_wave)
 
         # VISUAL: Restore all colors of the viewport.
-        self.view_port.invert_colors(False)
+        self.view_port_service.invert_colors(False)
         return
 
     def cast_spell_projectile(self):
@@ -144,3 +144,17 @@ class SfxLibraryService:
             # ANIMATION: n/a
 
         return
+    
+    def victory(self):
+        generator = self.sound_service.get_generator()
+        victory_wave = generator.square_wave().sequence([
+            DarkNote(440, 0.5),
+            DarkNote(  0, 0.1),
+            DarkNote(440, 0.5),
+            DarkNote(  0, 0.1),
+            DarkNote(440, 0.5),
+            DarkNote(  0, 0.1),
+            DarkNote(440 * 2, 0.75),
+        ]).to_stereo()
+
+        self._play_and_wait(victory_wave)

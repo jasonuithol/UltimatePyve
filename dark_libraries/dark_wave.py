@@ -464,6 +464,10 @@ class DarkNote(tuple):
     __slots__ = ()
 
     def __new__(cls, hz: float, sec: float):
+
+        if isinstance(hz,  int): hz  = float(hz)
+        if isinstance(sec, int): sec = float(sec)
+
         assert isinstance(hz,  float),  f"hz expects a float, got {type(hz).__name__}"
         assert isinstance(sec, float), f"sec expects a float, got {type(sec).__name__}"
 
