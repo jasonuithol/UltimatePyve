@@ -7,7 +7,7 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
 ## Requirements
 
-- This has been tested on Windows 10 and Windows 11.  
+- This has been tested on Windows 10, Windows 11 and MacOS.
 
 - **A legal copy of the PC version of Ultima V**  
   You can purchase a DRM‑free copy from [GOG.com](https://www.gog.com/en/game/ultima_4_5_6).
