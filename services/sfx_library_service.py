@@ -179,12 +179,11 @@ class SfxLibraryService(LoggerMixin):
         # Build the ray animation, but don't play it yet.
         magic_ray_set_playlist = self._build_magic_ray_set_playlist(start_coord, spell_direction, color, ray_boundaries)
 
-        # Just make this something ridiculously too long
-        playlist_duration_seconds = 10.0
-
-        # SOUND: A directional cone of magic rays
+ 
+        # SOUND: A roaring of directionally channeled magic enery BWOOOOARRRRR
         generator = self.sound_service.get_generator()
-        noise_wave = generator.white_noise(hz = 1200.0, sec = playlist_duration_seconds).to_stereo()
+        # Just ensure that the duration is way too long.  10 seconds is more than enough
+        noise_wave = generator.white_noise(hz = 1200.0, sec = 10.0).to_stereo()
 
         # Fire and forget, allowing this sound, and the following animation to play simultaneously
         _, noise_handle = self.sound_service.play_sound(noise_wave)
