@@ -78,6 +78,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
                 self.pass_time_internal()
 
                 enemy_npc = self.npc_service.get_attacking_npc()
+                
                 if not enemy_npc is None:
                     #
                     # C O M B A T

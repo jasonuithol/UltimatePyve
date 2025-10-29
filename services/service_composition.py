@@ -1,36 +1,41 @@
 # file: display/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
 
-from services.console_service   import ConsoleService
-from services.display_service import DisplayService
-from services.font_mapper       import FontMapper
-from services.avatar_sprite_factory    import AvatarSpriteFactory
-from services.field_of_view_calculator import FieldOfViewCalculator
-from services.info_panel_data_provider import InfoPanelDataProvider
-from services.info_panel_service import InfoPanelService
-from services.lighting_service import LightingService
+from .console_service   import ConsoleService
+from .display_service import DisplayService
+from .font_mapper       import FontMapper
+from .avatar_sprite_factory    import AvatarSpriteFactory
+from .field_of_view_calculator import FieldOfViewCalculator
+from .info_panel_data_provider import InfoPanelDataProvider
+from .info_panel_service import InfoPanelService
+from .lighting_service import LightingService
 
-from services.door_instance_factory    import DoorInstanceFactory
+from .door_instance_factory    import DoorInstanceFactory
 
-from services.main_loop_service import MainLoopService
-from services.monster_service import MonsterService
-from services.monster_spawner     import MonsterSpawner
-from services.combat_map_service import CombatMapService
-from services.npc_service import NpcService
+from .main_loop_service import MainLoopService
+from .monster_service import MonsterService
+from .monster_spawner     import MonsterSpawner
+from .combat_map_service import CombatMapService
+from .npc_service import NpcService
 
-from services.modding_service     import ModdingService
+from .modding_service     import ModdingService
 
-from services.sfx_library_service import SfxLibraryService
-from services.sound_service import SoundService
-from services.surface_factory import SurfaceFactory
-from services.view_port_data_provider import ViewPortDataProvider
-from services.view_port_service import ViewPortService
-from services.world_clock import WorldClock
+from .sfx_library_service import SfxLibraryService
+from .sound_service import SoundService
+from .surface_factory import SurfaceFactory
+from .view_port_data_provider import ViewPortDataProvider
+from .view_port_service import ViewPortService
+from .world_clock import WorldClock
+
+# Service Implementations 
+from service_implementations.npc_service_implementation import NpcServiceImplementation
 
 from .map_cache.service_composition  import compose as compose_map_cache
 from .world_loot.service_composition import compose as compose_world_loot
 
 def compose(provider: ServiceProvider):
+
+    provider.register_mapping(NpcService, NpcServiceImplementation)
 
     provider.register(SurfaceFactory)
     provider.register(AvatarSpriteFactory)
@@ -43,7 +48,6 @@ def compose(provider: ServiceProvider):
     provider.register(ModdingService)
     provider.register(MonsterSpawner)
     provider.register(SoundService)
-    provider.register(NpcService)
 
     provider.register(WorldClock)
     provider.register(FontMapper)

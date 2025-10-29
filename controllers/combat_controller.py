@@ -304,7 +304,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 event = self.main_loop_service.get_next_event()
 
                 self._dispatch_player_event(combat_map, party_member, event)
-
+                self.view_port_service.remove_cursor(CursorType.OUTLINE)
  
             else:
     
