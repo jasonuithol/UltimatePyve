@@ -3,6 +3,7 @@ import random
 from dark_libraries.dark_math import Vector2
 from dark_libraries.logging import LoggerMixin
 
+from models.agents.combat_agent import CombatAgent
 from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
@@ -21,7 +22,7 @@ class DirectionalSpellController(LoggerMixin):
 
     def cast(self, spell_caster: PartyMemberAgent, spell_type: SpellType, direction: Vector2[int]) -> bool:
 
-        affected_monsters = self._get_affected_monsters(spell_caster, direction)
+        affected_npcs = self._get_affected_npcs(spell_caster, direction)
 
         # LEVEL ONE
 
@@ -36,7 +37,7 @@ class DirectionalSpellController(LoggerMixin):
         elif spell_type.spell_key == "iz":
 
             # apply the effect.  in this case - sleep
-            for m in affected_monsters:
+            for m in affected_npcs:
                 #
                 # TODO: This doesn't do anything right now
                 #
@@ -49,24 +50,25 @@ class DirectionalSpellController(LoggerMixin):
             assert False, f"Unknown spell_key={spell_type.spell_key} for {__class__.__name__}"
 
 
-    def _get_affected_monsters(self, spell_caster: PartyMemberAgent, direction: Vector2[int]) -> set[MonsterAgent]:
+    def _get_affected_npcs(self, spell_caster: PartyMemberAgent, direction: Vector2[int]) -> set[CombatAgent]:
 
         min_normal, max_normal = DIRECTION_SECTORS[direction]
 
         assert min_normal < max_normal, "Normals must be in increasing order of radian value."
             
-        monsters = self.npc_service.get_monsters()
+        # Cannot cast a directional spell on yourself.            
+        npcs = [npc for npc in self.npc_service.get_npcs().values() if npc != spell_caster]
 
-        in_range_monsters = {
+        in_range_npcs = {
             m
-            for m in monsters
+            for m in npcs
             if min_normal <= spell_caster.coord.normal(m.coord) <= max_normal
         }
 
-        affected_monsters = {
+        affected_npcs = {
             m
-            for m in in_range_monsters
+            for m in in_range_npcs
             if random.randint(0,30) < spell_caster.intelligence
         }
 
-        return affected_monsters
+        return affected_npcs

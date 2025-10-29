@@ -110,9 +110,11 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
         )
 
         if final_choice.slept:
-            self.log("eepy-deepy detected, will try to awake, then choose next npc for an action")
             if random.randint(0,100) < 2:
+                self.log(f"awakening eepy-deepy ({final_choice.name}), but still choosing next npc for an action")
                 final_choice.awake()
+            else:
+                self.log(f"eepy-deepy detected ({final_choice.name}), choosing next npc for an action")
 
             final_choice.spend_action_quanta()
             return self.get_next_moving_npc()
