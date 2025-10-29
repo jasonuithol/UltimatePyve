@@ -7,6 +7,8 @@ from typing import Callable
 
 type SuffixFunc = Callable[[], str]
 
+MESSAGE_COLUMN_OFFSET = 54 # you better have a wide screen !
+
 class Logger:
 
     @classmethod
@@ -55,8 +57,8 @@ class Logger:
             if self.show_debug == True:
                 ascii_control_code_prefix = colorama.Style.BRIGHT + colorama.Fore.WHITE
 
-        time_prefix = datetime.now().strftime("%H:%M:%S.%f")
-        entire_prefix = f"[{time_prefix} {self.prefix}]".ljust(48)
+        time_prefix = datetime.now().time().isoformat(timespec="milliseconds")
+        entire_prefix = f"[{time_prefix} {self.prefix}]".ljust(MESSAGE_COLUMN_OFFSET)
         print(ascii_control_code_prefix + entire_prefix + msg + ascii_control_code_suffix)
         
 class LoggerMixin:
