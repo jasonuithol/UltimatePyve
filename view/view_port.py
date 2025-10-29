@@ -1,3 +1,4 @@
+import pygame
 from dark_libraries.dark_math import Coord, Rect
 from dark_libraries.dark_surface import DarkSurface
 from dark_libraries.logging import LoggerMixin
@@ -6,6 +7,8 @@ from models.tile import Tile
 
 from .display_config import DisplayConfig
 from .scalable_component import ScalableComponent
+
+BIBLICALLY_ACCURATE_MISC_LINE_THICCNESS = 2
 
 class ViewPort(ScalableComponent, LoggerMixin):
 
@@ -40,3 +43,13 @@ class ViewPort(ScalableComponent, LoggerMixin):
             pixel_offset   = unscaled_pixel_coord,
             inverted       = inverted
         )
+
+    def draw_unscaled_line(self, start_coord: Coord[int], end_coord: Coord[int], rgb_mapped_color: int):
+        pygame.draw.line(
+            surface   = self.get_input_surface(),
+            color     = rgb_mapped_color,
+            start_pos = start_coord,
+            end_pos   = end_coord,
+            width = BIBLICALLY_ACCURATE_MISC_LINE_THICCNESS
+        )
+        

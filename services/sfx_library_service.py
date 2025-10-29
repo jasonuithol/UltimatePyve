@@ -1,11 +1,18 @@
+import datetime
 import math
 import random
 
-from dark_libraries.dark_math import Coord
+import pygame
+
+from dark_libraries.dark_math import ORIGIN, Coord, Rect, Vector2
 from dark_libraries.dark_wave import DarkNote, DarkWave, DarkWaveStereo
 
+from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
+from models.enums.direction_map import DIRECTION_SECTORS
+from models.enums.ega_palette_values import EgaPaletteValues
 from models.enums.projectile_type import ProjectileType
+from models.magic_ray_set import MagicRaySet
 from models.motion import Motion
 from models.projectile import Projectile
 from services.console_service import ConsoleService
@@ -17,8 +24,21 @@ from view.display_config import DisplayConfig
 
 # This can be anything we want really.
 PROJECTILE_SPATIAL_UNITS_PER_SECOND = 11 # in tiles
+BIBLICALLY_ACCURATE_CONE_OF_MAGIC_RAY_LENGTH_INCREMENT_IN_TILES = 0.5
+NUMBER_OF_MAGIC_RAYS_IN_CONE_OF_MAGIC = 20
+SECONDS_BETWEEN_RAY_GROWTHS = 0.05 / NUMBER_OF_MAGIC_RAYS_IN_CONE_OF_MAGIC
 
-class SfxLibraryService:
+def _harmonic(base_hz, harmonic) -> float:
+    return base_hz * 2**(harmonic / 12)
+
+def _shortest_span(start: float, end: float) -> float:
+    """Return the signed shortest angular difference in radians."""
+    diff = (end - start) % (2 * math.pi)
+    if diff > math.pi:
+        diff -= 2 * math.pi
+    return diff
+
+class SfxLibraryService(LoggerMixin):
 
     display_config:  DisplayConfig
     global_registry: GlobalRegistry
@@ -132,13 +152,100 @@ class SfxLibraryService:
     def victory(self):
         generator = self.sound_service.get_generator()
         victory_wave = generator.square_wave().sequence([
+            #
+            # TODO: These need to be chords of some sort
+            #
+
             DarkNote(440, 0.5),
             DarkNote(  0, 0.1),
             DarkNote(440, 0.5),
             DarkNote(  0, 0.1),
             DarkNote(440, 0.5),
             DarkNote(  0, 0.1),
-            DarkNote(440 * 2, 0.75),
+            DarkNote(_harmonic(440, 5), 0.75), # Obviously needs to be some major fifth thingo.
         ]).to_stereo()
 
         self._play_and_wait(victory_wave)
+
+    def cone_of_magic(self, start_coord: Coord, spell_direction: Vector2[int], color: EgaPaletteValues, ray_boundaries: Rect[int]):
+
+        #
+        # TODO: This is going be embodied in some extensions to dark_math once I get my head around it properly
+        #
+
+        # ANIMATION: Draw a rapidly expanding cone of magic originating from the origin
+        min_normal_screen, max_normal_screen = DIRECTION_SECTORS[spell_direction]
+
+        min_normal = min_normal_screen.screen_to_math()
+        max_normal = max_normal_screen.screen_to_math()
+
+        min_angle_radians = ORIGIN.angle_radians(min_normal) % (2 * math.pi) 
+        max_angle_radians = ORIGIN.angle_radians(max_normal) % (2 * math.pi)
+
+        self.log(f"DEBUG: Casting ray angles from {min_angle_radians} radians (normal={min_normal}) to {max_angle_radians} radians (normal={max_normal})")
+
+        # can be positive or negative
+        ray_angle_span = _shortest_span(min_angle_radians, max_angle_radians)
+        self.log(f"DEBUG: ray_angle_span={ray_angle_span}")
+
+        ray_angle_delta = ray_angle_span / NUMBER_OF_MAGIC_RAYS_IN_CONE_OF_MAGIC
+        self.log(f"DEBUG: ray_angle_delta={ray_angle_delta}")
+
+        ray_angles = [
+            (min_angle_radians + (ray_angle_delta * ray_index)) % (2 * math.pi)
+            for ray_index in range(NUMBER_OF_MAGIC_RAYS_IN_CONE_OF_MAGIC + 1)
+        ]
+
+        self.log(f"DEBUG: built magic ray angles={ray_angles}")
+
+        unfinished_magic_rays = {
+            ray_angle : (0.0, start_coord)
+            for ray_angle in ray_angles
+        }
+
+        next_ray_growth_ticks = pygame.time.get_ticks() + (SECONDS_BETWEEN_RAY_GROWTHS * 1000)
+        finished_magic_rays = {}
+
+        while any(unfinished_magic_rays):
+
+            if pygame.time.get_ticks() < next_ray_growth_ticks:
+                self.display_service.render()
+                continue
+            else:
+                next_ray_growth_ticks = pygame.time.get_ticks() + (SECONDS_BETWEEN_RAY_GROWTHS * 1000)
+
+            ray_angle, ray_state = random.choice([x for x in unfinished_magic_rays.items()])
+            current_length, current_end_coord = ray_state
+
+            new_length = current_length + BIBLICALLY_ACCURATE_CONE_OF_MAGIC_RAY_LENGTH_INCREMENT_IN_TILES
+            new_end_offset = ORIGIN.from_polar_coords(ray_angle, new_length).math_to_screen()
+            new_end_coord = start_coord + new_end_offset
+
+            self.log(f"DEBUG: Growing magic ray angle={ray_angle}, length={current_length} -> {new_length}, end_coord={current_end_coord} -> {new_end_coord}")
+
+            # This check requires that the unit of length is TILES.
+            if ray_boundaries.is_in_bounds(new_end_coord):
+                unfinished_magic_rays[ray_angle] = (new_length, new_end_coord)
+            else:
+                self.log(f"DEBUG: Terminating growth of magic ray angle={ray_angle}, length={new_length}, end_coord={new_end_coord}")
+                # The ray has finished growing
+                del unfinished_magic_rays[ray_angle]
+                # ... but must still remain visible.
+                finished_magic_rays[ray_angle] = (new_length, new_end_coord)
+
+            magic_ray_set = MagicRaySet(
+                origin = start_coord,
+                end_points = [
+                    ray_state[1] # new_end_coord
+                    for _, ray_state in (unfinished_magic_rays | finished_magic_rays).items()
+                ],
+                color = color
+            )
+
+            self.view_port_service.set_magic_rays(magic_ray_set)
+
+
+
+        self.log(f"DEBUG: Magic ray finished.  Endpoints stopped at {magic_ray_set.end_points}")
+
+            

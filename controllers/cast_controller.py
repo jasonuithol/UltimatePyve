@@ -11,6 +11,7 @@ from data.global_registry import GlobalRegistry
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
 from models.combat_map import CombatMap
+from models.enums.ega_palette_values import EgaPaletteValues
 from models.enums.projectile_type import ProjectileType
 from models.enums.spell_target_type import SpellTargetType
 from models.spell_type import SpellType
@@ -67,6 +68,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         spell_type = self.global_registry.spell_types.get(rune_keys)
 
         if spell_type is None:
+            self.log(f"DEBUG: Ignoring unknown spell key: {rune_keys}")
             self.console_service.print_ascii("No effect!")
             return
 
@@ -158,9 +160,10 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             self.general_spell_controller.cast(spell_caster, spell_type)
 
         elif spell_type.target_type == SpellTargetType.T_DIRECTION:
-            self.console_service.print_ascii("Direction: ", include_carriage_return = False)
+#            self.console_service.print_ascii("Direction: ", include_carriage_return = False)
             spell_direction = self.main_loop_service.obtain_action_direction()
-            self.sfx_library_service.cast_spell_normal()
+            self.sfx_library_service.bubbling_of_reality()
+            self.sfx_library_service.cone_of_magic(spell_caster.coord, spell_direction, EgaPaletteValues.Magenta, combat_map.get_size().to_rect(Coord(0,0)))
 
         elif spell_type.target_type == SpellTargetType.T_COORD:
 

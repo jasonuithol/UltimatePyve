@@ -64,7 +64,8 @@ class InitialisationController(LoggerMixin):
         #
         # --------------------------------------------------
 
-        self.party_controller.load_inner_location(saved_game.read_party_location())
+        saved_location = saved_game.read_party_location()
+        self.party_controller.load_location(saved_location)
 
         # TODO: read from saved_game
         self.party_controller.load_transport_state(0,0,1) # on foot, "facing" east

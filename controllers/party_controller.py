@@ -139,22 +139,29 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
     # good for loading a SAVE.GAM location that's in a town or dungeon or something, and you need to eventually 
     # resolve the overworld position when exiting.
-    def load_inner_location(self, inner_location: GlobalLocation):
-
-        # Get outer world coords for starting position
-        # will need this trick when importing saved games from OG U5 files.
-        outer_location: GlobalLocation = None
-        for entry_location, exit_location in self.global_registry.entry_triggers.items():
-            if exit_location.location_index == inner_location.location_index:
-                outer_location = entry_location
-        
-        assert not outer_location is None, f"Could not load overworld location for {inner_location}"
+    def load_location(self, location: GlobalLocation):
 
         self.party_agent.clear_locations()
-        self.party_agent.push_location(outer_location)
-        self.party_agent.push_location(inner_location)
 
-        self.log(f"Set party location to outer={outer_location}, inner={inner_location}")
+        if location.location_index == 0:
+            self.party_agent.push_location(location)
+
+            self.log(f"Set party location to outer={location}")
+        else:
+
+            # Get outer world coords for starting position
+            # will need this trick when importing saved games from OG U5 files.
+            outer_location: GlobalLocation = None
+            for entry_location, exit_location in self.global_registry.entry_triggers.items():
+                if exit_location.location_index == location.location_index:
+                    outer_location = entry_location
+
+            assert not outer_location is None, f"Could not load overworld location for inner_location={location}"
+
+            self.party_agent.push_location(outer_location)
+            self.party_agent.push_location(location)
+
+            self.log(f"Set party location to outer={outer_location}, inner={location}")
 
     def load_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
         self.party_agent.set_transport_state(

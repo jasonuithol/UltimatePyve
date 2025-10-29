@@ -63,6 +63,7 @@ class Vector2[TNumeric](tuple):
     __floordiv__ = floor_div
 
     def add(self, other: TOtherNumericTuple) -> 'Vector2[TOtherNumeric]':
+        assert isinstance(other, tuple), f"other must be a tuple but got {other!r}"
         return self.__class__(self.x + other[0], self.y + other[1])
     
     __add__ = __radd__ = add
@@ -75,15 +76,34 @@ class Vector2[TNumeric](tuple):
     def __rsub__(self, other):
         return self.__class__(other[0] - self.x, other[1] - self.y)
 
-    def pythagorean_distance(self, other: tuple) -> float:
+    def screen_to_math(self) -> 'Vector2[TOtherNumericTuple]':
+        """Convert a screen-space vector (y down) to math-space (y up)."""
+        return Vector2(self.x, -1 * self.y)
+
+    def math_to_screen(self) -> 'Vector2[TOtherNumericTuple]':
+        """Convert a math-space vector (y up) back to screen-space (y down)."""
+        return Vector2(self.x, -1 * self.y)
+
+    def pythagorean_distance(self, other: TOtherNumericTuple) -> float:
         assert len(other) >= 2, "Argument must have at least two elements."
         return ( ((self[0] - other[0]) ** 2) + ((self[1] - other[1]) ** 2) ) ** 0.5
+
+    def angle_radians(self, other: TOtherNumericTuple) -> float:
+        assert len(other) >= 2, "Argument must have at least two elements."
+        distance = self.pythagorean_distance(other)
+        assert not (distance == 0), "Cannot call angle_radians when self == other"
+        return math.atan2(other[1] - self[1], other[0] - self[0])
 
     def normal(self, other: TOtherNumericTuple) -> tuple[float,float]:
         assert len(other) >= 2, "Argument must have at least two elements."
         distance = self.pythagorean_distance(other)
         assert not (distance == 0), "Cannot call normal when self == other"
         return ((other[0] - self[0]) / distance, (other[1] - self[1]) / distance)
+
+    def from_polar_coords(self, angle_radians: float, length: float) -> 'Vector2[TOtherNumeric]':
+        x = length * math.cos(angle_radians)
+        y = length * math.sin(angle_radians)
+        return Vector2(x, y)
 
     # TODO: must be a faster way of doing this.
     def normal_4way(self, other: tuple[int, int]) -> 'Vector2[int, int]':
@@ -138,6 +158,8 @@ class Coord[TNumeric](Vector2[TNumeric]):
 
     def to_offset(self) -> Vector2[TNumeric]:
         return Vector2[TNumeric](self.x, self.y)
+
+ORIGIN = Coord[int](0,0)
 
 class Size[TNumeric](Vector2[TNumeric]):
 

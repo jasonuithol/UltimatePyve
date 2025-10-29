@@ -25,6 +25,9 @@ class SurfaceFactory:
     def create_surface(self, size_in_pixels: Size[int]) -> pygame.Surface:
         return pygame.Surface(size_in_pixels.to_tuple())
     
+    #
+    # TODO: Move into color_service
+    #
     def get_rgb_mapped_color(self, color: EgaPaletteValues | int):
         if isinstance(color, EgaPaletteValues):
             return self._rgb_color_map[color]

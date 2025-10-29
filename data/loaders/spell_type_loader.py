@@ -48,6 +48,7 @@ class SpellTypeLoader(LoggerMixin):
         self._level = 5
 
         self._register_peace_spell("iep", [ASH, MOS], T_DIR) # In Ex Por
+        self._register_combat_spell("iz", [GIN, SLK, NYT], T_DIR) # In Zu
 
         self.log(f"Registered {self.global_registry.spell_types} spell types")
 

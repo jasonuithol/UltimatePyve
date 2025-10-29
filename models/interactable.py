@@ -9,11 +9,9 @@ class Interactable(Protocol):
     coord: Coord[int]
     tile_id: int
 
-    # For Viewport.draw_map
     def get_current_tile_id(self) -> int:
         ...
 
-    # For main.run
     def pass_time(self):
         pass
 
