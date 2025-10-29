@@ -2,6 +2,7 @@
 from dark_libraries.service_provider import ServiceProvider
 from service_implementations.display_service_implementation import DisplayServiceImplementation
 from service_implementations.input_service_implementation import InputServiceImplementation
+from service_implementations.view_port_data_provider_implementation import ViewPortDataProviderImplementation
 
 from .console_service   import ConsoleService
 from .display_service import DisplayService
@@ -44,6 +45,7 @@ def compose(provider: ServiceProvider):
     provider.register_mapping(NpcService, NpcServiceImplementation)
     provider.register_mapping(DisplayService, DisplayServiceImplementation)
     provider.register_mapping(InputService, InputServiceImplementation)
+    provider.register_mapping(ViewPortDataProvider, ViewPortDataProviderImplementation)
 
     provider.register(SurfaceFactory)
     provider.register(AvatarSpriteFactory)
@@ -63,7 +65,6 @@ def compose(provider: ServiceProvider):
     provider.register(FontMapper)
     provider.register(CombatMapService)
 
-    provider.register(ViewPortDataProvider)
     provider.register(ViewPortService)
     provider.register(MonsterService)
     provider.register(InfoPanelService)
