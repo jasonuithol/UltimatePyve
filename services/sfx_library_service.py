@@ -1,4 +1,3 @@
-import datetime
 import math
 import random
 
@@ -17,6 +16,7 @@ from models.motion import Motion
 from models.projectile import Projectile
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
+from services.input_service import InputService
 from services.sound_service import SoundService
 
 from services.view_port_service import ViewPortService
@@ -46,6 +46,7 @@ class SfxLibraryService(LoggerMixin):
     display_service: DisplayService
     view_port_service: ViewPortService
     console_service: ConsoleService
+    input_service:   InputService
 
     def _play_and_wait(self, dark_wave: DarkWave | DarkWaveStereo):
 
@@ -54,6 +55,13 @@ class SfxLibraryService(LoggerMixin):
         # Keep rendering until the sound finished, but don't take any more input
         while channel_handle.get_busy():
             self.display_service.render()
+            self.input_service.discard_events()
+
+    def _wait_seconds(self, seconds: float):
+        deadline_ticks = pygame.time.get_ticks() + (seconds * 1000)
+        while pygame.time.get_ticks() < deadline_ticks:
+            self.display_service.render()
+            self.input_service.discard_events()
 
     def _create_motion(self, start_tile_coord: Coord[int], finish_tile_coord: Coord[int]) -> Motion:
         return Motion(
@@ -131,7 +139,6 @@ class SfxLibraryService(LoggerMixin):
 
 
         generator = self.sound_service.get_generator()
-#        noise_wave = generator.white_noise(hz = 1600.0, sec = 2.0).clamp(-0.2, +0.2)
 
         duration = 2.0
         phase_shift = 1 / duration
@@ -169,50 +176,43 @@ class SfxLibraryService(LoggerMixin):
 
     def cone_of_magic(self, start_coord: Coord, spell_direction: Vector2[int], color: EgaPaletteValues, ray_boundaries: Rect[int]):
 
-        #
-        # TODO: This is going be embodied in some extensions to dark_math once I get my head around it properly
-        #
+        # Build the ray animation, but don't play it yet.
+        magic_ray_set_playlist = self._build_magic_ray_set_playlist(start_coord, spell_direction, color, ray_boundaries)
 
-        # ANIMATION: Draw a rapidly expanding cone of magic originating from the origin
-        min_normal_screen, max_normal_screen = DIRECTION_SECTORS[spell_direction]
+        # Just make this something ridiculously too long
+        playlist_duration_seconds = 10.0
 
-        min_normal = min_normal_screen.screen_to_math()
-        max_normal = max_normal_screen.screen_to_math()
+        # SOUND: A directional cone of magic rays
+        generator = self.sound_service.get_generator()
+        noise_wave = generator.white_noise(hz = 1200.0, sec = playlist_duration_seconds).to_stereo()
 
-        min_angle_radians = ORIGIN.angle_radians(min_normal) % (2 * math.pi) 
-        max_angle_radians = ORIGIN.angle_radians(max_normal) % (2 * math.pi)
+        # Fire and forget, allowing this sound, and the following animation to play simultaneously
+        _, noise_handle = self.sound_service.play_sound(noise_wave)
 
-        self.log(f"DEBUG: Casting ray angles from {min_angle_radians} radians (normal={min_normal}) to {max_angle_radians} radians (normal={max_normal})")
+        # ANIMATION: Now we play the rays fanning out from the spell-caster.
+        for magic_ray_set in magic_ray_set_playlist:
+            self._wait_seconds(SECONDS_BETWEEN_RAY_GROWTHS)
+            self.view_port_service.set_magic_rays(magic_ray_set)
 
-        # can be positive or negative
-        ray_angle_span = _shortest_span(min_angle_radians, max_angle_radians)
-        self.log(f"DEBUG: ray_angle_span={ray_angle_span}")
+        # Once the animation is finished, halt the sound effect.
+        noise_handle.stop()
 
-        ray_angle_delta = ray_angle_span / NUMBER_OF_MAGIC_RAYS_IN_CONE_OF_MAGIC
-        self.log(f"DEBUG: ray_angle_delta={ray_angle_delta}")
+        self.log(f"DEBUG: Magic ray finished.  Endpoints stopped at {magic_ray_set.end_points}")
 
-        ray_angles = [
-            (min_angle_radians + (ray_angle_delta * ray_index)) % (2 * math.pi)
-            for ray_index in range(NUMBER_OF_MAGIC_RAYS_IN_CONE_OF_MAGIC + 1)
-        ]
+    def _build_magic_ray_set_playlist(self, start_coord: Coord, spell_direction: Vector2[int], color: EgaPaletteValues, ray_boundaries: Rect[int]) -> list[MagicRaySet]:
 
-        self.log(f"DEBUG: built magic ray angles={ray_angles}")
+        ray_angles = self._build_magic_ray_angles(spell_direction)
 
         unfinished_magic_rays = {
             ray_angle : (0.0, start_coord)
             for ray_angle in ray_angles
         }
 
-        next_ray_growth_ticks = pygame.time.get_ticks() + (SECONDS_BETWEEN_RAY_GROWTHS * 1000)
         finished_magic_rays = {}
 
-        while any(unfinished_magic_rays):
+        play_list = list[MagicRaySet]()
 
-            if pygame.time.get_ticks() < next_ray_growth_ticks:
-                self.display_service.render()
-                continue
-            else:
-                next_ray_growth_ticks = pygame.time.get_ticks() + (SECONDS_BETWEEN_RAY_GROWTHS * 1000)
+        while any(unfinished_magic_rays):
 
             ray_angle, ray_state = random.choice([x for x in unfinished_magic_rays.items()])
             current_length, current_end_coord = ray_state
@@ -242,8 +242,40 @@ class SfxLibraryService(LoggerMixin):
                 color = color
             )
 
-            self.view_port_service.set_magic_rays(magic_ray_set)
+            play_list.append(magic_ray_set)
 
-        self.log(f"DEBUG: Magic ray finished.  Endpoints stopped at {magic_ray_set.end_points}")
+        return play_list
 
-            
+    def _build_magic_ray_angles(self, spell_direction: Vector2[int]) -> list[float]:
+
+        #
+        # TODO: This is going be embodied in some extensions to dark_math once I get my head around it properly
+        #
+
+        # ANIMATION: Draw a rapidly expanding cone of magic originating from the origin
+        min_normal_screen, max_normal_screen = DIRECTION_SECTORS[spell_direction]
+
+        min_normal = min_normal_screen.screen_to_math()
+        max_normal = max_normal_screen.screen_to_math()
+
+        min_angle_radians = ORIGIN.angle_radians(min_normal) % (2 * math.pi) 
+        max_angle_radians = ORIGIN.angle_radians(max_normal) % (2 * math.pi)
+
+        self.log(f"DEBUG: Casting ray angles from {min_angle_radians} radians (normal={min_normal}) to {max_angle_radians} radians (normal={max_normal})")
+
+        # can be positive or negative
+        ray_angle_span = _shortest_span(min_angle_radians, max_angle_radians)
+        self.log(f"DEBUG: ray_angle_span={ray_angle_span}")
+
+        ray_angle_delta = ray_angle_span / NUMBER_OF_MAGIC_RAYS_IN_CONE_OF_MAGIC
+        self.log(f"DEBUG: ray_angle_delta={ray_angle_delta}")
+
+        ray_angles = [
+            (min_angle_radians + (ray_angle_delta * ray_index)) % (2 * math.pi)
+            for ray_index in range(NUMBER_OF_MAGIC_RAYS_IN_CONE_OF_MAGIC + 1)
+        ]
+
+        self.log(f"DEBUG: built magic ray angles={ray_angles}")
+
+        return ray_angles
+                    
