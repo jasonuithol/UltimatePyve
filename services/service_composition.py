@@ -1,6 +1,7 @@
 # file: display/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
 from service_implementations.display_service_implementation import DisplayServiceImplementation
+from service_implementations.input_service_implementation import InputServiceImplementation
 
 from .console_service   import ConsoleService
 from .display_service import DisplayService
@@ -36,16 +37,23 @@ from .world_loot.service_composition import compose as compose_world_loot
 
 def compose(provider: ServiceProvider):
 
+    #
+    # As service's API's stablize/mature, give them interfaces to reduce their contribution to future potential cyclic dependency issues.
+    # Give higher priority to services that themselves depend on other services.
+    # 
     provider.register_mapping(NpcService, NpcServiceImplementation)
     provider.register_mapping(DisplayService, DisplayServiceImplementation)
+    provider.register_mapping(InputService, InputServiceImplementation)
 
     provider.register(SurfaceFactory)
     provider.register(AvatarSpriteFactory)
     provider.register(ConsoleService)
-    provider.register(DoorInstanceFactory)
-    # TODO: World Loot might be a service
-    provider.register(FieldOfViewCalculator)
 
+    provider.register(DoorInstanceFactory) # <== SCHEDULED FOR DEMOLITION
+
+    # TODO: World Loot might be a service
+
+    provider.register(FieldOfViewCalculator)
     provider.register(LightingService)
     provider.register(ModdingService)
     provider.register(MonsterSpawner)
@@ -57,7 +65,6 @@ def compose(provider: ServiceProvider):
 
     provider.register(ViewPortDataProvider)
     provider.register(ViewPortService)
-    provider.register(InputService)
     provider.register(MonsterService)
     provider.register(InfoPanelService)
     provider.register(InfoPanelDataProvider)
