@@ -10,7 +10,10 @@ It uses the original game data files but runs them through a modern, Python‑ba
 - This has been tested on Windows 10, Windows 11 and MacOS.
 
 - **A legal copy of the PC version of Ultima V**  
-  You can purchase a DRM‑free copy from [GOG.com](https://www.gog.com/en/game/ultima_4_5_6).
+  You can purchase a DRM‑free copy from [GOG.com](https://www.gog.com/en/game/ultima_4_5_6). This will be the PC version, but with this engine, you can run it on MacOS.  NOTE: It comes packaged in DOSBox - there's probably a way to run OG Ultima from GOG on MacOS.
+
+  (I tried to find Ultima V on the appstore and could not.)
+
 - **Python 3.13 or newer**  
   [Download Python here](https://www.python.org/downloads/).
 
@@ -20,7 +23,7 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
 1. **Install Python 3.13+**  
 
-    Make sure `python` (or `python3`) points to the correct version.  When it asks if you want to add it to the PATH, say yes.
+    Make sure `pypi` points to the correct version (if that's even a thing).  When it asks if you want to add it to the PATH, say yes.
 
 
 2. **Clone this repository**  
