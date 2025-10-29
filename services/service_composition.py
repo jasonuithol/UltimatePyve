@@ -1,5 +1,6 @@
 # file: display/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
+from service_implementations.display_service_implementation import DisplayServiceImplementation
 
 from .console_service   import ConsoleService
 from .display_service import DisplayService
@@ -36,6 +37,7 @@ from .world_loot.service_composition import compose as compose_world_loot
 def compose(provider: ServiceProvider):
 
     provider.register_mapping(NpcService, NpcServiceImplementation)
+    provider.register_mapping(DisplayService, DisplayServiceImplementation)
 
     provider.register(SurfaceFactory)
     provider.register(AvatarSpriteFactory)
@@ -53,7 +55,6 @@ def compose(provider: ServiceProvider):
     provider.register(FontMapper)
     provider.register(CombatMapService)
 
-    provider.register(DisplayService)
     provider.register(ViewPortDataProvider)
     provider.register(ViewPortService)
     provider.register(MainLoopService)
