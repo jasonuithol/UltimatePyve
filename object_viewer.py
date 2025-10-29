@@ -169,8 +169,8 @@ while running:
     menu_bar.draw(active_profile.screen)
 
     # Draw objects in grid
-    for row in range(active_profile.viewer_size().h):
-        for col in range(active_profile.viewer_size().w):
+    for row in range(int(active_profile.viewer_size().h)):
+        for col in range(int(active_profile.viewer_size().w)):
 
             x = MARGIN + col * active_profile.object_scaled_size().w
             y = MARGIN + row * active_profile.object_scaled_size().h
