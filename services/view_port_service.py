@@ -74,7 +74,7 @@ class ViewPortService(LoggerMixin):
         self.log(f"DEBUG: Set cursor ({cursor_type}) to {cursor_coord}")
 
     def remove_cursor(self, cursor_type: int):
-        del self._cursors[cursor_type]
+        self._cursors.pop(cursor_type, None)
         self.log(f"DEBUG: Removed cursor {cursor_type}")
 
     #

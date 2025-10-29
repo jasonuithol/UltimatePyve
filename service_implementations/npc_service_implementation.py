@@ -14,6 +14,7 @@ from models.global_location    import GlobalLocation
 from models.agents.npc_agent   import NpcAgent
 
 from services.display_service import DisplayService
+from services.main_loop_service import MainLoopService
 from services.map_cache.map_cache_service import MapCacheService
 
 class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
@@ -23,6 +24,7 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
     party_agent: PartyAgent
 
     display_service: DisplayService
+    main_loop_service: MainLoopService
 
     def __init__(self):
         super().__init__()
@@ -131,6 +133,7 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
                 decision_time = pygame.time.get_ticks() + 250
                 while pygame.time.get_ticks() < decision_time:
                     self.display_service.render()
+                    self.main_loop_service.discard_events()
 
             return final_choice
 

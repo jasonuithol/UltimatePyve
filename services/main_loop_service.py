@@ -169,3 +169,10 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
         if not self._has_quit:
             self.dark_event_service.quit()
         return self._fake_quit_event
+
+    def discard_events(self):
+        num = 0
+        for event in pygame.event.get():
+            num += 1
+        self.log(f"Discarded {num} events")
+    

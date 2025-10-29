@@ -268,6 +268,8 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
         victory_declared = False
 
+        self.main_loop_service.discard_events()
+
         while not self._has_quit:
 
             if not victory_declared:
