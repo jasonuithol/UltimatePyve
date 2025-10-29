@@ -1,3 +1,4 @@
+from enum import Enum
 import pygame
 
 from dark_libraries.dark_math import Coord, Rect
@@ -6,7 +7,6 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.agents.party_agent import PartyAgent
-from models.enums.ega_palette_values import EgaPaletteValues
 from models.magic_ray_set import MagicRaySet
 from models.projectile import Projectile
 from models.sprite import Sprite
@@ -26,8 +26,10 @@ BIBLICALLY_ACCURATE_PROJECTILE_OFFSET       = (0.25,  0.0)
 # TODO: Assumes casting north.  OK for east/west but south will look cooked.
 BIBLICALLY_ACCURATE_MAGIC_RAY_ORIGIN_OFFSET = (0.45 ,  0.0)
 
-PARTY_MODE  = 123
-COMBAT_MODE = 456
+
+class ViewPortMode(Enum):
+    PartyMode = 123
+    CombatMode = 456
 
 class ViewPortService(LoggerMixin):
 
@@ -89,19 +91,19 @@ class ViewPortService(LoggerMixin):
 
     def set_combat_mode(self):
         self._set_mode(
-            value = COMBAT_MODE,
+            value = ViewPortMode.CombatMode,
             default_tile_id = 255   # Black block
         )
 
     def set_party_mode(self):
         self._set_mode(
-            value = PARTY_MODE,
+            value = ViewPortMode.PartyMode,
             default_tile_id = 5     # grass 
         )
 
     @property
     def view_rect(self) -> Rect[int]:
-        if self._mode == PARTY_MODE:
+        if self._mode == ViewPortMode.PartyMode:
             minimum_corner = self.party_agent.coord - (self.display_config.VIEW_PORT_SIZE // 2)
             return Rect[int](minimum_corner, self.display_config.VIEW_PORT_SIZE)
         else:
@@ -135,7 +137,7 @@ class ViewPortService(LoggerMixin):
 
     def draw_map(self) -> None:
 
-        if self._mode == PARTY_MODE:
+        if self._mode == ViewPortMode.PartyMode:
             view_port_data: ViewPortData = self.view_port_data_provider.get_party_map_data(self.view_rect)
         else:
             view_port_data: ViewPortData = self.view_port_data_provider.get_combat_map_data(self.view_rect)

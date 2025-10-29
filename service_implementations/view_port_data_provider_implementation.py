@@ -19,16 +19,6 @@ from services.npc_service import NpcService
 from services.view_port_data_provider import ViewPortData
 from view.view_port import ViewPort
 
-PARTY_MODE  = 123
-COMBAT_MODE = 456
-
-#ViewPortData = dict[Coord[int], Tile]
-
-DEFAULT_TILE_IDS = {
-    PARTY_MODE:    5,
-    COMBAT_MODE: 255
-}
-
 class ViewPortDataProviderImplementation(LoggerMixin):
 
     party_agent:              PartyAgent

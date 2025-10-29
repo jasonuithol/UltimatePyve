@@ -2,16 +2,6 @@ from typing import Protocol
 from dark_libraries.dark_math import Coord, Rect
 from models.tile import Tile
 
-'''
-PARTY_MODE  = 123
-COMBAT_MODE = 456
-
-DEFAULT_TILE_IDS = {
-    PARTY_MODE:    5,
-    COMBAT_MODE: 255
-}
-'''
-
 ViewPortData = dict[Coord[int], Tile]
 
 class ViewPortDataProvider(Protocol):
