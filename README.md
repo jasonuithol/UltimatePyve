@@ -44,7 +44,14 @@ Currently, this program looks for your Ultima V installation at:
 %ProgramFiles(x86)%\GOG Galaxy\Games\Ultima 5
 ```
 
-This value lives in configure.py
+and on MacOS it will find it at
+
+```
+/Applications/Ultima V™.app/Contents/Resources/game
+```
+
+
+These values live in configure.py
 
 ## Running
 
