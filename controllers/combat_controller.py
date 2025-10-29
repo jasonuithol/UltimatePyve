@@ -316,6 +316,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                     #
                     monster_target_coord = self.npc_service.get_party_members()[0].coord
 
+                    # This triggers the AI in MonsterService
                     self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, monster_target_coord))
 
         self._exit_combat_arena(enemy_party)

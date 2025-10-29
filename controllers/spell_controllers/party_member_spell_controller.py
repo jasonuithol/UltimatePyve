@@ -17,5 +17,9 @@ class PartyMemberSpellController(LoggerMixin):
         if spell_type.spell_key == "m":
             amount_healed = random.randrange(1, spell_caster.intelligence)
             target_member.hitpoints = min(target_member.hitpoints + amount_healed, target_member.maximum_hitpoints)
+
+        # LEVEL TWO
+
+
         else:
             assert False, f"Unknown spell_key={spell_type.spell_key} for {__class__.__name__}"

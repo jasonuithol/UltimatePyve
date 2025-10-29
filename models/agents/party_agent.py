@@ -102,6 +102,11 @@ class PartyAgent(NpcAgent):
     def dexterity(self) -> int:
         transport_mode, _ = self.get_transport_state()
         return transport_mode_dexterity_map[transport_mode]
+
+    @property
+    def slept(self) -> bool:
+        return False
+    
     #
     # NPC_AGENT IMPLEMENTATION: end
 

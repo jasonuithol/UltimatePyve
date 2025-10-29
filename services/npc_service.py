@@ -88,10 +88,10 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
         if not any(self._active_npcs):
             return None
 
-        all_candidates = self.get_npcs().values()
+        candidates = self.get_npcs().values()
 
-        min_spent_action_points = min(npc.spent_action_points for npc in all_candidates)
-        ap_candidates = [npc for npc in all_candidates if npc.spent_action_points == min_spent_action_points]
+        min_spent_action_points = min(npc.spent_action_points for npc in candidates)
+        ap_candidates = [npc for npc in candidates if npc.spent_action_points == min_spent_action_points]
 
         if not any(ap_candidates):
             return None
@@ -102,13 +102,22 @@ class NpcService(LoggerMixin, DarkEventListenerMixin):
         if not any(dex_candidates):
             return None
         
-        result = random.choice(dex_candidates)
+        final_choice = random.choice(dex_candidates)
         self.log(
-            f"DEBUG: Choosing {result.name} at {result.coord} with {result.spent_action_points} spent action points for next turn"
+            f"DEBUG: Choosing {final_choice.name} at {final_choice.coord} with {final_choice.spent_action_points} spent action points for next turn"
             +
             f", out of {len(ap_candidates)} action candidates and {len(dex_candidates)} DEX candidates."
         )
-        return result
+
+        if final_choice.slept:
+            self.log("eepy-deepy detected, will try to awake, then choose next npc for an action")
+            if random.randint(0,100) < 2:
+                final_choice.awake()
+
+            final_choice.spend_action_quanta()
+            return self.get_next_moving_npc()
+        else:
+            return final_choice
 
     def get_party_members(self) -> list[PartyMemberAgent]:
         return [npc for npc in self._active_npcs if isinstance(npc, PartyMemberAgent)]

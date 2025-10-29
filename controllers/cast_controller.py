@@ -1,5 +1,6 @@
 import pygame
 
+from controllers.spell_controllers.directional_spell_controller import DirectionalSpellController
 from controllers.spell_controllers.general_spell_controller import GeneralSpellController
 from controllers.spell_controllers.party_member_spell_controller import PartyMemberSpellController
 from dark_libraries.dark_events import DarkEventListenerMixin
@@ -21,6 +22,7 @@ from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
 from services.main_loop_service import MainLoopService, keycode_to_char
 from services.sfx_library_service import SfxLibraryService
+from services.view_port_service import ViewPortService
 
 INCUR_SPELL_COST = True
 NO_SPELL_COST    = False
@@ -38,6 +40,8 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
     general_spell_controller:      GeneralSpellController
     party_member_spell_controller: PartyMemberSpellController
+    directional_spell_controller:  DirectionalSpellController
+    view_port_service: ViewPortService
 
     def handle_event(self, event: pygame.event.Event, spell_caster: PartyMemberAgent, combat_map: CombatMap):
         if event.key == pygame.K_c:
@@ -160,10 +164,14 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             self.general_spell_controller.cast(spell_caster, spell_type)
 
         elif spell_type.target_type == SpellTargetType.T_DIRECTION:
-#            self.console_service.print_ascii("Direction: ", include_carriage_return = False)
+            #
+            # APOLOGIES: There's shit all over the place here. It might get re-thought, it might not.
+            #
             spell_direction = self.main_loop_service.obtain_action_direction()
             self.sfx_library_service.bubbling_of_reality()
             self.sfx_library_service.cone_of_magic(spell_caster.coord, spell_direction, EgaPaletteValues.Magenta, combat_map.get_size().to_rect(Coord(0,0)))
+            self.directional_spell_controller.cast(spell_caster, spell_type, spell_direction)
+            self.view_port_service.set_magic_rays(None)
 
         elif spell_type.target_type == SpellTargetType.T_COORD:
 

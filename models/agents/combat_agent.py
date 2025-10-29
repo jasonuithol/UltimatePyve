@@ -16,11 +16,18 @@ class CombatAgent(NpcAgent):
         self._coord = coord
         self._sprite = sprite
         self._sprite_time_offset = sprite.create_random_time_offset()
+        self._slept = False
+        self._slept_tile: Tile = None
+
+
 
     # NPC_AGENT IMPLEMENTATION (Partial): Start
     @property
     def current_tile(self):
-        return self._sprite.get_current_frame(self._sprite_time_offset)
+        if self._slept_tile:
+            return self._slept_tile
+        else:
+            return self._sprite.get_current_frame(self._sprite_time_offset)
 
     @property
     def coord(self) -> Coord[int]:
@@ -29,7 +36,20 @@ class CombatAgent(NpcAgent):
     @coord.setter
     def coord(self, value: Coord[int]):
         self._coord = value
+
+    @property
+    def slept(self) -> bool:
+        return self._slept
+
     # NPC_AGENT IMPLEMENTATION (Partial): End
+
+    def sleep(self):
+        self._slept_tile = self.current_tile
+        self._slept = True
+
+    def awake(self):
+        self._slept_tile = None
+        self._slept = False
 
     @property
     def strength(self) -> int: ...
@@ -68,9 +88,7 @@ class CombatAgent(NpcAgent):
 
     def attack(self, other: Self, weapon: EquipableItemType) -> bool:
         if random.uniform(0.0, 1.0) < self.calculate_hit_probability(other):
-            #
-            # TODO: Get both hands involved.
-            #
+
             damage = self.calculate_damage(weapon)
             other.take_damage(damage)
 
@@ -93,4 +111,4 @@ class CombatAgent(NpcAgent):
         self.coord = coord
         self._spent_action_points = 0
 
-
+        

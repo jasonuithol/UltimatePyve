@@ -244,8 +244,6 @@ class SfxLibraryService(LoggerMixin):
 
             self.view_port_service.set_magic_rays(magic_ray_set)
 
-
-
         self.log(f"DEBUG: Magic ray finished.  Endpoints stopped at {magic_ray_set.end_points}")
 
             

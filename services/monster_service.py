@@ -41,6 +41,8 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
 
             monster_agent: MonsterAgent = next_npc_agent
 
+            assert not monster_agent.slept, "Cannot give a sleeping monster a turn."
+
             old_coord = monster_agent.coord
 
             if monster_agent.coord.taxi_distance(party_location.coord) == 1:
