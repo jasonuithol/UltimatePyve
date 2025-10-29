@@ -24,8 +24,14 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
     npc_service:       NpcService
     global_registry:   GlobalRegistry
     display_service:   DisplayService
-    main_loop_service: InputService
+    input_service: InputService
 
+    #
+    # TODO: In combat mode: "party_location" is really the combat map coord of the avatar.
+    #       This allows pathing to the avatar to simulate AI attack strategies, but falls  
+    #       apart whenever a monster gets in range of any party member that isn't the
+    #       actual avatar
+    #
     def pass_time(self, party_location: GlobalLocation):
         super().pass_time(party_location)
 
@@ -52,13 +58,18 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
             decision_time = pygame.time.get_ticks() + 250
             while pygame.time.get_ticks() < decision_time:
                 self.display_service.render()
-                self.main_loop_service.discard_events()
+                self.input_service.discard_events()
                     
             old_coord = monster_agent.coord
 
             if monster_agent.coord.taxi_distance(party_location.coord) == 1:
                 # Combat map mode
                 if current_map.location_index == COMBAT_MAP_LOCATION_INDEX:
+                    #
+                    # TODO: Since this algorithm has no where near enough into to path
+                    #       a monster towards an actual closest party member, we certainly 
+                    #       don't want to build atop that pile of garbage.
+                    #
                     self.console_service.print_ascii("WHAM !")
 
                 # Overworld mode

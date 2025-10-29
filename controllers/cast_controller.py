@@ -32,7 +32,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     console_service:   ConsoleService
     party_agent:       PartyAgent
     global_registry:   GlobalRegistry
-    main_loop_service: InputService
+    input_service: InputService
     
     info_panel_service:       InfoPanelService
     info_panel_data_provider: InfoPanelDataProvider
@@ -115,7 +115,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         rune_keys = ""
 
         while not self._has_quit:
-            event = self.main_loop_service.get_next_event()
+            event = self.input_service.get_next_event()
 
             if event.key == pygame.K_ESCAPE or self._has_quit:
                 self.console_service.print_ascii("None !")
@@ -167,7 +167,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             #
             # APOLOGIES: There's shit all over the place here. It might get re-thought, it might not.
             #
-            spell_direction = self.main_loop_service.obtain_action_direction()
+            spell_direction = self.input_service.obtain_action_direction()
             self.sfx_library_service.bubbling_of_reality()
             self.sfx_library_service.cone_of_magic(spell_caster.coord, spell_direction, EgaPaletteValues.Magenta, combat_map.get_size().to_rect(Coord(0,0)))
             self.directional_spell_controller.cast(spell_caster, spell_type, spell_direction)
@@ -177,7 +177,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
             assert combat_map, "Should be in combat, or have been prevented from casting this spell"
 
-            spell_coord = self.main_loop_service.obtain_cursor_position(
+            spell_coord = self.input_service.obtain_cursor_position(
                 starting_coord  = spell_caster.coord,
                 boundary_rect   = combat_map.get_size().to_rect(Coord(0,0)),
                 range_          = 255

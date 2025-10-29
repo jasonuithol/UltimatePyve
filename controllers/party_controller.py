@@ -39,7 +39,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     global_registry:    GlobalRegistry
 
     dark_event_service: DarkEventService
-    main_loop_service:  InputService
+    input_service:  InputService
     console_service:    ConsoleService
     npc_service:        NpcService
     world_clock:        WorldClock
@@ -87,7 +87,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
     def dispatch_input(self) -> bool:
         
-        event = self.main_loop_service.get_next_event()
+        event = self.input_service.get_next_event()
 
         self.active_member_controller.handle_event(event)
         self.ready_controller.handle_event(event)
@@ -108,7 +108,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
         elif event.key == pygame.K_j:
             self.console_service.print_ascii("Jimmy - ",include_carriage_return=False)
-            action_direction = self.main_loop_service.obtain_action_direction()
+            action_direction = self.input_service.obtain_action_direction()
             if not action_direction is None:
                 self.jimmy(action_direction)
                 return PASS_TIME
@@ -119,7 +119,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
         elif event.key == pygame.K_a:
             self.console_service.print_ascii("Attack - ",include_carriage_return=False)
-            action_direction = self.main_loop_service.obtain_action_direction()
+            action_direction = self.input_service.obtain_action_direction()
             if not action_direction is None:
                 self.attack(action_direction)
                 return PASS_TIME

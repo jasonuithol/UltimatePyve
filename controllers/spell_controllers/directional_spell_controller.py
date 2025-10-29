@@ -16,7 +16,7 @@ from services.sfx_library_service import SfxLibraryService
 class DirectionalSpellController(LoggerMixin):
 
     party_agent: PartyAgent
-    main_loop_service: InputService
+    input_service: InputService
     npc_service: NpcService
     sfx_library_service: SfxLibraryService
 

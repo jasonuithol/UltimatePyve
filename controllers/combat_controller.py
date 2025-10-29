@@ -66,7 +66,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     map_cache_service: MapCacheService
     console_service: ConsoleService
     
-    main_loop_service: InputService
+    input_service: InputService
     dark_event_service: DarkEventService
     display_service: DisplayService
     move_controller: MoveController
@@ -162,7 +162,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
             else:
                 starting_coord = target_enemy.coord
 
-            target_coord = self.main_loop_service.obtain_cursor_position(
+            target_coord = self.input_service.obtain_cursor_position(
                 starting_coord = starting_coord,
                 boundary_rect  = combat_map.get_size().to_rect(Coord(0,0)),
                 range_         = max(weapon.range_, 1)
@@ -268,7 +268,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
         victory_declared = False
 
-        self.main_loop_service.discard_events()
+        self.input_service.discard_events()
 
         while not self._has_quit:
 
@@ -303,7 +303,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 #
                 # -- R E N D E R --
                 #
-                event = self.main_loop_service.get_next_event()
+                event = self.input_service.get_next_event()
 
                 self._dispatch_player_event(combat_map, party_member, event)
                 self.view_port_service.remove_cursor(CursorType.OUTLINE)

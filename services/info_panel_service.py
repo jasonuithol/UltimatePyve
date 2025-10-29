@@ -22,7 +22,7 @@ class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
     global_registry: GlobalRegistry
     font_mapper:     FontMapper
     main_display:    MainDisplay
-    main_loop_service: InputService
+    input_service: InputService
     surface_factory: SurfaceFactory
 
     def init(self):
@@ -78,7 +78,7 @@ class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
         self._update_choose_item_display(glyph_rows, selected_index)
 
         while not self._has_quit:
-            event = self.main_loop_service.get_next_event()
+            event = self.input_service.get_next_event()
 
             if event.key == pygame.K_UP:
                 selected_index = (selected_index - 1) % item_count

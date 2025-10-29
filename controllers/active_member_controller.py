@@ -17,7 +17,7 @@ class ActiveMemberController:
 
     party_agent: PartyAgent
     console_service: ConsoleService
-    main_loop_service: InputService
+    input_service: InputService
 
     # This never passes time or consumes items or nuffin
     def handle_event(self, event: pygame.event.Event):
