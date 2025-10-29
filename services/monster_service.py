@@ -1,4 +1,5 @@
 
+import pygame
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.logging     import LoggerMixin
 
@@ -10,6 +11,8 @@ from models.global_location      import GlobalLocation
 from models.agents.monster_agent import MonsterAgent
 
 from services.console_service             import ConsoleService
+from services.display_service import DisplayService
+from services.main_loop_service import MainLoopService
 from services.npc_service                 import NpcService
 from services.map_cache.map_cache_service import MapCacheService
 
@@ -20,6 +23,8 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
     map_cache_service: MapCacheService
     npc_service:       NpcService
     global_registry:   GlobalRegistry
+    display_service:   DisplayService
+    main_loop_service: MainLoopService
 
     def pass_time(self, party_location: GlobalLocation):
         super().pass_time(party_location)
@@ -43,6 +48,12 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
 
             assert not monster_agent.slept, "Cannot give a sleeping monster a turn."
 
+            # Let's simulate the monster taking a real-world-time moment to think about what it's going to do.
+            decision_time = pygame.time.get_ticks() + 250
+            while pygame.time.get_ticks() < decision_time:
+                self.display_service.render()
+                self.main_loop_service.discard_events()
+                    
             old_coord = monster_agent.coord
 
             if monster_agent.coord.taxi_distance(party_location.coord) == 1:

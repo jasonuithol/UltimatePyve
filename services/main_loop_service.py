@@ -174,5 +174,6 @@ class MainLoopService(DarkEventListenerMixin, LoggerMixin):
         num = 0
         for event in pygame.event.get():
             num += 1
-        self.log(f"Discarded {num} events")
+        if num > 0:
+            self.log(f"DEBUG: Discarded {num} events")
     

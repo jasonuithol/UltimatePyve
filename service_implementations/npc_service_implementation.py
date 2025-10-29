@@ -13,8 +13,6 @@ from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 from models.global_location    import GlobalLocation
 from models.agents.npc_agent   import NpcAgent
 
-from services.display_service import DisplayService
-from services.main_loop_service import MainLoopService
 from services.map_cache.map_cache_service import MapCacheService
 
 class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
@@ -22,9 +20,6 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
     # Injectable
     map_cache_service: MapCacheService
     party_agent: PartyAgent
-
-    display_service: DisplayService
-    main_loop_service: MainLoopService
 
     def __init__(self):
         super().__init__()
@@ -127,14 +122,6 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
             final_choice.spend_action_quanta()
             return self.get_next_moving_npc()
         else:
-
-            if isinstance(final_choice, MonsterAgent):
-                # Let's simulate the monster taking a real-world-time moment to think about what it's going to do.
-                decision_time = pygame.time.get_ticks() + 250
-                while pygame.time.get_ticks() < decision_time:
-                    self.display_service.render()
-                    self.main_loop_service.discard_events()
-
             return final_choice
 
     def get_party_members(self) -> list[PartyMemberAgent]:
