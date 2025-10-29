@@ -15,7 +15,10 @@ def check_python_version():
 
 def get_u5_path() -> Path:
     u5_search_paths = [
-        r"%ProgramFiles(x86)%\GOG Galaxy\Games\Ultima 5"
+        r"%ProgramFiles(x86)%\GOG Galaxy\Games\Ultima 5",       # GOG on Windows 10
+
+        r"/Applications/Ultima V™.app/Contents/Resources/game"  # THANKS: TheMadBug (reddit) 29/10/25
+                                                                # This is for mac systems.
     ]
     for path_str in u5_search_paths:
         expanded = os.path.expanduser(os.path.expandvars(path_str))
