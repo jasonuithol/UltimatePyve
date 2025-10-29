@@ -2,7 +2,7 @@ import pygame
 
 from models.agents.party_agent import PartyAgent
 from services.console_service import ConsoleService
-from services.main_loop_service import MainLoopService
+from services.input_service import InputService
 
 active_player_keymap = {
     pygame.K_1 : 0,
@@ -17,7 +17,7 @@ class ActiveMemberController:
 
     party_agent: PartyAgent
     console_service: ConsoleService
-    main_loop_service: MainLoopService
+    main_loop_service: InputService
 
     # This never passes time or consumes items or nuffin
     def handle_event(self, event: pygame.event.Event):

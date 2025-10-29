@@ -8,7 +8,7 @@ from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
 from models.spell_type import SpellType
-from services.main_loop_service import MainLoopService
+from services.input_service import InputService
 from services.npc_service import NpcService
 from models.enums.direction_map import DIRECTION_SECTORS
 from services.sfx_library_service import SfxLibraryService
@@ -16,7 +16,7 @@ from services.sfx_library_service import SfxLibraryService
 class DirectionalSpellController(LoggerMixin):
 
     party_agent: PartyAgent
-    main_loop_service: MainLoopService
+    main_loop_service: InputService
     npc_service: NpcService
     sfx_library_service: SfxLibraryService
 

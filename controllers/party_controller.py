@@ -23,7 +23,7 @@ from models.enums.inventory_offset import InventoryOffset
 from models.agents.party_agent import PartyAgent
 
 from services.display_service import DisplayService
-from services.main_loop_service import MainLoopService
+from services.input_service import InputService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
 from services.view_port_service import ViewPortService
@@ -39,7 +39,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     global_registry:    GlobalRegistry
 
     dark_event_service: DarkEventService
-    main_loop_service:  MainLoopService
+    main_loop_service:  InputService
     console_service:    ConsoleService
     npc_service:        NpcService
     world_clock:        WorldClock

@@ -12,7 +12,7 @@ from models.agents.monster_agent import MonsterAgent
 
 from services.console_service             import ConsoleService
 from services.display_service import DisplayService
-from services.main_loop_service import MainLoopService
+from services.input_service import InputService
 from services.npc_service                 import NpcService
 from services.map_cache.map_cache_service import MapCacheService
 
@@ -24,7 +24,7 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
     npc_service:       NpcService
     global_registry:   GlobalRegistry
     display_service:   DisplayService
-    main_loop_service: MainLoopService
+    main_loop_service: InputService
 
     def pass_time(self, party_location: GlobalLocation):
         super().pass_time(party_location)

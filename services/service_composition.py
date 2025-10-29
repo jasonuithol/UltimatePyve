@@ -13,7 +13,7 @@ from .lighting_service import LightingService
 
 from .door_instance_factory    import DoorInstanceFactory
 
-from .main_loop_service import MainLoopService
+from .input_service import InputService
 from .monster_service import MonsterService
 from .monster_spawner     import MonsterSpawner
 from .combat_map_service import CombatMapService
@@ -57,7 +57,7 @@ def compose(provider: ServiceProvider):
 
     provider.register(ViewPortDataProvider)
     provider.register(ViewPortService)
-    provider.register(MainLoopService)
+    provider.register(InputService)
     provider.register(MonsterService)
     provider.register(InfoPanelService)
     provider.register(InfoPanelDataProvider)

@@ -50,7 +50,7 @@ class SyntheticQuit:
         self.key = -1
         self.type = -1
 
-class MainLoopService(DarkEventListenerMixin, LoggerMixin):
+class InputService(DarkEventListenerMixin, LoggerMixin):
 
     party_agent:     PartyAgent
     display_service: DisplayService

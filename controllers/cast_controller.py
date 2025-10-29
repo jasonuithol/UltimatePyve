@@ -20,7 +20,7 @@ from models.spell_type import SpellType
 from services.console_service import ConsoleService
 from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
-from services.main_loop_service import MainLoopService, keycode_to_char
+from services.input_service import InputService, keycode_to_char
 from services.sfx_library_service import SfxLibraryService
 from services.view_port_service import ViewPortService
 
@@ -32,7 +32,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     console_service:   ConsoleService
     party_agent:       PartyAgent
     global_registry:   GlobalRegistry
-    main_loop_service: MainLoopService
+    main_loop_service: InputService
     
     info_panel_service:       InfoPanelService
     info_panel_data_provider: InfoPanelDataProvider

@@ -29,7 +29,7 @@ from models.equipable_item_type import EquipableItemType # for syntax highlighti
 from services.combat_map_service import CombatMapService
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
-from services.main_loop_service import MainLoopService
+from services.input_service import InputService
 from services.map_cache.map_cache_service import MapCacheService
 from services.npc_service import NpcService
 from services.sfx_library_service import SfxLibraryService
@@ -66,7 +66,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     map_cache_service: MapCacheService
     console_service: ConsoleService
     
-    main_loop_service: MainLoopService
+    main_loop_service: InputService
     dark_event_service: DarkEventService
     display_service: DisplayService
     move_controller: MoveController
