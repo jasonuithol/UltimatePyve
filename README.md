@@ -39,7 +39,7 @@ It uses the original game data files but runs them through a modern, Python‑ba
     Unzip it and rename UltimatePyve-master to UltimatePyve
 
 
-# IMPORTANT REASSURANCE: This program does NOT alter your u5 or Ultima V directory or file contents.
+# IMPORTANT REASSURANCE: This program does NOT alter your Ultima V directory or file contents.
 
 Currently, this program looks for your Ultima V installation at:
 
