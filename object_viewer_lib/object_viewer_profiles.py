@@ -1,21 +1,21 @@
-import math
+import pygame, base64, math
+
 from pathlib import Path
-import pygame, base64
 
 from dark_libraries.dark_math import Size
 from dark_libraries.registry import Registry
 
-from data.global_registry import GlobalRegistry
+from data.global_registry                   import GlobalRegistry
 from data.loaders.location_metadata_builder import LocationMetadataBuilder
-from data.loaders.tileset_loader import TileLoader
-from data.loaders.u5_font_loader import U5FontLoader
-from data.loaders.u5_glyph_loader import U5GlyphLoader
-from data.loaders.u5_map_loader import U5MapLoader
+from data.loaders.tileset_loader            import TileLoader
+from data.loaders.u5_font_loader            import U5FontLoader
+from data.loaders.u5_glyph_loader           import U5GlyphLoader
+from data.loaders.u5_map_loader             import U5MapLoader
 
-from models.data_ovl import DataOVL
-from models.glyph_key import GlyphKey
-from models.tile import Tile
-from models.u5_glyph import U5Glyph
+from models.tile         import Tile
+from models.data_ovl     import DataOVL
+from models.glyph_key    import GlyphKey
+from models.u5_glyph     import U5Glyph
 from models.u5_map_level import U5MapLevel
 
 from services.surface_factory import SurfaceFactory
