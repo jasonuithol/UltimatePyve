@@ -126,6 +126,23 @@ class SfxLibraryService(LoggerMixin):
         # ANIMATION: Hide The flashy explody tile.
         self.view_port_service.set_damage_blast_at(None)
 
+    def miss(self):
+        generator = self.sound_service.get_generator()
+
+        start_hz = 0.0
+        end_hz   = 1400.0
+        duration = 0.125
+
+        sweep_up_modulator = generator.sawtooth_wave(geometry=1.0).sequence([DarkNote(hz = duration * 16, sec = duration)])
+#        sweep_up_modulator = generator.sine_wave(phase_offset = math.pi / 2).sequence([DarkNote(hz = duration * 16, sec = duration)])
+        whoosh_wave = generator.square_wave().sequence([DarkNote(hz = start_hz, sec = duration)]).frequency_modulate(
+            sweep_up_modulator.wave_data, 
+            base_hz = start_hz, 
+            deviation_hz = abs(start_hz - end_hz)
+        ).to_stereo()
+
+        self._play_and_wait(whoosh_wave)        
+
     def cast_spell_normal(self):
 
         self.bubbling_of_reality()

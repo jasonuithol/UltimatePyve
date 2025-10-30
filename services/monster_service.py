@@ -3,30 +3,30 @@ import random
 import pygame
 
 from dark_libraries.dark_events import DarkEventListenerMixin
-from dark_libraries.dark_math import Coord
+from dark_libraries.dark_math   import Coord
 from dark_libraries.logging     import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
 from models.agents.npc_agent                import NpcAgent
 from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
-from models.enums.projectile_type import ProjectileType
+from models.enums.projectile_type           import ProjectileType
 from models.global_location                 import GlobalLocation
 from models.agents.monster_agent            import MonsterAgent
+from models.u5_map                          import U5Map
 
-from models.u5_map import U5Map
 from services.console_service             import ConsoleService
 from services.display_service             import DisplayService
-from services.info_panel_service import InfoPanelService
+from services.info_panel_service          import InfoPanelService
 from services.input_service               import InputService
-from services.map_cache.map_level_contents import MapLevelContents
 from services.npc_service                 import NpcService
 from services.map_cache.map_cache_service import MapCacheService
-from services.sfx_library_service import SfxLibraryService
-from services.view_port_service import ViewPortService
+from services.sfx_library_service         import SfxLibraryService
 
-RANGED_ATTACK_CHANCE = 0.1
-DO_NOTHING_CHANCE = 0.1
+RANGED_ATTACK_CHANCE = 0.20
+DO_NOTHING_CHANCE    = 0.05
+
+MONSTER_THOUGHT_SECS = 0.25
 
 class MonsterService(LoggerMixin, DarkEventListenerMixin):
 
@@ -48,7 +48,7 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
         self.log(f"DEBUG: {monster_agent.name} ranged_attacks ? {monster_agent._npc_metadata.abilities_attack.has_ranged_attack()}")
 
         # Let's simulate the monster taking a real-world-time moment to think about what it's going to do.
-        decision_time = pygame.time.get_ticks() + 250
+        decision_time = pygame.time.get_ticks() + (MONSTER_THOUGHT_SECS * 1000)
         while pygame.time.get_ticks() < decision_time:
             self.display_service.render()
             self.input_service.discard_events()
@@ -94,6 +94,8 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
                 self.sfx_library_service.damage(closest_party_member.coord)
                 self.info_panel_service.update_party_summary()
                 self.console_service.print_ascii(f"{closest_party_member.name} hit !")
+            else:
+                self.sfx_library_service.miss()
 
         #
         # MOVE

@@ -28,7 +28,6 @@ from models.equipable_item_type import EquipableItemType # for syntax highlighti
 
 from services.combat_map_service import CombatMapService
 from services.console_service import ConsoleService
-from services.display_service import DisplayService
 from services.input_service import InputService
 from services.map_cache.map_cache_service import MapCacheService
 from services.monster_service import MonsterService
@@ -69,7 +68,6 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     console_service: ConsoleService
     input_service: InputService
     dark_event_service: DarkEventService
-    display_service: DisplayService
     sfx_library_service: SfxLibraryService
     view_port_service: ViewPortService
     monster_service: MonsterService
@@ -211,6 +209,8 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                     # MISSED 
                     #
                     self.console_service.print_ascii("Missed !")
+                    self.sfx_library_service.miss()
+
             party_member.spend_action_quanta()
 
     def _move_handler(self, party_member: PartyMemberAgent, move_offset: Vector2[int]):
@@ -227,6 +227,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
             party_member.exit_combat()
             self.npc_service.remove_npc(party_member)
             self.log(f"Party member {party_member.name} exited !")
+            self.sfx_library_service.miss()
 
         elif move_outcome.success:
             self.log(f"DEBUG: Combat move received: {move_offset}")
