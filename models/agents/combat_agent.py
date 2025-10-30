@@ -79,12 +79,13 @@ class CombatAgent(NpcAgent):
         return int(self.get_damage(weapon) * damage_penalty)
         
     def take_damage(self, damage: int) -> bool:
+        old_hitpoints = self.hitpoints
         self.hitpoints = self.hitpoints - damage
 
         self.hitpoints = max(self.hitpoints, 0)
         self.hitpoints = min(self.hitpoints, self.maximum_hitpoints)
 
-        self.log(f"{self.name} took damage={damage} to change hitpoints {self.hitpoints} -> {self.hitpoints}")
+        self.log(f"{self.name} took damage={damage} to change hitpoints {old_hitpoints} -> {self.hitpoints}")
 
     def attack(self, other: Self, weapon: EquipableItemType) -> bool:
         if random.uniform(0.0, 1.0) < self.calculate_hit_probability(other):

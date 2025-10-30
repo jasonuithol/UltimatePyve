@@ -11,6 +11,17 @@ class NpcAbilitiesAttack:
     poison_spit:   bool = False
     steals_food:   bool = False
 
+    def has_ranged_attack(self) -> bool:
+        return (
+            (self.ranged_weapon_glyphcode is not None)
+            or
+            self.magic_missile
+            or
+            self.poison_melee
+            or
+            self.poison_spit
+        )
+
 class NpcAbilitiesMagic:
 
     # Abilities: Magic

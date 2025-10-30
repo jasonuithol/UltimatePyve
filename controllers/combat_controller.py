@@ -31,6 +31,7 @@ from services.console_service import ConsoleService
 from services.display_service import DisplayService
 from services.input_service import InputService
 from services.map_cache.map_cache_service import MapCacheService
+from services.monster_service import MonsterService
 from services.npc_service import NpcService
 from services.sfx_library_service import SfxLibraryService
 from services.view_port_service import ViewPortService
@@ -59,22 +60,24 @@ def wrap_combat_map_in_u5map(combat_map: CombatMap) -> U5Map:
 class CombatController(DarkEventListenerMixin, LoggerMixin):
 
     # Injectable
+    global_registry: GlobalRegistry
     party_agent: PartyAgent
+
     npc_service: NpcService
     combat_map_service: CombatMapService
-    global_registry: GlobalRegistry
     map_cache_service: MapCacheService
     console_service: ConsoleService
-    
     input_service: InputService
     dark_event_service: DarkEventService
     display_service: DisplayService
+    sfx_library_service: SfxLibraryService
+    view_port_service: ViewPortService
+    monster_service: MonsterService
+
     move_controller: MoveController
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
     cast_controller: CastController
-    sfx_library_service: SfxLibraryService
-    view_port_service: ViewPortService
 
     _last_attacked_monster = dict[str, MonsterAgent]()
 
@@ -272,17 +275,6 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
         while not self._has_quit:
 
-            if not victory_declared:
-                if self.npc_service.get_monster_count() == 0:
-                    self.console_service.print_ascii("VICTORY !")
-                    self.sfx_library_service.victory()
-                    victory_declared = True
-
-            if self.npc_service.get_party_member_count() == 0:
-
-                # All party members have left the combat map.
-                break
-
             #
             # Combat continues, so give someone a turn
             #
@@ -308,18 +300,28 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 self._dispatch_player_event(combat_map, party_member, event)
                 self.view_port_service.remove_cursor(CursorType.OUTLINE)
  
-            else:
-    
-                # All members moved - give the monsters a turn
-                if self.npc_service.get_party_member_count() > 0:
+            # last player might have left the map
+            if self.npc_service.get_party_member_count() == 0:
 
-                    #
-                    # TODO: More sophisticated AI can come later.
-                    #
-                    monster_target_coord = self.npc_service.get_party_members()[0].coord
+                # All party members have left the combat map.
+                break
 
-                    # This triggers the AI in MonsterService
-                    self.dark_event_service.pass_time(GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, monster_target_coord))
+            # last monster might have been killed
+            if not victory_declared:
+                if self.npc_service.get_monster_count() == 0:
+                    self.console_service.print_ascii("VICTORY !")
+                    self.sfx_library_service.victory()
+                    victory_declared = True
+                    
+            if isinstance(next_turn_npc, MonsterAgent):
+
+                self.monster_service.take_combat_turn(next_turn_npc)
+
+            # Monster might have killed the last player
+            if self.npc_service.get_party_member_count() == 0:
+
+                # All party members have left the combat map.
+                break
 
         self._exit_combat_arena(enemy_party)
 

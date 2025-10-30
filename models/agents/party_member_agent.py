@@ -179,7 +179,7 @@ class PartyMemberAgent(CombatAgent):
 
     @hitpoints.setter
     def hitpoints(self, val: int):
-        self._character_record.current_hp = val
+        self._character_record.current_hp = max(0, int(val))
 
     def get_damage(self, weapon: EquipableItemType) -> int:
         damage = weapon.attack

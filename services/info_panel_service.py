@@ -8,7 +8,7 @@ from models.agents.party_agent import PartyAgent
 from models.enums.ega_palette_values import EgaPaletteValues
 
 from services.font_mapper import FontMapper
-from services.info_panel_data_provider import EquipableItemsData, PartySummaryData
+from services.info_panel_data_provider import EquipableItemsData, InfoPanelDataProvider, PartySummaryData
 from services.input_service import InputService
 from services.surface_factory import SurfaceFactory
 
@@ -24,6 +24,7 @@ class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
     main_display:    MainDisplay
     input_service: InputService
     surface_factory: SurfaceFactory
+    info_panel_data_provider: InfoPanelDataProvider
 
     def init(self):
         super().__init__()
@@ -32,6 +33,13 @@ class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
 
         black = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
         self._both_arrow = self._up_arrow.overlay_with(self._down_arrow, black)
+
+    #
+    # TODO: do we incur the cost of a render loop ?
+    #
+    def update_party_summary(self):
+        data = self.info_panel_data_provider.get_party_summary_data()
+        self.show_party_summary(data)
 
     def show_party_summary(self, party_summary_data: PartySummaryData, select_mode: bool = False):
 

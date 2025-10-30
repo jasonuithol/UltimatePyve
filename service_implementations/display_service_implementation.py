@@ -23,9 +23,6 @@ class DisplayServiceImplementation(LoggerMixin):
     interactive_console: InteractiveConsole
     view_port_service:   ViewPortService
 
-    #
-    # TODO: Think about a view_port_service.
-    #
     view_port_data_provider: ViewPortDataProvider
 
     def init(self):
