@@ -5,6 +5,7 @@ from pathlib import Path
 from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
+from models.enums.ega_palette_values import EgaPaletteValues
 from models.tile import Tile, TileData
 from services.surface_factory import SurfaceFactory
 from view.display_config import DisplayConfig
@@ -105,7 +106,8 @@ class TileLoader(LoggerMixin):
 
             # Get the pixel color from the tile
             u5_color = tile.pixels[pixel_coord.y][pixel_coord.x]
-            rgb_color = self.surface_factory.get_rgb_mapped_color(u5_color)
+            ega_color = EgaPaletteValues.from_index(u5_color)
+            rgb_color = self.global_registry.colors.get(ega_color)
             
             # Set the pixel color on the rendered surface
             surface_pixels[pixel_coord.add(target_pixel_offset).to_tuple()] = rgb_color

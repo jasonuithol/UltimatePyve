@@ -17,8 +17,8 @@ class U5GlyphLoader(LoggerMixin):
 
     def register_glyphs(self):
 
-        self.foreground = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.White)
-        self.background = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
+        self.foreground = self.global_registry.colors.get(EgaPaletteValues.White)
+        self.background = self.global_registry.colors.get(EgaPaletteValues.Black)
 
         for font_name, font in self.global_registry.fonts.items():
             for glyph_code, glyph_data in enumerate(font.data):

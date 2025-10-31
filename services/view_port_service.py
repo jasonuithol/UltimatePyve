@@ -180,7 +180,7 @@ class ViewPortService(LoggerMixin):
             self.view_port.draw_unscaled_line(
                 start_coord = ray_start,
                 end_coord   = ray_end,
-                rgb_mapped_color = self.surface_factory.get_rgb_mapped_color(self._magic_ray_set.color)
+                rgb_mapped_color = self.global_registry.colors.get(self._magic_ray_set.color)
             )
 
     def _set_mode(self, value: int, default_tile_id: int):

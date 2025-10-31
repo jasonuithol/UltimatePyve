@@ -1,7 +1,11 @@
 # file: display/service_composition.py
 from dark_libraries.service_provider import ServiceProvider
+
+from service_implementations.console_service_implementation import ConsoleServiceImplementation
 from service_implementations.display_service_implementation import DisplayServiceImplementation
 from service_implementations.input_service_implementation import InputServiceImplementation
+from service_implementations.sound_service_implementation import SoundServiceImplementation
+from service_implementations.surface_factory_implementation import SurfaceFactoryImplementation
 from service_implementations.view_port_data_provider_implementation import ViewPortDataProviderImplementation
 
 from .console_service   import ConsoleService
@@ -46,10 +50,11 @@ def compose(provider: ServiceProvider):
     provider.register_mapping(DisplayService, DisplayServiceImplementation)
     provider.register_mapping(InputService, InputServiceImplementation)
     provider.register_mapping(ViewPortDataProvider, ViewPortDataProviderImplementation)
+    provider.register_mapping(SoundService, SoundServiceImplementation)
+    provider.register_mapping(ConsoleService, ConsoleServiceImplementation)
+    provider.register_mapping(SurfaceFactory, SurfaceFactoryImplementation)
 
-    provider.register(SurfaceFactory)
     provider.register(AvatarSpriteFactory)
-    provider.register(ConsoleService)
 
     provider.register(DoorInstanceFactory) # <== SCHEDULED FOR DEMOLITION
 
@@ -59,7 +64,6 @@ def compose(provider: ServiceProvider):
     provider.register(LightingService)
     provider.register(ModdingService)
     provider.register(MonsterSpawner)
-    provider.register(SoundService)
 
     provider.register(WorldClock)
     provider.register(FontMapper)

@@ -4,6 +4,7 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from data.loaders.blue_border_glyph_factory import BlueBorderGlyphFactory
+from data.loaders.color_loader import ColorLoader
 from data.loaders.combat_map_loader     import CombatMapLoader
 from data.loaders.cursor_loader import CursorLoader
 from data.loaders.data_ovl_loader import DataOVLLoader
@@ -45,6 +46,7 @@ class GlobalRegistryLoader(LoggerMixin):
 
     data_ovl_loader: DataOVLLoader
 
+    color_loader:                ColorLoader 
     tile_loader:                 TileLoader
     terrain_loader:              TerrainLoader
     u5map_loader:                U5MapLoader
@@ -98,6 +100,7 @@ class GlobalRegistryLoader(LoggerMixin):
     def load(self, u5_path: Path):
 
         self.data_ovl_loader.load(u5_path)
+        self.color_loader.load()
 
         # Map
         self.tile_loader.load_tiles(u5_path)

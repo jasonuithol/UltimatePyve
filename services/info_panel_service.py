@@ -31,7 +31,7 @@ class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
         self._up_arrow   = self.font_mapper.map_code("IBM.CH", 24)
         self._down_arrow = self.font_mapper.map_code("IBM.CH", 25)
 
-        black = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
+        black = self.global_registry.colors.get(EgaPaletteValues.Black)
         self._both_arrow = self._up_arrow.overlay_with(self._down_arrow, black)
 
     #

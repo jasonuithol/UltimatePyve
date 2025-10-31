@@ -4,6 +4,7 @@ from dark_libraries.registry import Registry
 from models.combat_map import CombatMap, DungeonRoom
 from models.data_ovl import DataOVL
 from models.door_type import DoorType
+from models.enums.ega_palette_values import EgaPaletteValues
 from models.enums.projectile_type import ProjectileType
 from models.glyph_key import GlyphKey
 from models.spell_type import SpellType
@@ -48,6 +49,7 @@ class GlobalRegistry:
         self.transport_modes = Registry[int, str]() # transport_mode_index
 
         # display oriented features.
+        self.colors   = Registry[EgaPaletteValues, int]() 
         self.tiles    = Registry[int, Tile]()     # tile_id
         self.sprites  = Registry[int, Sprite[Tile]]()   # tile_id
         self.cursors  = Registry[int, Sprite[Tile]]()   # CursorType.value

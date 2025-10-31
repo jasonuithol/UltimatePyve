@@ -33,8 +33,8 @@ class ProjectileSpriteLoader(LoggerMixin):
 
     def _ball_of_particles(self, color: EgaPaletteValues) -> Sprite:
 
-        white_mapped = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.White)
-        color_mapped = self.surface_factory.get_rgb_mapped_color(color)
+        white_mapped = self.global_registry.colors.get(EgaPaletteValues.White)
+        color_mapped = self.global_registry.colors.get(color)
 
         ball = self.global_registry.font_glyphs.get(GlyphKey(font_name = "RUNES.CH", glyph_code = 14))
         frames = self._spinning_glyph_frames(ball)

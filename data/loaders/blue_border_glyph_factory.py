@@ -33,11 +33,11 @@ class BlueBorderGlyphFactory(LoggerMixin):
     def _create_border_glyphs(self) -> BorderGlyphs:
 
         # Be careful changing these colors.
-        self._color_black      = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Black)
-        self._color_white      = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.White)
+        self._color_black      = self.global_registry.colors.get(EgaPaletteValues.Black)
+        self._color_white      = self.global_registry.colors.get(EgaPaletteValues.White)
 
         # Go nuts changing this color.
-        self._color_dark_blue  = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Blue)
+        self._color_dark_blue  = self.global_registry.colors.get(EgaPaletteValues.Blue)
 
         border_glyphs = BorderGlyphs()
 

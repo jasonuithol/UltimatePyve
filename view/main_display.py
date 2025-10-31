@@ -47,11 +47,12 @@ class MainDisplay(ScalableComponent):
         # 6 being half the width of the panorama output of 12 chars.
         self.celestial_char_offset = (self.viewport_width_in_glyphs // 2) - 6
 
-        self._color_light_grey = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.LightGrey)
-        self._color_yellow     = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.Yellow)
-        self._color_white      = self.surface_factory.get_rgb_mapped_color(EgaPaletteValues.White)
 
     def init(self):
+
+        self._color_light_grey = self.global_registry.colors.get(EgaPaletteValues.LightGrey)
+        self._color_yellow     = self.global_registry.colors.get(EgaPaletteValues.Yellow)
+        self._color_white      = self.global_registry.colors.get(EgaPaletteValues.White)
 
         #
         # CELESTIAL GLYPHS

@@ -23,6 +23,6 @@ class EgaPaletteValues(Enum):
 
     @classmethod
     def from_index(cls, index: int):
-        if cls._as_list is None:
+        if not hasattr(cls, '_as_list'):
             cls._as_list = list(cls)
         return cls._as_list[index]
