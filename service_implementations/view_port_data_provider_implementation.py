@@ -17,7 +17,6 @@ from services.map_cache.map_level_contents import MapLevelContents
 from services.npc_service import NpcService
 
 from services.view_port_data_provider import ViewPortData
-from view.view_port import ViewPort
 
 class ViewPortDataProviderImplementation(LoggerMixin):
 
@@ -25,7 +24,6 @@ class ViewPortDataProviderImplementation(LoggerMixin):
     global_registry:          GlobalRegistry
     map_cache_service:        MapCacheService    
     field_of_view_calculator: FieldOfViewCalculator
-    view_port:                ViewPort
     lighting_service:         LightingService
     npc_service:              NpcService
 
