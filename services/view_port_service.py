@@ -37,7 +37,6 @@ class ViewPortService(LoggerMixin):
     display_config: DisplayConfig
     global_registry: GlobalRegistry
     party_agent: PartyAgent
-    surface_factory: SurfaceFactory
     view_port: ViewPort
     view_port_data_provider: ViewPortDataProvider
 

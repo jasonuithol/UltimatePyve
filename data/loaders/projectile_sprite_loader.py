@@ -6,12 +6,10 @@ from models.enums.projectile_type import ProjectileType
 from models.glyph_key import GlyphKey
 from models.sprite import Sprite
 from models.u5_glyph import U5Glyph
-from services.surface_factory import SurfaceFactory
 
 class ProjectileSpriteLoader(LoggerMixin):
 
     global_registry: GlobalRegistry
-    surface_factory: SurfaceFactory
 
     def load(self):
         #

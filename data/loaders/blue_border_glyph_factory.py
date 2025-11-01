@@ -4,7 +4,6 @@ from data.global_registry import GlobalRegistry
 from models.enums.ega_palette_values import EgaPaletteValues
 
 from services.font_mapper import FontMapper
-from services.surface_factory import SurfaceFactory
 
 from models.border_glyphs import BorderGlyphs
 
@@ -23,7 +22,6 @@ class BlueBorderGlyphCodes(Enum):
 class BlueBorderGlyphFactory(LoggerMixin):
 
     global_registry: GlobalRegistry
-    surface_factory: SurfaceFactory
     font_mapper:     FontMapper
 
     def load(self):

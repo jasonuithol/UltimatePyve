@@ -10,7 +10,6 @@ from models.enums.ega_palette_values import EgaPaletteValues
 from services.font_mapper import FontMapper
 from services.info_panel_data_provider import EquipableItemsData, InfoPanelDataProvider, PartySummaryData
 from services.input_service import InputService
-from services.surface_factory import SurfaceFactory
 
 from view.info_panel import ORIGINAL_PANEL_WIDTH, InfoPanel, InfoPanelDataSet
 from view.main_display import MainDisplay
@@ -23,7 +22,6 @@ class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
     font_mapper:     FontMapper
     main_display:    MainDisplay
     input_service: InputService
-    surface_factory: SurfaceFactory
     info_panel_data_provider: InfoPanelDataProvider
 
     def init(self):

@@ -1,4 +1,8 @@
 from configure import get_u5_path, check_python_version
+from data.loaders.color_loader import ColorLoader
+from data.loaders.u5_font_loader import U5FontLoader
+from data.loaders.u5_glyph_loader import U5GlyphLoader
+from service_implementations.surface_factory_implementation import SurfaceFactoryImplementation
 
 check_python_version()
 u5_path = get_u5_path()
@@ -10,7 +14,6 @@ from data.global_registry import GlobalRegistry
 from data.loaders.tileset_loader import TileLoader
 
 from models.data_ovl import DataOVL
-from services.surface_factory import SurfaceFactory
 from view.display_config import DisplayConfig
 
 from object_viewer_lib.object_viewer_menu_bar import ObjectViewerMenuBar
@@ -28,17 +31,43 @@ clock = pygame.time.Clock()
 
 display_config = DisplayConfig()
 
-surface_factory = SurfaceFactory()
-surface_factory.display_config = display_config
-surface_factory._after_inject()
+surface_factory = SurfaceFactoryImplementation()
 
 data_ovl = DataOVL(u5_path)
+global_registry = GlobalRegistry()
+
 
 tile_loader = TileLoader()
 tile_loader.display_config  = display_config
-tile_loader.global_registry = GlobalRegistry()
+tile_loader.global_registry = global_registry
 tile_loader.surface_factory = surface_factory
 
+color_loader = ColorLoader()
+color_loader.surface_factory = surface_factory
+color_loader.global_registry = global_registry
+
+'''
+
+
+font_loader = U5FontLoader()
+font_loader.global_registry = global_registry
+
+glyph_loader = U5GlyphLoader()
+glyph_loader.global_registry = global_registry
+glyph_loader.display_config  = display_config
+glyph_loader.surface_factory = surface_factory
+
+'''
+
+#
+# Load assets
+#
+'''
+font_loader.register_fonts(u5_path)
+glyph_loader.register_glyphs()
+'''
+
+color_loader.load()
 tile_loader.load_tiles(u5_path)
 
 MARGIN = 20  # padding around grid
@@ -48,6 +77,7 @@ configure_profiles(
     display_config, 
     surface_factory, 
     data_ovl, 
+    global_registry,
     tile_loader, 
     MARGIN
 )

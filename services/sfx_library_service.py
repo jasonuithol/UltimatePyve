@@ -42,11 +42,14 @@ class SfxLibraryService(LoggerMixin):
 
     display_config:  DisplayConfig
     global_registry: GlobalRegistry
+
+    input_service:   InputService
+
     sound_service:   SoundService
+
     display_service: DisplayService
     view_port_service: ViewPortService
     console_service: ConsoleService
-    input_service:   InputService
 
     def _play_and_wait(self, dark_wave: DarkWave | DarkWaveStereo):
 

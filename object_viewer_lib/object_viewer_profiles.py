@@ -26,6 +26,7 @@ u5_path:         Path           = None
 display_config:  DisplayConfig  = None
 surface_factory: SurfaceFactory = None
 data_ovl:        DataOVL        = None
+global_registry: GlobalRegistry = None
 tile_loader:     TileLoader     = None
 margin:          int            = None
 
@@ -34,6 +35,7 @@ def configure_profiles(
     display_config_:  DisplayConfig,
     surface_factory_: SurfaceFactory,
     data_ovl_:        DataOVL,
+    global_registry_: GlobalRegistry,
     tile_loader_:     TileLoader,
     margin_:          int
 ):
@@ -48,6 +50,9 @@ def configure_profiles(
 
     global data_ovl
     data_ovl = data_ovl_
+
+    global global_registry
+    global_registry = global_registry_
 
     global tile_loader
     tile_loader = tile_loader_
@@ -134,7 +139,7 @@ class ViewerProfile[TKey, TValue]:
 class TileViewerProfile(ViewerProfile[int, Tile]):
     def __init__(self):
         super().__init__("TILES.16")
-        self.global_registry = tile_loader.global_registry
+        self.global_registry = global_registry
 
         print(f"Loaded {__class__.__name__} as {self.dropdown_label}")
 
@@ -173,7 +178,7 @@ class FontViewerProfile(ViewerProfile[tuple[str,int], U5Glyph]):
     def __init__(self, font_name):
         super().__init__(font_name)
         self.font_name = font_name
-        self.global_registry = GlobalRegistry()
+        self.global_registry = global_registry
         self.global_registry.data_ovl = data_ovl
 
         f_loader = U5FontLoader()
@@ -256,7 +261,7 @@ class MapViewerProfile(ViewerProfile[tuple[str,int], U5MapLevel]):
             option_label = "Maps (raw)"
 
         super().__init__(option_label)
-        self.global_registry = GlobalRegistry()
+        self.global_registry = global_registry
         self.global_registry.data_ovl = data_ovl
         self.tile_set = tile_set
 
