@@ -2,15 +2,15 @@ import random
 
 from dark_libraries.dark_math import Coord, Rect
 
-from models.agents.combat_agent import CombatAgent
-from models.agents.party_agent import PartyAgent
+from models.agents.combat_agent       import CombatAgent
+from models.agents.party_agent        import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
-from models.combat_map import CombatMap
-from models.enums.projectile_type import ProjectileType
-from models.spell_type import SpellType
+from models.combat_map                import CombatMap
+from models.enums.projectile_type     import ProjectileType
+from models.spell_type                import SpellType
 
-from services.input_service import InputService
-from services.npc_service import NpcService
+from services.input_service       import InputService
+from services.npc_service         import NpcService
 from services.sfx_library_service import SfxLibraryService
 
 PROJECTILE_TYPES = {
@@ -21,7 +21,7 @@ PROJECTILE_TYPES = {
     "vf"  : ProjectileType.Fireball,
     "ing" : ProjectileType.Poison,
     "ifg" : ProjectileType.Fireball,
-    
+
     "rxb" : ProjectileType.MagicMissile,
     "axe" : ProjectileType.MagicMissile,
     "xc"  : ProjectileType.MagicMissile
