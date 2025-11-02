@@ -1,17 +1,20 @@
 import random
 
-from dark_libraries.dark_math import Vector2
+from dark_libraries.dark_math import Coord, Vector2
 from dark_libraries.logging import LoggerMixin
 
 from models.agents.combat_agent import CombatAgent
-from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
+from models.combat_map import CombatMap
+from models.enums.ega_palette_values import EgaPaletteValues
 from models.spell_type import SpellType
+from models.enums.direction_map import DIRECTION_SECTORS
+
 from services.input_service import InputService
 from services.npc_service import NpcService
-from models.enums.direction_map import DIRECTION_SECTORS
 from services.sfx_library_service import SfxLibraryService
+from services.view_port_service import ViewPortService
 
 class DirectionalSpellController(LoggerMixin):
 
@@ -19,8 +22,27 @@ class DirectionalSpellController(LoggerMixin):
     input_service: InputService
     npc_service: NpcService
     sfx_library_service: SfxLibraryService
+    view_port_service: ViewPortService
 
-    def cast(self, spell_caster: PartyMemberAgent, spell_type: SpellType, direction: Vector2[int]) -> bool:
+    def cast(self, combat_map: CombatMap, spell_caster: PartyMemberAgent, spell_type: SpellType) -> bool:
+
+        spell_direction = self.input_service.obtain_action_direction()
+        if spell_direction is None:
+            return False
+
+        self.sfx_library_service.bubbling_of_reality()
+
+        if combat_map:
+            self.sfx_library_service.cone_of_magic(spell_caster.coord, spell_direction, EgaPaletteValues.Magenta, combat_map.get_size().to_rect(Coord(0,0)))
+
+        self._apply_spell_effects(spell_caster, spell_type, spell_direction)
+        
+        if combat_map:
+            self.view_port_service.set_magic_rays(None)
+
+        return True
+
+    def _apply_spell_effects(self, spell_caster: PartyMemberAgent, spell_type: SpellType, direction: Vector2[int]) -> bool:
 
         affected_npcs = self._get_affected_npcs(spell_caster, direction)
 

@@ -45,9 +45,17 @@ class SpellTypeLoader(LoggerMixin):
 
         self._level = 2
 
+        self._register_peace_spell ("iw" , [NYT]          , T_NON) # In Wis
+        self._register_peace_spell ("ixm", [GIN, GAR, MAN], T_NON) # In Xen Mani
+        self._register_peace_spell ("rh" , [ASH, MOS]     , T_DIR) # Rel Hur
+
+        self._register_spell_type  ("as" , [ASH, MOS]     , T_DIR) # An Sanct
+        self._register_combat_spell("kx" , [SLK, MAN]     , T_CRD) # Kal Xen
+        self._register_combat_spell("axc", [GAR, ASH]     , T_NON) # An Xen Corp
+
         self._level = 5
 
-        self._register_peace_spell("iep", [ASH, MOS], T_DIR) # In Ex Por
+        self._register_peace_spell("iep", [ASH, MOS]     , T_DIR) # In Ex Por
         self._register_combat_spell("iz", [GIN, SLK, NYT], T_DIR) # In Zu
 
         self.log(f"Registered {self.global_registry.spell_types} spell types")
@@ -61,14 +69,17 @@ class SpellTypeLoader(LoggerMixin):
                                 combat_allowed = True
                              ) -> SpellType:
         
-        spell_name = self._spell_names[spell_key]
-        premix_inventory_offset_name = f"MIXED_{spell_name.upper().replace(" ", "_")}"
+        short_spell_name = self._spell_names[spell_key]
+        full_spell_name = "_".join([self.global_registry.runes.get(rune_key) for rune_key in spell_key])
+
+        premix_inventory_offset_name = f"MIXED_{full_spell_name}"
+
         premix_inventory_offset = InventoryOffset[premix_inventory_offset_name]
         assert premix_inventory_offset, f"Could not find premix_inventory_offset for premix_inventory_offset_name={premix_inventory_offset_name}"
 
         spell_type = SpellType(
             spell_key = spell_key,
-            name     = spell_name,
+            name     = short_spell_name,
             level    = self._level,
             reagents = reagents,
 

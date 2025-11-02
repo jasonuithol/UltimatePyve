@@ -18,8 +18,7 @@ class CombatAgent(NpcAgent):
         self._sprite_time_offset = sprite.create_random_time_offset()
         self._slept = False
         self._slept_tile: Tile = None
-
-
+        self._poisoned: bool = False
 
     # NPC_AGENT IMPLEMENTATION (Partial): Start
     @property
@@ -50,6 +49,12 @@ class CombatAgent(NpcAgent):
     def awake(self):
         self._slept_tile = None
         self._slept = False
+
+    def poison(self):
+        self._poisoned = True
+
+    def cure(self):
+        self._poisoned = False
 
     @property
     def strength(self) -> int: ...

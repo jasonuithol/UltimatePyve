@@ -1,5 +1,6 @@
 import pygame
 
+from controllers.spell_controllers.coordinate_spell_controller import CoordinateSpellController
 from controllers.spell_controllers.directional_spell_controller import DirectionalSpellController
 from controllers.spell_controllers.general_spell_controller import GeneralSpellController
 from controllers.spell_controllers.party_member_spell_controller import PartyMemberSpellController
@@ -41,6 +42,8 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     general_spell_controller:      GeneralSpellController
     party_member_spell_controller: PartyMemberSpellController
     directional_spell_controller:  DirectionalSpellController
+    coordinate_spell_controller:   CoordinateSpellController
+
     view_port_service: ViewPortService
 
     def handle_event(self, event: pygame.event.Event, spell_caster: PartyMemberAgent, combat_map: CombatMap):
@@ -159,51 +162,21 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             self.log(f"Spell failed: caster_mana={spell_caster.mana}, caster_level={spell_caster.level}, spell_level={spell_type.level}")
             return NO_SPELL_COST
 
+        #
+        # EVERY OBSTACLE OVERCOME - CAST THE DAMN SPELL ALREADY
+        #
+
         if spell_type.target_type == SpellTargetType.T_NONE:
-            self.sfx_library_service.cast_spell_normal()
-            self.general_spell_controller.cast(spell_caster, spell_type)
+            return self.general_spell_controller.cast(spell_caster, spell_type)
 
         elif spell_type.target_type == SpellTargetType.T_DIRECTION:
-            #
-            # APOLOGIES: There's shit all over the place here. It might get re-thought, it might not.
-            #
-            spell_direction = self.input_service.obtain_action_direction()
-            self.sfx_library_service.bubbling_of_reality()
-            self.sfx_library_service.cone_of_magic(spell_caster.coord, spell_direction, EgaPaletteValues.Magenta, combat_map.get_size().to_rect(Coord(0,0)))
-            self.directional_spell_controller.cast(spell_caster, spell_type, spell_direction)
-            self.view_port_service.set_magic_rays(None)
+            return self.directional_spell_controller.cast(combat_map, spell_caster, spell_type)
 
         elif spell_type.target_type == SpellTargetType.T_COORD:
-
-            assert combat_map, "Should be in combat, or have been prevented from casting this spell"
-
-            spell_coord = self.input_service.obtain_cursor_position(
-                starting_coord  = spell_caster.coord,
-                boundary_rect   = combat_map.get_size().to_rect(Coord(0,0)),
-                range_          = 255
-            )
-
-            self.sfx_library_service.bubbling_of_reality()
-            self.sfx_library_service.emit_projectile(ProjectileType.MagicMissile, spell_caster.coord, spell_coord)
-
-            #
-            # TODO: Did the magic spell hit ?
-            #
-            self.sfx_library_service.damage(spell_coord)
-            
+            return self.coordinate_spell_controller.cast(combat_map, spell_caster, spell_type)
 
         elif spell_type.target_type == SpellTargetType.T_PARTY_MEMBER:
-
-            self.console_service.print_ascii("On who: ", include_carriage_return = False)
-            party_data = self.info_panel_data_provider.get_party_summary_data()
-            self.info_panel_service.show_party_summary(party_data, select_mode = True)
-
-            target_party_member_index = self.info_panel_service.choose_item(party_data.party_data_set, 0)
-            target_party_member = self.party_agent.get_party_member(target_party_member_index)
-            self.console_service.print_ascii(target_party_member.name, no_prompt = True)
-
-            self.sfx_library_service.cast_spell_normal()
-            self.party_member_spell_controller.cast(spell_caster, spell_type, target_party_member)
+            return self.party_member_spell_controller.cast(spell_caster, spell_type)
 
         return INCUR_SPELL_COST
 
