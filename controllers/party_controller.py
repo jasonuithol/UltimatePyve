@@ -16,6 +16,7 @@ from data.global_registry     import GlobalRegistry
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.global_location     import GlobalLocation
 from models.interactable        import Interactable
+from models.party_inventory import PartyInventory
 from models.u5_map              import U5Map
 from models.enums.inventory_offset import InventoryOffset
 
@@ -37,6 +38,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     # Injectable
     party_agent:        PartyAgent
     global_registry:    GlobalRegistry
+    party_inventory:    PartyInventory
 
     dark_event_service: DarkEventService
     input_service:  InputService
@@ -246,12 +248,11 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     def ignite_torch(self):
         TORCH_RADIUS = 3
         TORCH_DURATION_HOURS = 4
-        torch_count = self.global_registry.saved_game.read_u8(InventoryOffset.TORCHES)
-        if torch_count == 0:
+        if not self.party_inventory.has(InventoryOffset.TORCHES):
             self.console_service.print_ascii("No torches !")
             return
         self.console_service.print_ascii("Ignite torch !")
-        self.global_registry.saved_game.write_u8(InventoryOffset.TORCHES, torch_count - 1)
+        self.party_inventory.use(InventoryOffset.TORCHES)
         self.party_agent.set_light(TORCH_RADIUS, self.world_clock.get_natural_time() + timedelta(hours = TORCH_DURATION_HOURS))
 
     def attack(self, direction: Vector2[int]):

@@ -1,7 +1,10 @@
+from models.enums.inventory_offset import InventoryOffset
+
+
 class ItemType(tuple):
     __slots__ = ()    
 
-    def __new__(cls, item_id: int, inventory_offset: int, tile_id: int, name: str):
+    def __new__(cls, item_id: int, inventory_offset: InventoryOffset, tile_id: int, name: str):
         return super().__new__(cls, (item_id, inventory_offset, tile_id, name))
 
     @property
@@ -9,7 +12,7 @@ class ItemType(tuple):
         return self[0]
 
     @property
-    def inventory_offset(self) -> int:
+    def inventory_offset(self) -> InventoryOffset:
         return self[1]
 
     @property

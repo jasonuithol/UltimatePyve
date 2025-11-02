@@ -187,23 +187,31 @@ class PartyMemberAgent(CombatAgent):
             self.log(f"WARNING: weapon '{weapon.name}' (item_id={weapon.item_id}) has zero damage.")
         return damage
 
+    @property
+    def status(self) -> chr:
+        return self._character_record.status
+    
+    @status.setter
+    def status(self, value: chr):
+        self._character_record.status = value
+
     def sleep(self):
         super().sleep()
-        self._character_record.status = "S"
+        self.status = "S"
 
     def awake(self):
         super().awake()
-        if self._character_record.status == "S":
-            self._character_record.status = "G"
+        if self.status == "S":
+            self.status = "G"
 
     def poison(self):
         super().poison()
-        self._character_record.status = "P"
+        self.status = "P"
 
     def cure(self):
         super().cure()
-        if self._character_record.status == "P":
-            self._character_record.status = "G"
+        if self.status == "P":
+            self.status = "G"
     #
     # COMBAT_AGENT IMPLEMENTATION: End
 

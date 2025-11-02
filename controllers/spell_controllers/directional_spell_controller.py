@@ -54,6 +54,12 @@ class DirectionalSpellController(LoggerMixin):
             #
             pass
 
+        elif spell_type.spell_key == "ay":
+            #
+            # TODO: Actually make something vanish
+            #
+            pass
+
         # LEVEL FIVE
 
         elif spell_type.spell_key == "iz":

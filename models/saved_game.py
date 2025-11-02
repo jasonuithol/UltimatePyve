@@ -71,6 +71,7 @@ class SavedGame:
         self.write_u8(0x02D9, value.hour  ) 
         self.write_u8(0x02DB, value.minute)
 
+    '''
     def read_equipable_item_quantity(self, dra_index: int) -> int:
         assert dra_index < 112, f"Expected index < 112, got {dra_index}"
         offset = 0x021A
@@ -84,6 +85,10 @@ class SavedGame:
 
         offset = 0x021A
         self.write_u8(offset + dra_index, quantity)
+
+    '''
+
+
 
     '''
         # --- Party resources ---

@@ -10,6 +10,7 @@ from models.enums.inventory_offset import InventoryOffset
 from models.equipable_item_type import EquipableItemType
 
 from models.glyph_key import GlyphKey
+from models.party_inventory import PartyInventory
 from services.font_mapper import FontMapper
 from services.world_clock import WorldClock
 
@@ -35,6 +36,7 @@ class InfoPanelDataProvider(LoggerMixin):
     global_registry: GlobalRegistry
     font_mapper:     FontMapper
     world_clock:     WorldClock
+    party_inventory: PartyInventory
     
     def get_party_summary_data(self) -> PartySummaryData:
         data = PartySummaryData()
@@ -44,8 +46,8 @@ class InfoPanelDataProvider(LoggerMixin):
             for ix in range(self.party_agent.get_party_count())
         ]
 
-        data.food = self.global_registry.saved_game.read_u16(InventoryOffset.FOOD.value)
-        data.gold = self.global_registry.saved_game.read_u16(InventoryOffset.GOLD.value)
+        data.food = self.party_inventory.read(InventoryOffset.FOOD)
+        data.gold = self.party_inventory.read(InventoryOffset.GOLD)
         data.datetime_ = self.world_clock.daylight_savings_time
 
         return data
@@ -56,7 +58,7 @@ class InfoPanelDataProvider(LoggerMixin):
 
         # First row of text
         name_part   = party_member_agent.name
-        health_part = str(party_member_agent.hitpoints) + party_member_agent._character_record.status
+        health_part = str(party_member_agent.hitpoints) + party_member_agent.status
 
         is_active = party_member_index == self.party_agent.get_active_member_index()
         active_member_indicator_glyph_code = 26 if is_active else 0
@@ -100,7 +102,7 @@ class InfoPanelDataProvider(LoggerMixin):
         for item_id, equipable_item_type in self.global_registry.item_types.items():
             if not isinstance(equipable_item_type, EquipableItemType):
                 continue
-            quantity_held = self.global_registry.saved_game.read_u8(equipable_item_type.inventory_offset)
+            quantity_held = self.party_inventory.read(equipable_item_type.inventory_offset)
             is_equipped = (equipable_item_type in items_equipped)
 
             if not is_equipped and quantity_held == 0:

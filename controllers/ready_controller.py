@@ -5,6 +5,7 @@ from data.global_registry import GlobalRegistry
 from models.agents.party_agent import PartyAgent
 from models.enums.equipable_item_slot import EquipableItemSlot
 from models.equipable_item_type import EquipableItemType
+from models.party_inventory import PartyInventory
 from services.console_service import ConsoleService
 from services.info_panel_data_provider import InfoPanelDataProvider
 from services.info_panel_service import InfoPanelService
@@ -13,6 +14,7 @@ class ReadyController:
 
     console_service: ConsoleService
     global_registry: GlobalRegistry
+    party_inventory: PartyInventory
 
     info_panel_service:       InfoPanelService
     info_panel_data_provider: InfoPanelDataProvider
@@ -101,13 +103,17 @@ class ReadyController:
     def _update_inventories(self, selected_item_id: int):
 
         selected_item: EquipableItemType = self.global_registry.item_types.get(selected_item_id)
-        current_party_qty                = self.global_registry.saved_game.read_u8(selected_item.inventory_offset)
+        selected_inventory_item = selected_item.inventory_offset
+#        current_party_qty                = self.party_inventory.read(selected_inventory_item)
         party_member                     = self.party_agent.get_party_member(self.selected_member_index)
 
         if party_member.has_equipped_item(selected_item_id):
-            # unequipping an item
-            self.global_registry.saved_game.write_u8(selected_item.inventory_offset, current_party_qty + 1)
-            party_member.unequip_item(selected_item_id)
+            if self.party_inventory.has(selected_inventory_item, amount=self.party_inventory.max(selected_inventory_item)):
+                self._print_rejection("Thou must sell some first before unequipping !")
+            else:
+                # unequipping an item
+                self.party_inventory.add(selected_inventory_item, 1)
+                party_member.unequip_item(selected_item_id)
             
         elif not party_member.is_slot_available(selected_item.slot) :
             if selected_item.slot == EquipableItemSlot.ONE_HAND:
@@ -128,8 +134,9 @@ class ReadyController:
 
         else:
             # Equipping an item into an available slot
-            assert current_party_qty > 0, f"No items of item_id={selected_item_id} in party inventory !"
-            self.global_registry.saved_game.write_u8(selected_item.inventory_offset, current_party_qty - 1)
+            assert self.party_inventory.has(selected_inventory_item), f"No items of item_id={selected_item_id}({selected_inventory_item.name}) in party inventory !"
+
+            self.party_inventory.add(selected_inventory_item, -1)
             party_member.equip_item(selected_item_id)
 
 

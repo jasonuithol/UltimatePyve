@@ -1,6 +1,7 @@
 from models.enums.equipable_item_rune_id import EquipableItemRuneId
 from models.enums.equipable_item_slot import EquipableItemSlot
 
+from models.enums.inventory_offset import InventoryOffset
 from models.item_type import ItemType
 
 class EquipableItemType(ItemType):
@@ -9,7 +10,7 @@ class EquipableItemType(ItemType):
     def __new__(
         cls,
         item_id: int,                        #  (inherited)
-        inventory_offset: int,               #  (inherited)
+        inventory_offset: InventoryOffset,   #  (inherited)
         tile_id: int,                        #  (inherited)
         name: str,                           #  (inherited)
         short_name: str,
@@ -36,7 +37,7 @@ class EquipableItemType(ItemType):
 
     # inherits item_id:int at tuple index 0
 
-    # inherits inventory_offset:int at tuple index 1
+    # inherits inventory_offset:InventoryOffset at tuple index 1
 
     # inherits tile_id:int at tuple index 2
 

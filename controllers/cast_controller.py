@@ -16,6 +16,7 @@ from models.combat_map import CombatMap
 from models.enums.ega_palette_values import EgaPaletteValues
 from models.enums.projectile_type import ProjectileType
 from models.enums.spell_target_type import SpellTargetType
+from models.party_inventory import PartyInventory
 from models.spell_type import SpellType
 
 from services.console_service import ConsoleService
@@ -34,6 +35,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
     party_agent:       PartyAgent
     global_registry:   GlobalRegistry
     input_service: InputService
+    party_inventory: PartyInventory
     
     info_panel_service:       InfoPanelService
     info_panel_data_provider: InfoPanelDataProvider
@@ -86,8 +88,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
         #
         if incur_spell_cost:
             spell_caster.mana = spell_caster.mana - spell_type.level
-            premixed_amount = self._get_premixed_amount(spell_type)
-            self._set_premixed_amount(spell_type, premixed_amount - 1)
+            self.party_inventory.use(spell_type.premix_inventory_offset)
             self.console_service.print_ascii("Success!")
 
     def _get_spell_caster(self) -> PartyMemberAgent:
@@ -147,8 +148,7 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
             self.console_service.print_ascii("Not here !")
             return NO_SPELL_COST
 
-        premixed_amount = self._get_premixed_amount(spell_type)
-        if premixed_amount == 0:
+        if not self.party_inventory.has(spell_type.premix_inventory_offset):
             self.console_service.print_ascii("None mixed !")
             return NO_SPELL_COST
 
@@ -180,11 +180,6 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
         return INCUR_SPELL_COST
 
-    def _get_premixed_amount(self, spell_type: SpellType) -> int:
-        return self.global_registry.saved_game.read_u8(spell_type.premix_inventory_offset)
-
-    def _set_premixed_amount(self, spell_type: SpellType, amount: int) -> int:
-        return self.global_registry.saved_game.write_u8(spell_type.premix_inventory_offset, amount)
     
 
 
