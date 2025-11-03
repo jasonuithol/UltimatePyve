@@ -53,6 +53,9 @@ class PartyMemberSpellController(LoggerMixin):
         elif spell_type.spell_key == "an":
             target_member.cure()
 
+        elif spell_type.spell_key == "az":
+            target_member.awake()
+
         # LEVEL TWO
 
         else:

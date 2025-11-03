@@ -85,3 +85,7 @@ class CoordinateSpellController:
                 target_npc.hitpoints = max(0, target_npc.hitpoints - 5)
                 self.sfx_library_service.damage(spell_coord)
 
+        #
+        # TODO: Need to create wall of fire/poison/magic barriers.
+        #
+

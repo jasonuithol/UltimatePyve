@@ -11,6 +11,7 @@ from models.enums.ega_palette_values import EgaPaletteValues
 from models.spell_type import SpellType
 from models.enums.direction_map import DIRECTION_SECTORS
 
+from services.console_service import ConsoleService
 from services.input_service import InputService
 from services.npc_service import NpcService
 from services.sfx_library_service import SfxLibraryService
@@ -23,6 +24,7 @@ class DirectionalSpellController(LoggerMixin):
     npc_service: NpcService
     sfx_library_service: SfxLibraryService
     view_port_service: ViewPortService
+    console_service: ConsoleService
 
     def cast(self, combat_map: CombatMap, spell_caster: PartyMemberAgent, spell_type: SpellType) -> bool:
 
@@ -52,13 +54,21 @@ class DirectionalSpellController(LoggerMixin):
             #
             # TODO: Actually change the direction of the wind
             #
-            pass
+            self.console_service.print_ascii("TODO !")
 
         elif spell_type.spell_key == "ay":
             #
             # TODO: Actually make something vanish
             #
-            pass
+            self.console_service.print_ascii("TODO !")
+
+        # LEVEL TWO
+
+        elif spell_type.spell_key == "as":
+            #
+            # TODO: Unlock a trapped chest
+            #
+            self.console_service.print_ascii("TODO !")
 
         # LEVEL FIVE
 
@@ -66,9 +76,6 @@ class DirectionalSpellController(LoggerMixin):
 
             # apply the effect.  in this case - sleep
             for m in affected_npcs:
-                #
-                # TODO: This doesn't do anything right now
-                #
                 m.sleep()
                 self.sfx_library_service.damage(m.coord)
 

@@ -9,6 +9,7 @@ from models.enums.inventory_offset import InventoryOffset
 from models.party_inventory import PartyInventory
 from models.spell_type import SpellType
 
+from services.console_service import ConsoleService
 from services.sfx_library_service import SfxLibraryService
 from services.world_clock import WorldClock
 
@@ -18,6 +19,7 @@ class GeneralSpellController(LoggerMixin):
     world_clock: WorldClock
     sfx_library_service: SfxLibraryService
     party_inventory: PartyInventory
+    console_service: ConsoleService
 
     def cast(self, spell_caster: PartyMemberAgent, spell_type: SpellType) -> bool:
 
@@ -32,7 +34,18 @@ class GeneralSpellController(LoggerMixin):
             self.party_inventory.safe_add(InventoryOffset.FOOD, extra_food)
 
         # LEVEL TWO
+
+        elif spell_type.spell_key == "iw":
+            #
+            # TODO: Reveal casters location
+            #
+            self.console_service.print_ascii("TODO !")
+
+
+
+        # LEVEL THREE
+
+
         else:
             assert False, f"Unknown spell_key={spell_type.spell_key} for {__class__.__name__}"
-
         return True
