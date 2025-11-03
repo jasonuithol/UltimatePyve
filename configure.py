@@ -1,7 +1,7 @@
 import os, sys
 from pathlib import Path
 
-MINIMUM_PYTHON_VERSION = (3,13)
+MINIMUM_PYTHON_VERSION = tuple([int(x) for x in os.getenv("PYTHON_VERSION", "3.14").split(".")])
 
 def reject_python_version():
     print(f"Python {MINIMUM_PYTHON_VERSION[0]}.{MINIMUM_PYTHON_VERSION[1]} or later required. Exiting.")

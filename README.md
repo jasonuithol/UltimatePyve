@@ -14,14 +14,18 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
   (I tried to find Ultima V on the appstore and could not.)
 
-- **Python 3.13 or newer**  
+- **Python 3.14 or newer**  
   [Download Python here](https://www.python.org/downloads/).
+
+  If you chose to install the "Python install manager" then you can issue this command in the command line
+
+  `py install 3.14`
 
 ---
 
 ## Installation
 
-1. **Install Python 3.13+**  
+1. **Install Python 3.14+**  
 
     Make sure `pypi` points to the correct version (if that's even a thing).  When it asks if you want to add it to the PATH, say yes.
 

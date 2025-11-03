@@ -1,14 +1,18 @@
 @echo off
-py -3.13 -m pip install -r requirements.txt
+
+set PYTHON_VERSION=3.14
+
+py -%PYTHON_VERSION% -m pip install --upgrade pip
+py -%PYTHON_VERSION% -m pip install -r requirements.txt
 if errorlevel 1 (
     echo( 
     echo -------------------------------------------
     echo(
-    echo ====! Must have python 3.13 installed !=====    
+    echo ====! Must have python %PYTHON_VERSION% installed !=====    
     echo(
     pause
     exit
 )
-py -3.13 utilities\check_for_updates.py --check-only
-py -3.13 main.py
+py -%PYTHON_VERSION% utilities\update_checker.py --check-only
+py -%PYTHON_VERSION% main.py
 pause
