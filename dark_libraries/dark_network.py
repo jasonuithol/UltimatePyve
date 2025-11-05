@@ -57,6 +57,7 @@ class DarkNetworkConnection(LoggerMixin):
                     stop_event: threading.Event, 
                     error_queue: queue.Queue
                  ):
+        super().__init__()
         self.transport   = transport
         self.protocol    = protocol
         self.network_id  = network_id
@@ -164,10 +165,10 @@ class DarkNetworkServer[TMessage](LoggerMixin, DarkNetworkInterface[TMessage]):
             if connection in self.remote_clients:
                 self.remote_clients.remove(connection)
 
-class DarkUtf8SocketServer(LoggerMixin, DarkNetworkServer[str]):
+class DarkUtf8SocketServer(DarkNetworkServer[str]):
 
     def __init__(self, host: str, port: int):
-        LoggerMixin.__init__()
+        LoggerMixin.__init__(self)
         self.host = host
         self.port = port
         self.protocol = DarkUtf8StringProtocol()
@@ -196,7 +197,7 @@ class DarkUtf8SocketServer(LoggerMixin, DarkNetworkServer[str]):
                     # Create the Client
                     #
                     transport = DarkSocketTransport(socket_connection)
-                    client_connection = DarkNetworkConnection(transport, self.protocol, f"{client_host}:{client_port}", self.stop_event)
+                    client_connection = DarkNetworkConnection(transport, self.protocol, f"{client_host}:{client_port}", self.stop_event, self.error_queue)
 
                     self.remote_clients[client_connection.network_id] = client_connection
                     self.log(f"Spawned client handler for {address}")

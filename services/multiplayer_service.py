@@ -26,7 +26,7 @@ def location_to_message_fragment(location: GlobalLocation):
     ]
 
 def to_message_gram(message_name: str, data: list[str]):
-    return [message_name] + DELIMITER.join(data)
+    return DELIMITER.join([message_name] + [str(x) for x in data])
 
 def from_message_gram(message: str) -> tuple[str, tuple]:
     parts = message.split(DELIMITER)
@@ -43,6 +43,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
     party_agent: PartyAgent
 
     def __init__(self):
+        super().__init__()
         self.server: DarkUtf8SocketServer = None
         self.client: DarkUtf8SocketClient = None
 
@@ -104,7 +105,6 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             except Exception as e:
                 self.log(f"ERROR: Could not parse message ({message}) from client {network_id}: {e}")
 
-        del network_id
 
         current_host_location = self.party_agent.get_current_location()
 
