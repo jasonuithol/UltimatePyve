@@ -1,3 +1,4 @@
+from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
 from dark_libraries.dark_network import DarkUtf8SocketServer, DarkUtf8SocketClient
 from dark_libraries.logging import LoggerMixin
@@ -36,7 +37,7 @@ def from_message_gram(message: str) -> tuple[str, tuple]:
 def location_update(agent: MultiplayerPartyAgent | PartyAgent):
     return to_message_gram(LOCATION_UPDATE, [agent.multiplayer_id] + location_to_message_fragment(agent.location))
 
-class MultiplayerService(LoggerMixin):
+class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
     npc_service: NpcService
     party_agent: PartyAgent
@@ -191,6 +192,12 @@ class MultiplayerService(LoggerMixin):
                         self.npc_service.add_npc(other_agent)
                     else:
                         self.npc_service.remove_npc(other_agent)
+
+    def pass_time(self, party_location):
+        if self.server:
+            self.update_clients()
+        elif self.client:
+            self.update_server()           
 
                 
         
