@@ -106,9 +106,14 @@ class PartyAgent(NpcAgent):
     @property
     def slept(self) -> bool:
         return False
-    
     #
     # NPC_AGENT IMPLEMENTATION: end
+
+
+    @property
+    def multiplayer_id(self) -> int:
+        return id(self)
+
 
     #
     # Location
@@ -144,6 +149,10 @@ class PartyAgent(NpcAgent):
     # 3 = dungeon room (combat), dungeon corridor combat, town combat
     def get_location_depth(self) -> int:
         return len(self.location_stack)
+
+    @property
+    def location(self) -> GlobalLocation:
+        return self.location_stack[-1]
 
     #
     # Transport mode.

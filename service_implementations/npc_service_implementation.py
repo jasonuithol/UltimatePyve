@@ -70,10 +70,12 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
         return registered
 
     def add_npc(self, npc_agent: NpcAgent):
-        self._active_npcs.append(npc_agent)
+        if not npc_agent in self._active_npcs:
+            self._active_npcs.append(npc_agent)
 
     def remove_npc(self, npc_agent: NpcAgent):
-        self._active_npcs.remove(npc_agent)
+        if npc_agent in self._active_npcs:
+            self._active_npcs.remove(npc_agent)
 
     def get_attacking_npc(self) -> NpcAgent:
         return self._attacking_npc

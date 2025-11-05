@@ -37,9 +37,6 @@ class NpcAgent(LoggerMixin):
     def spent_action_points(self) -> float:
         return self._spent_action_points
 
-    @property
-    def slept(self) -> bool: ...
-
     def spend_action_quanta(self, turns: int = 1):
         one_quanta = ((30 - self.dexterity) / 10 + 1)
         self._spent_action_points += one_quanta * turns

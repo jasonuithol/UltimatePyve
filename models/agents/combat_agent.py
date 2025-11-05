@@ -71,6 +71,9 @@ class CombatAgent(NpcAgent):
     @hitpoints.setter
     def hitpoints(self, val: int): ...
 
+    @property
+    def slept(self) -> bool: ...
+
     def get_damage(self, weapon: EquipableItemType) -> int: ...
 
     def calculate_hit_probability(self, target: Self) -> float:
