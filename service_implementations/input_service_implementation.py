@@ -12,6 +12,7 @@ from models.agents.party_agent  import PartyAgent
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
 
+from services.multiplayer_service import MultiplayerService
 from services.view_port_service import ViewPortService
 from view.info_panel import InfoPanel
 
@@ -31,7 +32,7 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
     info_panel:      InfoPanel
     dark_event_service: DarkEventService
     view_port_service:  ViewPortService
-
+    multiplayer_service: MultiplayerService
 
     def __init__(self):
         super().__init__()
@@ -130,6 +131,11 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
                     continue
 
                 return event
+
+            #
+            # Waiting for input ? Poll the multiplayer_service for updates
+            #  
+            self.multiplayer_service.read_updates()
 
             #
             # Waiting for input ? Render frames, ensuring that animations happen etc.

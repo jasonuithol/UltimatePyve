@@ -25,7 +25,8 @@ class MultiplayerPartyAgent(NpcAgent):
             self._multiplayer_id = remote_multiplayer_id
     
         provider = ServiceProvider.get_provider()
-        self.avatar_sprite_factory: AvatarSpriteFactory = provider.resolve(AvatarSpriteFactory)
+        self._avatar_sprite_factory: AvatarSpriteFactory = provider.resolve(AvatarSpriteFactory)
+        self._sprite_time_offset: int = None
 
     # NPC AGENT IMPLEMENTATION: Start
     #
@@ -39,9 +40,10 @@ class MultiplayerPartyAgent(NpcAgent):
 
     @property
     def current_tile(self) -> Tile:
-        sprite = self.avatar_sprite_factory.create_player(self._transport_mode_index, self._transport_direction)
-        sprite_time_offset = sprite.create_random_time_offset()
-        return sprite.get_current_frame(sprite_time_offset)
+        sprite = self._avatar_sprite_factory.create_player(self._transport_mode_index, self._transport_direction)
+        if self._sprite_time_offset is None:
+            self._sprite_time_offset = sprite.create_random_time_offset()
+        return sprite.get_current_frame(self._sprite_time_offset)
 
     @property
     def coord(self) -> Coord[int]:

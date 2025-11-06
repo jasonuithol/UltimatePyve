@@ -49,9 +49,11 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.client: DarkUtf8SocketClient = None
         self.client_agents = dict[str, MultiplayerPartyAgent]()
 
+    # =====================================
     #
-    # SERVER
+    #               SERVER
     #
+    # =====================================
 
     def start_hosting(self):
         assert (not self.server) and (not self.client), f"Cannot start hosting: server={self.server}, self={self.client}"
@@ -60,13 +62,38 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.server.launch()
         self.party_agent.set_multiplayer_id()
 
-    def _connect_new_client(self, network_id: str, message: str):
+    def read_client_updates(self):
 
-        message_name, data = from_message_gram(message)
-        if message_name != CONNECT_REQUEST:
-            self.log(f"ERROR: Did not get a {CONNECT_REQUEST} message")
+        for network_id, message_gram in self.server.read():
+            try:
+                message_name, message_data = from_message_gram(message_gram)
 
-        name, dexterity, location_index, level_index, x, y = data
+                if message_name == CONNECT_REQUEST:
+                    self._connect_new_client(network_id, message_data)
+
+                elif message_name == LOCATION_UPDATE:
+                    self._accept_location_update(message_data)
+
+            except Exception as e:
+                self.log(f"ERROR: Could not parse message ({message_gram}) from client {network_id}: {e}")
+
+
+    def write_client_updates(self):
+
+        # Send your (the host)'s location to all remote players
+        self.server.write(location_update(self.party_agent))
+
+        # Send everyone's location to all remote players
+        player_location_message_grams = [
+            location_update(agent)
+            for agent in self.client_agents.values()
+        ]
+        for message_gram in player_location_message_grams:
+            self.server.write(message_gram)
+
+    def _connect_new_client(self, network_id: str, message_data: tuple):
+
+        name, dexterity, location_index, level_index, x, y = message_data
 
         location = GlobalLocation(
             int(location_index), 
@@ -81,7 +108,8 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             int(dexterity),
             location
         )
-        self.client_agents[network_id] = agent
+        self.client_agents[agent.multiplayer_id] = agent
+        self._update_multiplayer_npc_registration()
 
         # Update the new client with it's multiplayer_id and it's spawn location (might be different to requested spawn location)
         connect_accept_message_gram = to_message_gram(CONNECT_ACCEPT, [agent.multiplayer_id] + location_to_message_fragment(agent.location))
@@ -97,46 +125,12 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.server.write(to_message_gram(PLAYER_JOIN, player_join_message_data))
 
         self.log(f"Player '{name}' has joined with network_id={network_id}, multiplayer_id={agent.multiplayer_id}")
-       
 
-    def update_clients(self):
-
-        for network_id, message in self.server.read():
-            try:
-                if not network_id in self.client_agents.keys():
-                    # REMOTE CLIENT IS JOINING THIS SERVER
-                    self._connect_new_client(network_id, message)
-
-            except Exception as e:
-                self.log(f"ERROR: Could not parse message ({message}) from client {network_id}: {e}")
-
-
-        current_host_location = self.party_agent.get_current_location()
-
-        # if a remote player is on the same location/level as you (the host) then add them to the NPC registry
-        for network_id, agent in self.client_agents.items():
-            same_location = agent.location_index == current_host_location.location_index
-            same_level = agent.level_index == current_host_location.level_index
-            if same_location and same_level:
-                self.npc_service.add_npc(agent)
-            else:
-                self.npc_service.remove_npc(agent)
-
-        # Send your (the host)'s location to all remote players
-        self.server.write(location_update(self.party_agent))
-
-        # Send everyone's location to all remote players
-        player_location_message_grams = [
-            location_update(agent)
-            for agent in self.client_agents.values()
-        ]
-        for message_gram in player_location_message_grams:
-            self.server.write(message_gram)
-
-
+    # ======================================================
     #
-    # CLIENT
+    #                       CLIENT
     #
+    # ======================================================
 
     def connect_to_host(self, host: str, port: int):
         assert (not self.server) and (not self.client), f"Cannot connect to host: server={self.server}, client={self.client}"
@@ -147,9 +141,25 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         message_gram = to_message_gram(CONNECT_REQUEST, message_data)
         self.client.write(message_gram)
 
-        time.sleep(0.5)
-        
-        self._read_connect_accept()
+    def read_server_updates(self):
+
+        if self.party_agent._multiplayer_id is None:
+            self._read_connect_accept()
+            return
+
+        for message_gram in self.client.read():
+            message_name, message_data = from_message_gram(message_gram)
+            
+            if message_name == PLAYER_JOIN:
+                self._accept_player_join(message_data)
+                
+            elif message_name == LOCATION_UPDATE:
+                self._accept_location_update(message_data)
+
+    def write_server_updates(self):
+
+        message_gram = location_update(self.party_agent)
+        self.client.write(message_gram)
 
     def _read_connect_accept(self):
         for message_gram in self.client.read():
@@ -162,69 +172,81 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
                 return
         self.log(f"ERROR: Did not receive {CONNECT_ACCEPT}, so no remote_multiplayer_id was assigned.")
 
-    def update_server(self):
+    # ===============================
+    #
+    # SHARED
+    #
+    # ===============================
 
-        if self.party_agent._multiplayer_id is None:
-            self._read_connect_accept()
-            return
+    def _accept_player_join(self, message_data: tuple):
 
-        message_gram = location_update(self.party_agent)
-        self.client.write(message_gram)
-        for message_gram in self.client.read():
-            message_name, message_data = from_message_gram(message_gram)
-            
-            if message_name == PLAYER_JOIN:
-                name, dexterity, remote_multiplayer_id, location_index, level_index, x, y = message_data
+        name, dexterity, remote_multiplayer_id, location_index, level_index, x, y = message_data
 
-                if remote_multiplayer_id == self.party_agent.multiplayer_id:
-                    #
-                    # Pass
-                    #
-                    pass
+        if remote_multiplayer_id != self.party_agent.multiplayer_id:
 
-                else:
+            location = GlobalLocation(
+                int(location_index), 
+                int(level_index), 
+                Coord(int(x),int(y))
+            )
+            agent = MultiplayerPartyAgent(
+                name, 
+                dexterity,
+                location,
+                remote_multiplayer_id
+            )
+            self.client_agents[remote_multiplayer_id] = agent
+            self._update_multiplayer_npc_registration()
+            self.log(f"Another player has joined this session: remote_multiplayer_id={remote_multiplayer_id}")
 
-                    location = GlobalLocation(
-                        int(location_index), 
-                        int(level_index), 
-                        Coord(int(x),int(y))
-                    )
-                    agent = MultiplayerPartyAgent(
-                        name, 
-                        dexterity,
-                        location,
-                        remote_multiplayer_id
-                    )
-                    self.client_agents[remote_multiplayer_id] = agent
-                    self.log(f"Another player has joined this session: remote_multiplayer_id={remote_multiplayer_id}")
-                
-            elif message_name == LOCATION_UPDATE:
+    def _accept_location_update(self, message_data: tuple):
 
-                remote_multiplayer_id, location_index, level_index, x, y = message_data
-                location = GlobalLocation(
-                    int(location_index), 
-                    int(level_index), 
-                    Coord(int(x),int(y))
-                )
+        remote_multiplayer_id, location_index, level_index, x, y = message_data
 
-                if remote_multiplayer_id == self.party_agent.multiplayer_id:
-                    #
-                    # TODO: Hmmmmmmm
-                    #
-                    pass
-                else:
-                    other_agent = self.client_agents[remote_multiplayer_id]
-                    other_agent.location = location
-                    if location_index == self.party_agent.location.location_index and level_index == self.party_agent.location.location_index:
-                        self.npc_service.add_npc(other_agent)
-                    else:
-                        self.npc_service.remove_npc(other_agent)
+        if remote_multiplayer_id != self.party_agent.multiplayer_id:
+
+            self.client_agents[remote_multiplayer_id].location = GlobalLocation(
+                int(location_index), 
+                int(level_index), 
+                Coord(int(x),int(y))
+            )
+            self._update_multiplayer_npc_registration()
+
+
+    def _update_multiplayer_npc_registration(self):
+        
+        current_host_location = self.party_agent.get_current_location()
+
+        # if a remote player is on the same location/level as you (the host) then add them to the NPC registry
+        for _, agent in self.client_agents.items():
+            same_location = agent.location_index == current_host_location.location_index
+            same_level = agent.level_index == current_host_location.level_index
+            if same_location and same_level:
+                self.npc_service.add_npc(agent)
+            else:
+                self.npc_service.remove_npc(agent)
+
+
+    # ===============================
+    #
+    #          PUBLIC API
+    #
+    # ===============================
+
+    def read_updates(self):
+        if self.server:
+            self.read_client_updates()
+        elif self.client:
+            self.read_server_updates()           
+
+    def write_updates(self):
+        if self.server:
+            self.write_client_updates()
+        elif self.client:
+            self.write_server_updates()           
 
     def pass_time(self, party_location):
-        if self.server:
-            self.update_clients()
-        elif self.client:
-            self.update_server()           
-
+        self.read_updates()
+        self.write_updates()
                 
         

@@ -87,7 +87,7 @@ class PartyAgent(NpcAgent):
     def tile_id(self) -> int: ...
 
     @property
-    def name(self) -> str: return "Quote Unquote"
+    def name(self) -> str: return self.party_members[0].name
 
     @property
     def current_tile(self) -> Tile:
