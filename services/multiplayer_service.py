@@ -170,7 +170,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
                 self.party_agent.change_coord(Coord(int(x),int(y)))
                 self.log(f"Connnection to server accepted, remote_multiplayer_id={remote_multiplayer_id}")
                 return
-        self.log(f"ERROR: Did not receive {CONNECT_ACCEPT}, so no remote_multiplayer_id was assigned.")
+        self.log(f"WARNING: Have not received {CONNECT_ACCEPT}, so no remote_multiplayer_id is yet assigned.")
 
     # ===============================
     #
