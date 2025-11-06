@@ -12,7 +12,9 @@ from models.multiplayer_protocol import ConnectAccept, ConnectRequest, LocationU
 from services.info_panel_service import InfoPanelService
 from services.npc_service import NpcService
 
-ProtocolFormat = NamedTuple
+# If you're changing one of these, you may need to change the other
+ProtocolFormat     = NamedTuple
+ProtocolDefinition = models.multiplayer_protocol
 
 class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
@@ -25,7 +27,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.server: DarkSocketServer[ProtocolFormat] = None
         self.client: DarkSocketClient[ProtocolFormat] = None
         self.client_agents = dict[str, MultiplayerPartyAgent]()
-        self.protocol = DarkNamedTupleProtocol(models.multiplayer_protocol)
+        self.protocol = DarkNamedTupleProtocol(ProtocolDefinition)
 
     # =====================================
     #
