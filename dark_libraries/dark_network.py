@@ -1,4 +1,4 @@
-from typing import Iterable, Protocol
+from typing import Iterable, NamedTuple, Protocol
 from abc import ABC, abstractmethod
 
 import queue
@@ -47,6 +47,38 @@ class DarkUtf8StringProtocol(DarkNetworkProtocol[str]):
             line, self._buffer = self._buffer.split(b"\n", 1)
             messages.append(line.decode("utf-8", errors="replace"))
         return messages
+
+class DarkNamedTupleProtocol(DarkNetworkProtocol[NamedTuple]):
+
+    DELIMITER = "|"
+
+    def __init__(self, protocol_format_module):
+        self._codec = DarkUtf8StringProtocol()
+        self._protocol_format_module = protocol_format_module
+
+    def encode(self, message: NamedTuple) -> bytes:
+        raw = self._to_string(message)
+        return self._codec.encode(raw)
+
+    def decode(self, data: bytes) -> NamedTuple:
+        strings = self._codec.decode(data)
+        return [self._from_string(s) for s in strings]
+
+    def _to_string(self, message: NamedTuple) -> str:
+        name = type(message).__name__  # keep consistent
+        values = [str(getattr(message, f)) for f in message._fields]
+        return self.DELIMITER.join([name] + values)
+
+    def _from_string(self, message_string: str) -> NamedTuple:
+        parts = message_string.split(self.DELIMITER)
+        name, values = parts[0], parts[1:]
+        cls: NamedTuple = getattr(self._protocol_format_module, name, None)
+        if cls is None:
+            raise ValueError(f"Unknown message type: {name}")
+        if len(values) != len(cls._fields):
+            raise ValueError(f"Field count mismatch for {name}: expected {len(cls._fields)}, got {len(values)}")
+        casted = [cls.__annotations__[f](v) for f, v in zip(cls._fields, values)]
+        return cls(*casted)
 
 class DarkNetworkConnection(LoggerMixin):
     def __init__(
@@ -163,15 +195,15 @@ class DarkNetworkServer[TMessage](LoggerMixin, DarkNetworkInterface[TMessage]):
             self.log(f"Removing client {connection.network_id} due to error: {error}")
             connection.close()
             if connection in self.remote_clients:
-                self.remote_clients.remove(connection)
+                del self.remote_clients[connection.network_id]
 
-class DarkUtf8SocketServer(DarkNetworkServer[str]):
+class DarkSocketServer[TMessage](DarkNetworkServer[TMessage]):
 
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, protocol: DarkNetworkProtocol[TMessage]):
         LoggerMixin.__init__(self)
         self.host = host
         self.port = port
-        self.protocol = DarkUtf8StringProtocol()
+        self.protocol = protocol
 
     @property
     def network_id(self):
@@ -223,9 +255,9 @@ class DarkNetworkClient[TMessage](DarkNetworkInterface[TMessage]):
     def close(self):
         self._connection.close()
 
-class DarkUtf8SocketClient(DarkNetworkClient[str]):
+class DarkSocketClient[TMessage](DarkNetworkClient[TMessage]):
 
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, protocol: DarkNetworkProtocol[TMessage]):
 
         # Create socket and connect to server
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -234,7 +266,6 @@ class DarkUtf8SocketClient(DarkNetworkClient[str]):
 
         # Wrap in transport
         transport = DarkSocketTransport(sock)
-        protocol = DarkUtf8StringProtocol()
 
         # Each client has its own stop_event
         self.stop_event = threading.Event()
@@ -250,12 +281,3 @@ class DarkUtf8SocketClient(DarkNetworkClient[str]):
         )
 
         super().__init__(connection)
-
-
-'''
-for incoming_message in server.read():
-    apply_event(incoming_message)
-
-for update in world_updates:
-    server.write(update)
-'''

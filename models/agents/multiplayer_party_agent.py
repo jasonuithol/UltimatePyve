@@ -75,14 +75,16 @@ class MultiplayerPartyAgent(NpcAgent):
         return self._location.location_index
     
     @property
-    def location(self) -> int:
+    def location(self) -> GlobalLocation:
         return self._location
     
     @location.setter
-    def location(self, value: int):
+    def location(self, value: GlobalLocation):
         self._location = value
 
     @property
     def multiplayer_id(self) -> str:
         return self._multiplayer_id
 
+    def change_coord(self, coord: Coord):
+        self._location = self._location.move_to_coord(coord)
