@@ -64,6 +64,16 @@ These values live in configure.py
 
 Double-click on **UltimatePyve.cmd**
 
+## Local Machine Multiplayer Test
+
+HOST
+
+`py -3.14 main.py -host`
+
+ANY CLIENT
+
+`py -3.14 main.py -join`
+
 ## Updating
 
 Double-click on **update.cmd** (Windows 10 onwards - for earlier versions, [install curl](https://curl.se/download.html) and add it to the system PATH)

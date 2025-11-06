@@ -1,4 +1,3 @@
-import time
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_math import Coord
 from dark_libraries.dark_network import DarkUtf8SocketServer, DarkUtf8SocketClient
@@ -8,6 +7,7 @@ from models.agents.multiplayer_party_agent import MultiplayerPartyAgent
 from models.agents.party_agent import PartyAgent
 from models.global_location import GlobalLocation
 
+from services.info_panel_service import InfoPanelService
 from services.npc_service import NpcService
 
 DELIMITER = "|" #chr(0)
@@ -42,6 +42,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
     npc_service: NpcService
     party_agent: PartyAgent
+    info_panel_service: InfoPanelService
 
     def __init__(self):
         super().__init__()
@@ -61,6 +62,8 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.server = DarkUtf8SocketServer("127.0.0.1", 5000)
         self.server.launch()
         self.party_agent.set_multiplayer_id()
+        self.party_agent.party_members[0]._character_record.name = "SERVER"
+        self.info_panel_service.update_party_summary()
 
     def read_client_updates(self):
 

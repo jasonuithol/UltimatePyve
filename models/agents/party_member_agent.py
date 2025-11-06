@@ -145,11 +145,8 @@ class PartyMemberAgent(CombatAgent):
 
     @property
     def name(self) -> str:
-        n = self._character_record.name
-        if len(n.strip()) == 0:
-            return "oroborus"
-        else:
-            return n
+        return self._character_record.name
+    
     #
     # NPC_AGENT IMPLEMENTATION (Completion): End
 
