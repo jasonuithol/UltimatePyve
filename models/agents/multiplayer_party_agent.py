@@ -1,17 +1,32 @@
 from dark_libraries.dark_math import Coord
 
+from dark_libraries.service_provider import ServiceProvider
 from models.agents.npc_agent import NpcAgent
 from models.global_location import GlobalLocation
 from models.tile import Tile
+from services.avatar_sprite_factory import AvatarSpriteFactory
 
 class MultiplayerPartyAgent(NpcAgent):
 
-    def __init__(self, name: str, dexterity: int, location: GlobalLocation):
-        self._name = name
+    def __init__(self, name: str, dexterity: int, location: GlobalLocation, remote_multiplayer_id: str = None):
+
+        super().__init__()
+
+        self._name      = name
         self._dexterity = dexterity
-        self._location: GlobalLocation = location
-        self._multiplayer_id: int = None
+        self._location  = location
+
+        self._transport_mode_index = 0 # walk
+        self._transport_direction  = 0 # east
+
+        if remote_multiplayer_id is None:
+            self._multiplayer_id = str(id(self))
+        else:
+            self._multiplayer_id = remote_multiplayer_id
     
+        provider = ServiceProvider.get_provider()
+        self.avatar_sprite_factory: AvatarSpriteFactory = provider.resolve(AvatarSpriteFactory)
+
     # NPC AGENT IMPLEMENTATION: Start
     #
     @property
@@ -24,10 +39,9 @@ class MultiplayerPartyAgent(NpcAgent):
 
     @property
     def current_tile(self) -> Tile:
-        #
-        # TODO: Actually have a sprite etc
-        #
-        return 284
+        sprite = self.avatar_sprite_factory.create_player(self._transport_mode_index, self._transport_direction)
+        sprite_time_offset = sprite.create_random_time_offset()
+        return sprite.get_current_frame(sprite_time_offset)
 
     @property
     def coord(self) -> Coord[int]:
@@ -67,9 +81,6 @@ class MultiplayerPartyAgent(NpcAgent):
         self._location = value
 
     @property
-    def multiplayer_id(self) -> int:
+    def multiplayer_id(self) -> str:
         return self._multiplayer_id
-    
-    @multiplayer_id.setter
-    def multiplayer_id(self, value: int):
-        self._multiplayer = value
+

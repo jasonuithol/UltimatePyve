@@ -45,6 +45,9 @@ class PartyAgent(NpcAgent):
     light_radius: int = None
     light_expiry: datetime = None
 
+
+    _multiplayer_id: int = None
+
     #
     # Party Members
     #
@@ -111,9 +114,15 @@ class PartyAgent(NpcAgent):
 
 
     @property
-    def multiplayer_id(self) -> int:
-        return id(self)
+    def multiplayer_id(self) -> str:
+        assert self._multiplayer_id, "Cannot access multiplayer_id before it is set."
+        return self._multiplayer_id
 
+    def set_multiplayer_id(self, remote_multiplayer_id: str = None):
+        if remote_multiplayer_id is None:
+            self._multiplayer_id = str(id(self))
+        else:
+            self._multiplayer_id = remote_multiplayer_id
 
     #
     # Location

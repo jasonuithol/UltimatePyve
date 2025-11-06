@@ -16,6 +16,7 @@ class CombatAgent(NpcAgent):
         self._coord = coord
         self._sprite = sprite
         self._sprite_time_offset = sprite.create_random_time_offset()
+
         self._slept = False
         self._slept_tile: Tile = None
         self._poisoned: bool = False

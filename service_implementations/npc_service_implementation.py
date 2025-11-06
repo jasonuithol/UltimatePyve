@@ -6,6 +6,7 @@ from dark_libraries.dark_math   import Coord
 from dark_libraries.logging     import LoggerMixin
 from dark_libraries.dark_events import DarkEventListenerMixin
 
+from models.agents.combat_agent import CombatAgent
 from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
@@ -114,7 +115,7 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
             f", out of {len(ap_candidates)} action candidates and {len(dex_candidates)} DEX candidates."
         )
 
-        if final_choice.slept:
+        if isinstance(final_choice, CombatAgent) and final_choice.slept:
             if random.randint(0,100) < 2:
                 self.log(f"awakening eepy-deepy ({final_choice.name}), but still choosing next npc for an action")
                 final_choice.awake()
