@@ -148,8 +148,12 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
         if location_update.multiplayer_id != self.party_agent.multiplayer_id:
 
-            location_update.update_agent(self.client_agents[location_update.multiplayer_id])
-            self._update_multiplayer_npc_registration()
+            agent = self.client_agents.get(location_update.multiplayer_id)
+            if agent:
+                location_update.update_agent(agent)
+                self._update_multiplayer_npc_registration()
+            else:
+                self.log(f"WARNING: LocationUpdate for unknown multiplayer_id={location_update.multiplayer_id}")
 
     def _update_multiplayer_npc_registration(self):
         
