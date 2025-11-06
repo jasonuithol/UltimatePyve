@@ -124,7 +124,10 @@ class DarkNetworkConnection(LoggerMixin):
     def writer(self):
         try:
             while self.is_alive and (not self.stop_event.is_set()):
-                msg = self.outgoing.get()  # blocks until something to send
+                try:
+                    msg = self.outgoing.get(timeout = 1.0)
+                except queue.Empty:
+                    continue
                 self.transport.send(self.protocol.encode(msg))
         except Exception as e:
             self.log(f"ERROR: Writer failed for {self.network_id}: {e}")

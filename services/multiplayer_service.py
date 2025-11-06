@@ -192,5 +192,12 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
     def pass_time(self, party_location):
         self.read_updates()
         self.write_updates()
+
+    def quit(self):
+        if self.server:
+            self.server.close()
+        elif self.client:
+            self.client.close()
+
                 
         
