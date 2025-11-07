@@ -41,7 +41,7 @@ class ViewPortService(LoggerMixin):
     view_port_data_provider: ViewPortDataProvider
 
     def __init__(self):
-        LoggerMixin.__init__(self)
+        super().__init__()
         self.invert_colors(False)
         self.set_damage_blast_at(None)
         self._projectile: Projectile = None

@@ -64,6 +64,9 @@ class ConnectAccept(NamedTuple):
         agent.set_multiplayer_id(self.multiplayer_id)
         agent.change_coord(self.get_coord())
 
+class ConnectTerminate(NamedTuple):
+    pass
+
 class PlayerJoin(NamedTuple):
     name: str
     dexterity: int
@@ -97,6 +100,10 @@ class PlayerJoin(NamedTuple):
             location  = self.get_location(),
             remote_multiplayer_id = self.multiplayer_id
         )
+
+class PlayerLeave(NamedTuple):
+    multiplayer_id: str
+
     
 class LocationUpdate(NamedTuple):
     multiplayer_id: str

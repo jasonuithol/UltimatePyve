@@ -62,10 +62,10 @@ class Logger:
         print(ascii_control_code_prefix + entire_prefix + msg + ascii_control_code_suffix)
         
 class LoggerMixin:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._logger = Logger(self)
         self.log = self._logger.log
-        super().__init__()
+        super().__init__(**kwargs)
 
     # ---------------------------------------------------------------------------------------
     #

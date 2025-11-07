@@ -1,8 +1,8 @@
-from typing import Iterable, NamedTuple, Protocol
+import time
+from typing import Iterable, Protocol
 from abc import ABC, abstractmethod
 
 import queue
-import socket
 import threading
 
 from dark_libraries.logging import LoggerMixin
@@ -10,75 +10,33 @@ from dark_libraries.logging import LoggerMixin
 PACKET_SIZE = 1024
 QUEUE_SIZE = 10
 
+
+# ===============================================================================================================================
+#
+# General Rule: 
+# 
+# If you create it, you close it. Don't delegate that responsibility to some other class, 
+# otherwise everything ends up with a close method.
+#
+# "it" is either a thread or a socket.
+#
+# If a class creates one, it might need a close method.  Was it passed into the constructor instead ?  Then no.
+#
+# ===============================================================================================================================
+
+
 class DarkNetworkTransport(Protocol):
     def send(self, data: bytes): ...
     def recv(self, buffer_size: int) -> bytes: ...
+
+class DarkNetworkListener(Protocol):
+    def listen(self): ...
+    def accept(self) -> DarkNetworkTransport: ...
     def close(self): ...
-
-class DarkSocketTransport(DarkNetworkTransport):
-    def __init__(self, socket_connection: socket.socket):
-        self.socket_connection = socket_connection
-
-    def send(self, data: bytes):
-        self.socket_connection.sendall(data)
-
-    def recv(self, buffer_size: int) -> bytes:
-        return self.socket_connection.recv(buffer_size)
-
-    def close(self):
-        self.socket_connection.close()
 
 class DarkNetworkProtocol[TMessage](Protocol):
     def encode(self, message: TMessage) -> bytes: ...
     def decode(self, data: bytes) -> list[TMessage]: ...
-
-class DarkUtf8StringProtocol(DarkNetworkProtocol[str]):
-
-    def __init__(self):
-        self._buffer = b""
-
-    def encode(self, message: str) -> bytes:
-        return message.encode("utf-8") + b"\n"
-
-    def decode(self, data: bytes) -> list[str]:
-        self._buffer += data
-        messages = []
-        while b"\n" in self._buffer:
-            line, self._buffer = self._buffer.split(b"\n", 1)
-            messages.append(line.decode("utf-8", errors="replace"))
-        return messages
-
-class DarkNamedTupleProtocol(DarkNetworkProtocol[NamedTuple]):
-
-    DELIMITER = "|"
-
-    def __init__(self, protocol_format_module):
-        self._codec = DarkUtf8StringProtocol()
-        self._protocol_format_module = protocol_format_module
-
-    def encode(self, message: NamedTuple) -> bytes:
-        raw = self._to_string(message)
-        return self._codec.encode(raw)
-
-    def decode(self, data: bytes) -> NamedTuple:
-        strings = self._codec.decode(data)
-        return [self._from_string(s) for s in strings]
-
-    def _to_string(self, message: NamedTuple) -> str:
-        name = type(message).__name__  # keep consistent
-        values = [str(getattr(message, f)) for f in message._fields]
-        return self.DELIMITER.join([name] + values)
-
-    def _from_string(self, message_string: str) -> NamedTuple:
-        parts = message_string.split(self.DELIMITER)
-        name, values = parts[0], parts[1:]
-        cls: NamedTuple = getattr(self._protocol_format_module, name, None)
-        if cls is None:
-            raise ValueError(f"Unknown message type: {name}")
-        if len(values) != len(cls._fields):
-            raise ValueError(f"Field count mismatch for {name}: expected {len(cls._fields)}, got {len(values)}")
-        casted = [cls.__annotations__[f](v) for f, v in zip(cls._fields, values)]
-        return cls(*casted)
 
 class DarkNetworkConnection(LoggerMixin):
     def __init__(
@@ -86,14 +44,12 @@ class DarkNetworkConnection(LoggerMixin):
                     transport: DarkNetworkTransport, 
                     protocol: DarkNetworkProtocol, 
                     network_id: str, 
-                    stop_event: threading.Event, 
                     error_queue: queue.Queue
                  ):
         super().__init__()
         self.transport   = transport
         self.protocol    = protocol
         self.network_id  = network_id
-        self.stop_event  = stop_event
         self.error_queue = error_queue
 
         self.is_alive = True
@@ -108,27 +64,39 @@ class DarkNetworkConnection(LoggerMixin):
 
     def reader(self):
         try:
-            while self.is_alive and (not self.stop_event.is_set()):
+            while self.is_alive:
                 data = self.transport.recv(PACKET_SIZE)
                 if not data:
-                    break
+                    continue
                 for message in self.protocol.decode(data):
                     self.log(f"DEBUG: Received from {self.network_id}: {message}")
                     self.incoming.put(message)
+                time.sleep(0) # yield thread
+
         except Exception as e:
             self.log(f"ERROR: Reader failed for {self.network_id}: {e}")
             self.error_queue.put((self, e))
         finally:
-            self.log("DEBUG: reader thread finished.")
-
+            self.log("Reader thread finished.")
+                
     def writer(self):
         try:
-            while self.is_alive and (not self.stop_event.is_set()):
-                try:
-                    msg = self.outgoing.get(timeout = 1.0)
-                except queue.Empty:
-                    continue
+            while self.is_alive:
+                if not self.outgoing.empty():
+                    msg = self.outgoing.get()
+                    self.log(f"DEBUG: Sending message from {self.network_id}: {msg}")
+                    self.transport.send(self.protocol.encode(msg))
+                time.sleep(0) # yield thread
+
+            self.log(f"Flushing {self.outgoing.qsize()} remaining outgoing messages")
+
+            while not self.outgoing.empty():
+                msg = self.outgoing.get()
+                self.log(f"DEBUG: Sending message from {self.network_id}: {msg}")
                 self.transport.send(self.protocol.encode(msg))
+
+            self.log(f"Outgoing queue empty, writer thread finished.")
+
         except Exception as e:
             self.log(f"ERROR: Writer failed for {self.network_id}: {e}")
             self.error_queue.put((self, e))
@@ -136,10 +104,13 @@ class DarkNetworkConnection(LoggerMixin):
             self.log("DEBUG: writer thread finished.")
 
     def close(self):
+
         self.is_alive = False
-        self.transport.close()     
-        self.incoming_thread.join()
-        self.outgoing_thread.join()
+
+        # 5. Join threads
+        self.incoming_thread.join(timeout=5.0)
+        self.outgoing_thread.join(timeout=5.0)
+
 
 class DarkNetworkInterface[TMessage](ABC):
 
@@ -155,43 +126,58 @@ class DarkNetworkInterface[TMessage](ABC):
 class DarkNetworkServer[TMessage](LoggerMixin, DarkNetworkInterface[TMessage]):
 
     def launch(self):
-        self.stop_event = threading.Event()
+        self.is_alive = True
         self.remote_clients = dict[str, DarkNetworkConnection]()
+
+        self.error_queue = queue.Queue()
 
         self.server_thread_handle = threading.Thread(target=self.server_thread)
         self.server_thread_handle.start()
 
-        self.error_queue = queue.Queue()
-
     def close(self):
         self.log("Shutting down")
-        self.stop_event.set()
+
+        # Stop accepting new connections from clients.
+        self.is_alive = False
         if self.server_thread_handle:
+            self.log("DEBUG: Waiting for server listener thread to finish.")
             self.server_thread_handle.join()
+
+        # Close down existing clients.
+        self.log("DEBUG: Closing remote client connections.")
         for remote_client in self.remote_clients.values():
             remote_client.close()
         self.remote_clients.clear()
+        self.log("DEBUG: Server has finished closing.")
+
+    def close_client(self, network_id: str):
+        client = self.remote_clients[network_id]
+        client.close()
+        del self.remote_clients[network_id]
+        self.log(f"Closed and removed client connection: {network_id}")
 
     def read(self) -> Iterable[tuple[str, TMessage]]:
-        for network_id, client in self.remote_clients.items():
-            try:
-                yield network_id, client.incoming.get_nowait()
-            except queue.Empty:
-                # skip exceptions from empty reads
-                continue
+        messages = []
+        for network_id, client in list(self.remote_clients.items()):
+            while not client.incoming.empty():
+                message = network_id, client.incoming.get()
+                messages.append(message)
+        return messages
 
     def write(self, message: TMessage):
-        for client in self.remote_clients.values():
-            client.outgoing.put(message)
+        for network_id in list(self.remote_clients.keys()):
+            self.write_to(network_id, message)
 
     def write_to(self, network_id: int, message: TMessage):
         client = self.remote_clients[network_id]
+        assert not client.outgoing.full(), "Outgoing queue was allowed to fill up"
         client.outgoing.put(message)
 
     @abstractmethod
     def server_thread(self): ...
 
-    def _close_failed_connections(self):
+    def close_failed_connections(self):
+
         while not self.error_queue.empty():
             queue_entry: tuple[DarkNetworkConnection, Exception] = self.error_queue.get()
             connection, error = queue_entry
@@ -199,50 +185,6 @@ class DarkNetworkServer[TMessage](LoggerMixin, DarkNetworkInterface[TMessage]):
             connection.close()
             if connection in self.remote_clients:
                 del self.remote_clients[connection.network_id]
-
-class DarkSocketServer[TMessage](DarkNetworkServer[TMessage]):
-
-    def __init__(self, host: str, port: int, protocol: DarkNetworkProtocol[TMessage]):
-        LoggerMixin.__init__(self)
-        self.host = host
-        self.port = port
-        self.protocol = protocol
-
-    @property
-    def network_id(self):
-        return f"{self.host}:{self.port}"
-
-    def server_thread(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            s.bind((self.host, self.port))
-            s.listen()
-            s.settimeout(1.0)
-
-            self.log(f"Listening on {self.host}:{self.port}")
-            while not self.stop_event.is_set():
-
-                self._close_failed_connections()
-
-                try:
-                    socket_connection, address = s.accept()
-                    client_host, client_port = address
-                    #
-                    # Create the Client
-                    #
-                    transport = DarkSocketTransport(socket_connection)
-                    client_connection = DarkNetworkConnection(transport, self.protocol, f"{client_host}:{client_port}", self.stop_event, self.error_queue)
-
-                    self.remote_clients[client_connection.network_id] = client_connection
-                    self.log(f"Spawned client handler for {address}")
-                except socket.timeout:
-                    continue
-                except Exception as e:
-                    self.log(f"ERROR: Listener failure: {e}")
-                    break
-
-        self.log(f"Shutting down listener: {self.host}:{self.port}")
 
 class DarkNetworkClient[TMessage](DarkNetworkInterface[TMessage]):
     def __init__(self, connection: DarkNetworkConnection):
@@ -254,33 +196,3 @@ class DarkNetworkClient[TMessage](DarkNetworkInterface[TMessage]):
 
     def write(self, message: TMessage):
         self._connection.outgoing.put(message)
-
-    def close(self):
-        self._connection.close()
-
-class DarkSocketClient[TMessage](DarkNetworkClient[TMessage]):
-
-    def __init__(self, host: str, port: int, protocol: DarkNetworkProtocol[TMessage]):
-
-        # Create socket and connect to server
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        sock.connect((host, port))
-
-        # Wrap in transport
-        transport = DarkSocketTransport(sock)
-
-        # Each client has its own stop_event
-        self.stop_event = threading.Event()
-        self.error_queue = queue.Queue()
-
-        # Create the underlying connection
-        connection = DarkNetworkConnection(
-            transport=transport,
-            protocol=protocol,
-            network_id=f"{host}:{port}",
-            stop_event=self.stop_event,
-            error_queue=self.error_queue
-        )
-
-        super().__init__(connection)

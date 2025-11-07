@@ -1,13 +1,14 @@
 from typing import NamedTuple
 
 from dark_libraries.dark_events import DarkEventListenerMixin
-from dark_libraries.dark_network import DarkNamedTupleProtocol, DarkSocketClient, DarkSocketServer
+from dark_libraries.dark_socket_network import DarkSocketClient, DarkSocketServer
+from dark_libraries.dark_tuple_network_protocol import DarkNamedTupleProtocol
 from dark_libraries.logging import LoggerMixin
 
 import models.multiplayer_protocol
 from models.agents.multiplayer_party_agent import MultiplayerPartyAgent
 from models.agents.party_agent import PartyAgent
-from models.multiplayer_protocol import ConnectAccept, ConnectRequest, LocationUpdate, PlayerJoin
+from models.multiplayer_protocol import ConnectAccept, ConnectRequest, ConnectTerminate, LocationUpdate, PlayerJoin, PlayerLeave
 
 from services.info_panel_service import InfoPanelService
 from services.npc_service import NpcService
@@ -54,6 +55,9 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
                 elif isinstance(named_tuple, LocationUpdate):
                     self._accept_location_update(named_tuple)
 
+                elif isinstance(named_tuple, PlayerLeave):
+                    self._accept_player_leave(network_id, named_tuple)
+
             except Exception as e:
                 self.log(f"ERROR: Error whilst processing message ({named_tuple}) from client {network_id}: {e}")
 
@@ -93,6 +97,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
         self.log(f"Player '{agent.name}' has joined with network_id={network_id}, multiplayer_id={agent.multiplayer_id}")
 
+
     # ======================================================
     #
     #                       CLIENT
@@ -115,8 +120,14 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             if isinstance(named_tuple, PlayerJoin):
                 self._accept_player_join(named_tuple)
                 
+            elif isinstance(named_tuple, PlayerLeave):
+                self._accept_player_leave(named_tuple)
+
             elif isinstance(named_tuple, LocationUpdate):
                 self._accept_location_update(named_tuple)
+
+            elif isinstance(named_tuple, ConnectTerminate):
+                self._accept_connect_terminate()
 
     def write_server_updates(self):
 
@@ -130,6 +141,14 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
                 self.log(f"Connnection to server accepted, multiplayer_id={named_tuple.multiplayer_id}")
                 return
         self.log(f"WARNING: Have not received ConnectAccept, so no multiplayer_id is yet assigned.")
+
+    def _accept_connect_terminate(self):
+        self.log(f"Server terminating connection, removing remote players and closing client connection.")
+        for agent in self.client_agents.values():
+            self.npc_service.remove_npc(agent)
+        self.client_agents.clear()
+        self.client.close()
+        self.client = None
 
     # ===============================
     #
@@ -145,6 +164,17 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.client_agents[player_join.multiplayer_id] = agent
             self._update_multiplayer_npc_registration()
             self.log(f"Another player has joined this session: remote_multiplayer_id={player_join.multiplayer_id}")
+
+    def _accept_player_leave(self, network_id: str, player_leave: PlayerLeave):
+        agent = self.client_agents[player_leave.multiplayer_id]
+        if agent is None:
+            self.log(f"WARNING: Got leave notice for unknown multiplayer_id: {player_leave.multiplayer_id}")
+        del self.client_agents[player_leave.multiplayer_id]            
+        self.npc_service.remove_npc(agent)
+
+        if self.server:
+            assert network_id, "Must provide a network_id if called as a server/host"
+            self.server.close_client(network_id)
 
     def _accept_location_update(self, location_update: LocationUpdate):
 
@@ -195,8 +225,10 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
     def quit(self):
         if self.server:
+            self.server.write(ConnectTerminate())
             self.server.close()
         elif self.client:
+            self.client.write(PlayerLeave(self.party_agent.multiplayer_id))
             self.client.close()
 
                 

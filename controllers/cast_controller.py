@@ -5,7 +5,6 @@ from controllers.spell_controllers.directional_spell_controller import Direction
 from controllers.spell_controllers.general_spell_controller import GeneralSpellController
 from controllers.spell_controllers.party_member_spell_controller import PartyMemberSpellController
 from dark_libraries.dark_events import DarkEventListenerMixin
-from dark_libraries.dark_math import Coord
 from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
@@ -13,8 +12,6 @@ from data.global_registry import GlobalRegistry
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
 from models.combat_map import CombatMap
-from models.enums.ega_palette_values import EgaPaletteValues
-from models.enums.projectile_type import ProjectileType
 from models.enums.spell_target_type import SpellTargetType
 from models.party_inventory import PartyInventory
 from models.spell_type import SpellType

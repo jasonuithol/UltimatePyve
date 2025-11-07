@@ -11,8 +11,8 @@ class ScalableComponent:
     global_registry: GlobalRegistry
     surface_factory: SurfaceFactory
 
-    def __init__(self, unscaled_size_in_pixels: Size[int], scale_factor: int):
-        super().__init__()
+    def __init__(self, unscaled_size_in_pixels: Size[int], scale_factor: int, **kwargs):
+        super().__init__(**kwargs)
         self._unscaled_size_in_pixels = unscaled_size_in_pixels
         self._scale_factor = scale_factor
 

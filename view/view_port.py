@@ -16,11 +16,11 @@ class ViewPort(ScalableComponent, LoggerMixin):
     display_config: DisplayConfig
 
     def __init__(self):
-        LoggerMixin.__init__(self)
+        #LoggerMixin.__init__(self)
+        pass
 
     def _after_inject(self):
-        ScalableComponent.__init__(
-            self,
+        super().__init__(
             unscaled_size_in_pixels = self.display_config.VIEW_PORT_SIZE.scale(self.display_config.TILE_SIZE),
             scale_factor            = self.display_config.SCALE_FACTOR
         )

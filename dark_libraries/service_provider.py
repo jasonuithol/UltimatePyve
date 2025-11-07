@@ -25,8 +25,19 @@ class ServiceProvider(LoggerMixin):
         assert inspect.isclass(cls), f"cls is not a class object, but instead is an instance of {type(cls)!r}"
 
         if needs_empty_constructor:
-            param_count = len(inspect.signature(cls).parameters)
-            assert param_count == 0, f"Constructor has {param_count} parameters, needs 0: {cls!r}"
+
+            sig = inspect.signature(cls.__init__)
+            params = list(sig.parameters.values())[1:]  # skip 'self'
+
+            # valid if all params are optional OR there's *args/**kwargs
+            for p in params:
+                if p.kind in (inspect.Parameter.VAR_POSITIONAL,
+                            inspect.Parameter.VAR_KEYWORD):
+                    return  # accepts anything, safe
+                if p.default is inspect.Parameter.empty:
+                    raise AssertionError(
+                        f"Constructor {cls} requires constructor parameter '{p.name}', therefore not injectable"
+                    )
 
     def _assert_is_instance(self, obj):
         assert not inspect.isclass(obj), f"obj is not an instance, but instead is a class object ({obj!r})"
