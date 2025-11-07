@@ -56,7 +56,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
                     self._accept_location_update(named_tuple)
 
                 elif isinstance(named_tuple, PlayerLeave):
-                    self._accept_player_leave(network_id, named_tuple)
+                    self._accept_player_leave(named_tuple, network_id)
 
             except Exception as e:
                 self.log(f"ERROR: Error whilst processing message ({named_tuple}) from client {network_id}: {e}")
@@ -165,7 +165,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self._update_multiplayer_npc_registration()
             self.log(f"Another player has joined this session: remote_multiplayer_id={player_join.multiplayer_id}")
 
-    def _accept_player_leave(self, network_id: str, player_leave: PlayerLeave):
+    def _accept_player_leave(self, player_leave: PlayerLeave, network_id: str = None):
         agent = self.client_agents[player_leave.multiplayer_id]
         if agent is None:
             self.log(f"WARNING: Got leave notice for unknown multiplayer_id: {player_leave.multiplayer_id}")

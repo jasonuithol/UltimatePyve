@@ -20,7 +20,10 @@ class MultiplayerController:
             self.join_server()
 
     def host_server(self):
-        if self.multiplayer_service.server:
+        if self.multiplayer_service.client:
+            self.console_service.print_ascii(f"Leave current host first !")
+
+        elif self.multiplayer_service.server:
             self.multiplayer_service.quit()
             self.console_service.print_ascii(f"Quit hosting")
         else:
@@ -28,7 +31,10 @@ class MultiplayerController:
             self.console_service.print_ascii(f"Hosting on {self.multiplayer_service.server.host}:{self.multiplayer_service.server.port}")
 
     def join_server(self):
-        if self.multiplayer_service.client:
+        if self.multiplayer_service.server:
+            self.console_service.print_ascii(f"Stop hosting first !")
+
+        elif self.multiplayer_service.client:
             self.multiplayer_service.quit()
             self.console_service.print_ascii(f"Left server")
         else:
