@@ -8,11 +8,12 @@ from services.avatar_sprite_factory import AvatarSpriteFactory
 
 class MultiplayerPartyAgent(NpcAgent):
 
-    def __init__(self, name: str, dexterity: int, location: GlobalLocation, remote_multiplayer_id: str = None):
+    def __init__(self, name: str, tile_id: int, dexterity: int, location: GlobalLocation, remote_multiplayer_id: str = None):
 
         super().__init__()
 
         self._name      = name
+        self._tile_id   = tile_id
         self._dexterity = dexterity
         self._location  = location
 
@@ -32,7 +33,7 @@ class MultiplayerPartyAgent(NpcAgent):
     #
     @property
     def tile_id(self) -> int:
-        return 284
+        return self._tile_id
 
     @property
     def name(self) -> str:

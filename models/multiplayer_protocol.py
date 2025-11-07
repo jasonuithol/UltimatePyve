@@ -16,6 +16,7 @@ def _get_location(self):
 
 class ConnectRequest(NamedTuple):
     name: str
+    tile_id: int
     dexterity: int
 
     location_index: int
@@ -29,6 +30,7 @@ class ConnectRequest(NamedTuple):
     def create_multiplayer_party_agent(self):
         return MultiplayerPartyAgent(
             name      = self.name,
+            tile_id   = self.tile_id,
             dexterity = self.dexterity,
             location  = self.get_location()
         )
@@ -37,6 +39,7 @@ class ConnectRequest(NamedTuple):
     def from_agent(cls, agent: PartyAgent):
         return cls(
             name = agent.name,
+            tile_id = agent.tile_id,
             dexterity = agent.dexterity,
 
             location_index = agent.location.location_index,
@@ -69,6 +72,7 @@ class ConnectTerminate(NamedTuple):
 
 class PlayerJoin(NamedTuple):
     name: str
+    tile_id: int
     dexterity: int
     multiplayer_id: str
 
@@ -84,6 +88,7 @@ class PlayerJoin(NamedTuple):
     def from_agent(cls, agent: PartyAgent | MultiplayerPartyAgent):
         return cls(
             name = agent.name,
+            tile_id = agent.tile_id,
             dexterity = agent.dexterity,
             multiplayer_id = agent.multiplayer_id,
 
@@ -96,6 +101,7 @@ class PlayerJoin(NamedTuple):
     def create_multiplayer_party_agent(self):
         return MultiplayerPartyAgent(
             name      = self.name,
+            tile_id   = self.tile_id,
             dexterity = self.dexterity,
             location  = self.get_location(),
             remote_multiplayer_id = self.multiplayer_id

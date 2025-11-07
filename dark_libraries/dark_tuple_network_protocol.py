@@ -19,7 +19,9 @@ class DarkUtf8StringProtocol(DarkNetworkProtocol[str]):
 
 class DarkNamedTupleProtocol(DarkNetworkProtocol[NamedTuple]):
 
-    DELIMITER = "|"
+    # Let's actually take advantage of the UTF-8 encoding.
+    DELIMITER = "¦"
+    NULL = "¨"
 
     def __init__(self, protocol_format_module):
         self._codec = DarkUtf8StringProtocol()
@@ -35,7 +37,13 @@ class DarkNamedTupleProtocol(DarkNetworkProtocol[NamedTuple]):
 
     def _to_string(self, message: NamedTuple) -> str:
         name = type(message).__name__  # keep consistent
-        values = [str(getattr(message, f)) for f in message._fields]
+        values = []
+        for f in message._fields:
+            value = getattr(message, f)
+            if value is None:
+                values.append(self.NULL)
+            else:
+                values.append(str(value))
         return self.DELIMITER.join([name] + values)
 
     def _from_string(self, message_string: str) -> NamedTuple:
@@ -46,5 +54,11 @@ class DarkNamedTupleProtocol(DarkNetworkProtocol[NamedTuple]):
             raise ValueError(f"Unknown message type: {name}")
         if len(values) != len(cls._fields):
             raise ValueError(f"Field count mismatch for {name}: expected {len(cls._fields)}, got {len(values)}")
-        casted = [cls.__annotations__[f](v) for f, v in zip(cls._fields, values)]
+        casted = []
+        for f, v in zip(cls._fields, values):
+            typ = cls.__annotations__[f]
+            if v == self.NULL:
+                casted.append(None)
+            else:
+                casted.append(typ(v))
         return cls(*casted)
