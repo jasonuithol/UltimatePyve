@@ -20,7 +20,7 @@ print(colorama.Fore.CYAN)
 
 u5_path: Path = get_u5_path()
 
-print(f"(main) Found legal copy of Ultima V at '{u5_path}'")
+print(f"(main) Found installed copy of Ultima V at '{u5_path}'")
 
 # Set up pygame
 import gc
