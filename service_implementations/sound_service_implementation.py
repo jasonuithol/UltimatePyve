@@ -40,8 +40,6 @@ class SoundServiceImplementation(LoggerMixin):
         else:
             self.amplitude_sampling_range = (2 ** bits) - 1         # e.g. 255 for 8‑bit unsigned
 
-        self.log(f"Setting amplitude_sampling_range to {self.amplitude_sampling_range}")
-
         # Determining data type for output
         dtype_type: npt.DTypeLike = None
         if bits == 8:
@@ -53,11 +51,12 @@ class SoundServiceImplementation(LoggerMixin):
 
         assert dtype_type, f"Unsupported bit depth: {bits}"
 
-        self.log(f"Using output data type {dtype_type.__name__}")
         self.dtype = np.dtype(dtype_type)
 
         self.set_sfx_volume(0.35)
         self.set_soundtrack_volume(0.35)
+
+        self.log(f"Sound service initialised: amplitude_sampling_range={self.amplitude_sampling_range}, output data type={dtype_type.__name__}")
 
     #
     # Volume Control
@@ -65,7 +64,7 @@ class SoundServiceImplementation(LoggerMixin):
 
     def set_sfx_volume(self, value: float) -> None:
         self.sfx_volume = max(0.0, min(1.0, value))
-        self.log(f"SFX volume set to {self.sfx_volume}")
+        self.log(f"DEBUG: SFX volume set to {self.sfx_volume}")
 
     def get_sfx_volume(self) -> float:
         return self.sfx_volume
@@ -73,7 +72,7 @@ class SoundServiceImplementation(LoggerMixin):
     def set_soundtrack_volume(self, value: float) -> None:
         self.soundtrack_volume = max(0.0, min(1.0, value))
         pygame.mixer.music.set_volume(self.soundtrack_volume)
-        self.log(f"Soundtrack volume set to {self.soundtrack_volume}")
+        self.log(f"DEBUG: Soundtrack volume set to {self.soundtrack_volume}")
 
     def get_soundtrack_volume(self) -> float:
         return self.soundtrack_volume

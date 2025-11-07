@@ -38,7 +38,7 @@ class DoorInstanceFactory(LoggerMixin, DarkEventListenerMixin):
 
     def level_changed(self, party_location: GlobalLocation):
 
-        self.log(f"Unregistering {len(self.global_registry.interactables)} door instances.")
+        self.log(f"DEBUG: Unregistering {len(self.global_registry.interactables)} door instances.")
         self.global_registry.interactables.clear()
 
         if party_location.location_index == 0:

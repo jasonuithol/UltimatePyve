@@ -39,7 +39,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
     def start_hosting(self):
         assert (not self.server) and (not self.client), f"Cannot start hosting: server={self.server}, self={self.client}"
 
-        self.server: DarkSocketServer[ProtocolFormat] = DarkSocketServer[ProtocolFormat]("127.0.0.1", 5000, self.protocol)
+        self.server: DarkSocketServer[ProtocolFormat] = DarkSocketServer[ProtocolFormat](self.protocol)
         self.server.launch()
         self.party_agent.set_multiplayer_id()
         self.party_agent.party_members[0]._character_record.name = "SERVER"

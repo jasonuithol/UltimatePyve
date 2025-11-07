@@ -1,3 +1,4 @@
+import ipaddress
 import time
 import queue
 import socket
@@ -27,6 +28,23 @@ def _create_timingout_socket() -> socket.socket:
     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     sock.settimeout(1.0)
     return sock
+
+def get_machine_address() -> str:
+    hostname = socket.gethostname()
+    ip_address = socket.gethostbyname(hostname)
+    ip = ipaddress.ip_address(ip_address)
+    if ip.is_loopback:
+        print("(dark_socket_network) Falling back to DGRAM method for obtaining machine address")
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # doesn't need to be reachable, just used to pick an interface
+            s.connect(("8.8.8.8", 80))
+            ip_address = s.getsockname()[0]
+        finally:
+            s.close()
+    return ip_address       
+
+LISTENER_PORT = 5000
 
 class DarkSocketTransport(DarkNetworkTransport):
     def __init__(self, socket_connection: socket.socket, address: tuple[str, int]):
@@ -77,12 +95,12 @@ class DarkSocketListener(LoggerMixin, DarkNetworkListener):
 
 class DarkSocketServer[TMessage](DarkNetworkServer[TMessage]):
 
-    def __init__(self, host: str, port: int, protocol: DarkNetworkProtocol[TMessage]):
+    def __init__(self, protocol: DarkNetworkProtocol[TMessage]):
         LoggerMixin.__init__(self)
-        self.host = host
-        self.port = port
+        self.host = get_machine_address()
+        self.port = LISTENER_PORT
         self.protocol = protocol
-        self.listener = DarkSocketListener(host, port) # I created the listener, I call close on the listener
+        self.listener = DarkSocketListener(self.host, self.port) # I created the listener, I call close on the listener
 
     @property
     def network_id(self):
@@ -90,7 +108,7 @@ class DarkSocketServer[TMessage](DarkNetworkServer[TMessage]):
 
     def server_thread(self):
 
-        self.log("DEBUG: Starting listener")
+        self.log(f"Starting listener on {self.host}:{self.port}")
         self.listener.listen()
 
         while self.is_alive:

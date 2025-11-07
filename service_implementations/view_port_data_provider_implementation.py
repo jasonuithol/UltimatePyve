@@ -31,7 +31,7 @@ class ViewPortDataProviderImplementation(LoggerMixin):
         self._default_tile: Tile = None
 
     def set_default_tile(self, tile: Tile):
-        self.log(f"Default tile set to: tile_id={tile.tile_id}")
+        self.log(f"DEBUG: Default tile set to: tile_id={tile.tile_id}")
         self._default_tile: Tile = tile
 
     def get_party_map_data(self, world_view_rect: Rect[int]) -> ViewPortData:
