@@ -3,7 +3,7 @@ import colorama
 import sys
 
 from datetime import datetime
-from typing import Callable
+from typing import Any, Callable
 
 type SuffixFunc = Callable[[], str]
 
@@ -36,7 +36,10 @@ class Logger:
         else:
             self.prefix = f"{class_prefix}:{instance_suffix_func()}"
 
-    def log(self, msg):
+    def log(self, msg: Any):
+
+        msg: str = str(msg)
+
         ascii_control_code_prefix = colorama.Style.RESET_ALL
 
         # Make 3rd party messages stand out
@@ -56,6 +59,9 @@ class Logger:
             # the "default" level.  consider it the INFO level.
             if self.show_debug == True:
                 ascii_control_code_prefix = colorama.Style.BRIGHT + colorama.Fore.WHITE
+
+        # Highlight the word "None" in purple
+        msg = msg.replace("None", colorama.Style.BRIGHT + colorama.Fore.MAGENTA + "None" + ascii_control_code_prefix)
 
         time_prefix = datetime.now().time().isoformat(timespec="milliseconds")
         entire_prefix = f"[{time_prefix} {self.prefix}]".ljust(MESSAGE_COLUMN_OFFSET)
