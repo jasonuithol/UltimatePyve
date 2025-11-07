@@ -12,8 +12,6 @@ class MultiplayerController:
 
     def handle_event(self, event: pygame.event.Event):
 
-        mods = pygame.key.get_mods()
-
         if event.key == pygame.K_F1:
             self.host_server()
         elif event.key == pygame.K_F2:
