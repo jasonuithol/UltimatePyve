@@ -2,6 +2,7 @@
 from controllers.active_member_controller import ActiveMemberController
 from controllers.cast_controller import CastController
 from controllers.move_controller import MoveController
+from controllers.multiplayer_controller import MultiplayerController
 from controllers.ready_controller import ReadyController
 from dark_libraries.service_provider import ServiceProvider
 
@@ -19,6 +20,7 @@ def compose(provider: ServiceProvider):
     provider.register(ActiveMemberController)
     provider.register(ReadyController)
     provider.register(CastController)
+    provider.register(MultiplayerController)
 
     compose_spell_controllers(provider)
 

@@ -1,10 +1,7 @@
 from pathlib import Path
 import colorama
-import sys
 
 from configure import get_u5_path, check_python_version
-from dark_libraries.dark_socket_network import LISTENER_PORT, get_machine_address
-from services.multiplayer_service import MultiplayerService
 
 check_python_version()
 
@@ -46,14 +43,6 @@ init.init(u5_path)
 
 # finished initialising, tidy up.
 gc.collect()
-
-multiplayer_service: MultiplayerService = provider.resolve(MultiplayerService)
-if "-host" in sys.argv:
-    multiplayer_service.start_hosting()
-if "-join" in sys.argv:
-    ip_address = get_machine_address()
-    multiplayer_service.connect_to_host(ip_address, LISTENER_PORT)
-
 
 pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
 pygame.mixer.init()

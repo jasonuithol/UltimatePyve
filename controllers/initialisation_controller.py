@@ -109,11 +109,20 @@ class InitialisationController(LoggerMixin):
 
         self.console_service.print_ascii("Returned to the world !")
 
-        #
-        # TODO: Remove once done
-        #
-        self.console_service.print_ascii(list(range(128)))
-        self.console_service.print_runes(list(range(128)))
+        self.console_service.print_ascii("Gameplay keys", no_prompt=True)
+        self.console_service.print_ascii("", no_prompt=True)
+        self.console_service.print_ascii("A.. Attack", no_prompt=True)
+        self.console_service.print_ascii("C.. Cast", no_prompt=True)
+        self.console_service.print_ascii("I.. Ignite torch", no_prompt=True)
+        self.console_service.print_ascii("J.. Jimmy lock", no_prompt=True)
+        self.console_service.print_ascii("R.. Ready", no_prompt=True)
+        self.console_service.print_ascii("1-6 Set default player", no_prompt=True)
+        self.console_service.print_ascii("0.. Reset default player")
+
+        self.console_service.print_ascii("Special keys", no_prompt=True)
+        self.console_service.print_ascii("", no_prompt=True)
+        self.console_service.print_ascii("F1. Host/quit multiplayer", no_prompt=True)
+        self.console_service.print_ascii("F2. Join/quit multiplayer")
 
         self.log("Initialisation completed.")
 

@@ -227,9 +227,11 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         if self.server:
             self.server.write(ConnectTerminate())
             self.server.close()
+            self.server = None
         elif self.client:
             self.client.write(PlayerLeave(self.party_agent.multiplayer_id))
             self.client.close()
+            self.client = None
 
                 
         

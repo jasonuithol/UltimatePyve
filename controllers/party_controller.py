@@ -6,6 +6,7 @@ from controllers.active_member_controller import ActiveMemberController
 from controllers.cast_controller import CastController
 from controllers.combat_controller import CombatController
 from controllers.move_controller import MoveController, MoveOutcome
+from controllers.multiplayer_controller import MultiplayerController
 from controllers.ready_controller import ReadyController
 from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
 from dark_libraries.dark_math   import Vector2
@@ -52,6 +53,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
     cast_controller: CastController
+    multiplayer_controller: MultiplayerController
 
     view_port_service: ViewPortService
     
@@ -91,9 +93,16 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         
         event = self.input_service.get_next_event()
 
+        self.multiplayer_controller.handle_event(event)
         self.active_member_controller.handle_event(event)
         self.ready_controller.handle_event(event)
         self.cast_controller.handle_event(event, spell_caster = self.party_agent.get_active_member(), combat_map = None)
+
+        '''
+        mods = pygame.key.get_mods()
+        if mods != 0:
+            return DONT_PASS_TIME
+        '''
 
         #
         # Received key input, call appropriate handler.
@@ -267,6 +276,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         # Internal
         if not self.party_agent.get_light_expiry() is None and self.world_clock.get_natural_time() > self.party_agent.get_light_expiry():
             self.party_agent.set_light(None, None)
+
 
     #
     # Testing only
