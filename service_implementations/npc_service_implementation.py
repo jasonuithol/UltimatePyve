@@ -29,6 +29,7 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
 
         self._party_location: GlobalLocation = None
         self._attacking_npc: NpcAgent = None
+        self._has_joined_server = False
 
     def _freeze_active_npcs(self):
         self.log(f"Freezing {len(self._active_npcs)} NPCs.")
@@ -64,6 +65,14 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
         self._party_location = party_location
     # IMPLEMENTATION END: DarkEventListenerMixin
 
+    def join_server(self):
+        self._has_joined_server = True
+        self._freeze_active_npcs()
+
+    def leave_server(self):
+        self._has_joined_server = False
+        self._unfreeze_active_npcs()
+
     def get_npcs(self) -> dict[Coord[int], NpcAgent]:
         registered = {npc.coord: npc for npc in self._active_npcs}
         if self._party_location.location_index != COMBAT_MAP_LOCATION_INDEX:
@@ -91,6 +100,10 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
         return {coord for coord in self.get_npcs().keys()}
 
     def get_next_moving_npc(self) -> NpcAgent | None:
+
+        if self._has_joined_server:
+            return None
+
         if not any(self._active_npcs):
             return None
 

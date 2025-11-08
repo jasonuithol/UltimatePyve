@@ -7,7 +7,9 @@ from service_implementations.input_service_implementation import InputServiceImp
 from service_implementations.sound_service_implementation import SoundServiceImplementation
 from service_implementations.surface_factory_implementation import SurfaceFactoryImplementation
 from service_implementations.view_port_data_provider_implementation import ViewPortDataProviderImplementation
-from services.multiplayer_service import MultiplayerService
+
+from .multiplayer_message_factory import MultiplayerMessageFactory
+from .multiplayer_service import MultiplayerService
 
 from .console_service   import ConsoleService
 from .display_service import DisplayService
@@ -77,6 +79,7 @@ def compose(provider: ServiceProvider):
     provider.register(SfxLibraryService)
 
     provider.register(MultiplayerService)
+    provider.register(MultiplayerMessageFactory)
 
     compose_map_cache(provider)
     compose_world_loot(provider)

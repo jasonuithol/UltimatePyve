@@ -1,18 +1,21 @@
 import traceback
 
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
 from dark_libraries.dark_events import DarkEventListenerMixin
 from dark_libraries.dark_socket_network import DarkSocketClient, DarkSocketServer
 from dark_libraries.dark_tuple_network_protocol import DarkNamedTupleProtocol
 from dark_libraries.logging import LoggerMixin
 
+from models.agents.monster_agent import MonsterAgent
+from models.agents.npc_agent import NpcAgent
 import models.multiplayer_protocol
 from models.agents.multiplayer_party_agent import MultiplayerPartyAgent
 from models.agents.party_agent import PartyAgent
-from models.multiplayer_protocol import ConnectAccept, ConnectRequest, ConnectTerminate, LocationUpdate, MultiplayerProtocolModuleEventListener, PlayerJoin, PlayerLeave
+from models.multiplayer_protocol import ConnectAccept, ConnectRequest, ConnectTerminate, LocationUpdate, PlayerJoin, PlayerLeave
 
 from services.info_panel_service import InfoPanelService
+from services.multiplayer_message_factory import MultiplayerMessageFactory
 from services.npc_service import NpcService
 
 # If you're changing one of these, you may need to change the other
@@ -24,7 +27,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
     npc_service: NpcService
     party_agent: PartyAgent
     info_panel_service: InfoPanelService
-    multiplayer_protocol_module_event_listener: MultiplayerProtocolModuleEventListener
+    multiplayer_message_factory: MultiplayerMessageFactory
 
     def __init__(self):
         super().__init__()
@@ -48,12 +51,14 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.party_agent.party_members[0]._character_record.name = "SERVER"
         self.info_panel_service.update_party_summary()
 
-        # Sync the protocol object factory to the party's current location
-        self.multiplayer_protocol_module_event_listener.level_changed(self.party_agent.location)
+    def monster_spawned(self, monster_agent: MonsterAgent):
+        if self.server:
+            player_join_message = self.multiplayer_message_factory.player_join(monster_agent)
+            self.server.write(player_join_message)
 
     def read_client_updates(self):
 
-        for network_id, named_tuple in self.server.read():
+        for network_id, named_tuple in self.server.read_all():
             try:
                 if isinstance(named_tuple, ConnectRequest):
                     self._connect_new_client(network_id, named_tuple)
@@ -70,12 +75,14 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
     def write_client_updates(self):
 
+        location_update: Callable[[NpcAgent], LocationUpdate] = self.multiplayer_message_factory.location_update
+
         # Send your (the host)'s location to all remote players
-        self.server.write(LocationUpdate.from_agent(self.party_agent))
+        self.server.write(location_update(self.party_agent))
 
         # Send everyone's location to all remote players
         player_location_message_grams = [
-            LocationUpdate.from_agent(agent)
+            location_update(agent)
             for agent in self.client_agents.values()
         ]
         for message_gram in player_location_message_grams:
@@ -83,32 +90,35 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
         # Tell the new guy about the monsters
         for monster_agent in self.npc_service.get_monsters():
-            self.server.write(LocationUpdate.from_agent(monster_agent))
+            self.server.write(location_update(monster_agent))
 
     def _connect_new_client(self, network_id: str, connect_request: ConnectRequest):
 
         #
         # TODO: Check if there's another registered player at this location (overworld)
         #
-        agent = connect_request.create_multiplayer_party_agent()
+        agent = self.multiplayer_message_factory.create_multiplayer_party_agent(connect_request)
 
         self.client_agents[agent.multiplayer_id] = agent
         self._update_multiplayer_npc_registration()
 
         # Update the new client with it's multiplayer_id and it's spawn location (might be different to requested spawn location)
-        connect_accept_message_gram = ConnectAccept.from_agent(agent)
-        self.server.write_to(network_id, connect_accept_message_gram)
+        connect_accept_message = self.multiplayer_message_factory.connect_accept(agent)
+        self.server.write_to(network_id, connect_accept_message)
+
+        # Update new client with all the existing npcs
+        player_join: Callable[[NpcAgent], PlayerJoin] = self.multiplayer_message_factory.player_join
 
         # Tell the new guy about all the other people in the lobby
         for other_agent in self.client_agents.values():
-            self.server.write(PlayerJoin.from_agent(other_agent))
+            self.server.write(player_join(other_agent))
 
         # Tell the new guy about ME
-        self.server.write(PlayerJoin.from_agent(self.party_agent))
+        self.server.write(player_join(self.party_agent))
 
         # Tell the new guy about the monsters
         for monster_agent in self.npc_service.get_monsters():
-            self.server.write(PlayerJoin.from_agent(monster_agent))
+            self.server.write(player_join(monster_agent))
 
         self.log(f"Player '{agent.name}' has joined with network_id={network_id}, multiplayer_id={agent.multiplayer_id}")
 
@@ -120,12 +130,15 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
     # ======================================================
 
     def connect_to_host(self, host: str, port: int):
-        assert (not self.server) and (not self.client), f"Cannot connect to host: server={self.server}, client={self.client}"
-        self.client: DarkSocketClient[ProtocolFormat] = DarkSocketClient[ProtocolFormat](host, port, self.protocol)
-        self.client.write(ConnectRequest.from_agent(self.party_agent))
 
-        # Sync the protocol object factory to the party's current location
-        self.multiplayer_protocol_module_event_listener.level_changed(self.party_agent.location)
+        assert (not self.server) and (not self.client), f"Cannot connect to host: server={self.server}, client={self.client}"
+
+        self.client: DarkSocketClient[ProtocolFormat] = DarkSocketClient[ProtocolFormat](host, port, self.protocol)
+
+        connect_request_message = self.multiplayer_message_factory.connect_request()
+        self.client.write(connect_request_message)
+
+        self.npc_service.join_server()
 
     def read_server_updates(self):
 
@@ -133,7 +146,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self._read_connect_accept()
             return
 
-        for named_tuple in self.client.read():
+        for named_tuple in self.client.read_all():
             
             if isinstance(named_tuple, PlayerJoin):
                 self._accept_player_join(named_tuple)
@@ -149,16 +162,16 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
     def write_server_updates(self):
 
-        message_gram = LocationUpdate.from_agent(self.party_agent)
-        self.client.write(message_gram)
+        location_update_message = self.multiplayer_message_factory.location_update(self.party_agent)
+        self.client.write(location_update_message)
 
     def _read_connect_accept(self):
-        for named_tuple in self.client.read():
-            if isinstance(named_tuple, ConnectAccept):
-                named_tuple.update_agent(self.party_agent)
-                self.log(f"Connnection to server accepted, multiplayer_id={named_tuple.multiplayer_id}")
-            else:
-                self.log(f"ERROR: Dropping unexpected message: {named_tuple}")
+        named_tuple = self.client.read()
+        if isinstance(named_tuple, ConnectAccept):
+            self.multiplayer_message_factory.update_agent(self.party_agent, named_tuple)
+            self.log(f"Connnection to server accepted, multiplayer_id={named_tuple.multiplayer_id}")
+        else:
+            self.log(f"ERROR: Dropping unexpected message: {named_tuple}")
 
         self.log(f"WARNING: Have not received ConnectAccept, so no multiplayer_id is yet assigned.")
 
@@ -180,7 +193,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
         if player_join.multiplayer_id != self.party_agent.multiplayer_id:
 
-            agent = player_join.create_multiplayer_party_agent()
+            agent = self.multiplayer_message_factory.create_multiplayer_party_agent(player_join)
             self.client_agents[player_join.multiplayer_id] = agent
             self._update_multiplayer_npc_registration()
             self.log(f"Another player has joined this session: remote_multiplayer_id={player_join.multiplayer_id}")
@@ -202,7 +215,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
             agent = self.client_agents.get(location_update.multiplayer_id)
             if agent:
-                location_update.update_agent(agent)
+                self.multiplayer_message_factory.update_agent(agent, location_update)
                 self._update_multiplayer_npc_registration()
             else:
                 self.log(f"WARNING: LocationUpdate for unknown multiplayer_id={location_update.multiplayer_id}")
@@ -252,6 +265,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.client.write(PlayerLeave(self.party_agent.multiplayer_id))
             self.client.close()
             self.client = None
+            self.npc_service.leave_server()
 
                 
         

@@ -115,7 +115,7 @@ class DarkNetworkConnection(LoggerMixin):
 class DarkNetworkInterface[TMessage](ABC):
 
     @abstractmethod
-    def read(self) -> Iterable[tuple[str, TMessage]]: ...
+    def read_all(self) -> Iterable[tuple[str, TMessage]]: ...
 
     @abstractmethod
     def write(self, message: TMessage): ...
@@ -156,7 +156,7 @@ class DarkNetworkServer[TMessage](LoggerMixin, DarkNetworkInterface[TMessage]):
         del self.remote_clients[network_id]
         self.log(f"Closed and removed client connection: {network_id}")
 
-    def read(self) -> Iterable[tuple[str, TMessage]]:
+    def read_all(self) -> Iterable[tuple[str, TMessage]]:
         messages = []
         for network_id, client in list(self.remote_clients.items()):
             while not client.incoming.empty():
@@ -190,9 +190,17 @@ class DarkNetworkClient[TMessage](DarkNetworkInterface[TMessage]):
     def __init__(self, connection: DarkNetworkConnection):
         self._connection = connection
 
-    def read(self) -> Iterable[TMessage]:
+    def read(self) -> TMessage:
+        if self._connection.incoming.empty():
+            return None
+        else:
+            return self._connection.incoming.get()
+
+    def read_all(self) -> Iterable[TMessage]:
+        messages = []
         while not self._connection.incoming.empty():
-            yield self._connection.incoming.get()
+            messages.append(self._connection.incoming.get())
+        return messages
 
     def write(self, message: TMessage):
         self._connection.outgoing.put(message)

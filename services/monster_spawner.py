@@ -13,9 +13,12 @@ from models.enums.npc_tile_id   import NpcTileId
 from models.agents.monster_agent import MonsterAgent
 from models.terrain import Terrain
 from services.map_cache.map_cache_service import MapCacheService
+from services.multiplayer_service import MultiplayerService
 from services.npc_service import NpcService
 
 class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
+
+    multiplayer_service: MultiplayerService
 
     def __init__(self):
         super().__init__()
@@ -34,6 +37,7 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
         self._party_location = party_location
 
     def _spawn_monster(self, npc_tile_id: int, monster_coord: Coord[int]):
+
         sprite = self.global_registry.sprites.get(npc_tile_id)
         npc_metadata = self.global_registry.npc_metadata.get(npc_tile_id)
         npc_agent = MonsterAgent(monster_coord, sprite, npc_metadata)
@@ -42,11 +46,16 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
             return
         npc_agent._spent_action_points = self.party_agent._spent_action_points
 
+        self.multiplayer_service.monster_spawned(npc_agent)
         self.npc_service.add_npc(npc_agent)
 
     def pass_time(self, party_location: GlobalLocation):
 
         self._party_location = party_location
+
+        # If you've joined a server, only the server can spawn monsters.
+        if self.multiplayer_service.client:
+            return
 
         # This is a monster free zone.
         # TODO: This will prevent dungeon monsters spawning, when dungeons are added.

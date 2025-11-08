@@ -1,19 +1,21 @@
 from dark_libraries.dark_math import Coord
 
-from dark_libraries.service_provider import ServiceProvider
 from models.agents.npc_agent import NpcAgent
 from models.global_location import GlobalLocation
+from models.sprite import Sprite
 from models.tile import Tile
-from services.avatar_sprite_factory import AvatarSpriteFactory
 
 class MultiplayerPartyAgent(NpcAgent):
 
-    def __init__(self, name: str, tile_id: int, dexterity: int, location: GlobalLocation, remote_multiplayer_id: str = None):
+    def __init__(self, name: str, tile_id: int, sprite: Sprite, dexterity: int, location: GlobalLocation, remote_multiplayer_id: str = None):
 
         super().__init__()
 
         self._name      = name
         self._tile_id   = tile_id
+        self._sprite    = sprite
+        self._sprite_time_offset = sprite.create_random_time_offset()
+
         self._dexterity = dexterity
         self._location  = location
 
@@ -21,13 +23,12 @@ class MultiplayerPartyAgent(NpcAgent):
         self._transport_direction  = 0 # east
 
         if remote_multiplayer_id is None:
+            # I'm the server, and am the authoritative source of multiplayer_id's
             self._multiplayer_id = str(id(self))
         else:
+            # I'm the client, and am supplied multiplayer_id's from the server
             self._multiplayer_id = remote_multiplayer_id
-    
-        provider = ServiceProvider.get_provider()
-        self._avatar_sprite_factory: AvatarSpriteFactory = provider.resolve(AvatarSpriteFactory)
-        self._sprite_time_offset: int = None
+   
 
     # NPC AGENT IMPLEMENTATION: Start
     #
@@ -41,10 +42,7 @@ class MultiplayerPartyAgent(NpcAgent):
 
     @property
     def current_tile(self) -> Tile:
-        sprite = self._avatar_sprite_factory.create_player(self._transport_mode_index, self._transport_direction)
-        if self._sprite_time_offset is None:
-            self._sprite_time_offset = sprite.create_random_time_offset()
-        return sprite.get_current_frame(self._sprite_time_offset)
+        return self._sprite.get_current_frame(self._sprite_time_offset)
 
     @property
     def coord(self) -> Coord[int]:
@@ -89,3 +87,10 @@ class MultiplayerPartyAgent(NpcAgent):
 
     def change_coord(self, coord: Coord):
         self._location = self._location.move_to_coord(coord)
+
+    def set_sprite(self, sprite: Sprite):
+        self._sprite = sprite
+        '''
+        if self._sprite_time_offset is None:
+            self._sprite_time_offset = sprite.create_random_time_offset()
+        '''
