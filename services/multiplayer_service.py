@@ -1,3 +1,5 @@
+import traceback
+
 from typing import NamedTuple
 
 from dark_libraries.dark_events import DarkEventListenerMixin
@@ -8,7 +10,7 @@ from dark_libraries.logging import LoggerMixin
 import models.multiplayer_protocol
 from models.agents.multiplayer_party_agent import MultiplayerPartyAgent
 from models.agents.party_agent import PartyAgent
-from models.multiplayer_protocol import ConnectAccept, ConnectRequest, ConnectTerminate, LocationUpdate, PlayerJoin, PlayerLeave
+from models.multiplayer_protocol import ConnectAccept, ConnectRequest, ConnectTerminate, LocationUpdate, MultiplayerProtocolModuleEventListener, PlayerJoin, PlayerLeave
 
 from services.info_panel_service import InfoPanelService
 from services.npc_service import NpcService
@@ -22,6 +24,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
     npc_service: NpcService
     party_agent: PartyAgent
     info_panel_service: InfoPanelService
+    multiplayer_protocol_module_event_listener: MultiplayerProtocolModuleEventListener
 
     def __init__(self):
         super().__init__()
@@ -45,6 +48,9 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.party_agent.party_members[0]._character_record.name = "SERVER"
         self.info_panel_service.update_party_summary()
 
+        # Sync the protocol object factory to the party's current location
+        self.multiplayer_protocol_module_event_listener.level_changed(self.party_agent.location)
+
     def read_client_updates(self):
 
         for network_id, named_tuple in self.server.read():
@@ -59,7 +65,8 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
                     self._accept_player_leave(named_tuple, network_id)
 
             except Exception as e:
-                self.log(f"ERROR: Error whilst processing message ({named_tuple}) from client {network_id}: {e}")
+                error_traceback = "\n".join(traceback.format_exception(e))
+                self.log(f"ERROR: Error whilst processing message ({named_tuple}) from client {network_id}: {error_traceback}")
 
     def write_client_updates(self):
 
@@ -73,6 +80,10 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         ]
         for message_gram in player_location_message_grams:
             self.server.write(message_gram)
+
+        # Tell the new guy about the monsters
+        for monster_agent in self.npc_service.get_monsters():
+            self.server.write(LocationUpdate.from_agent(monster_agent))
 
     def _connect_new_client(self, network_id: str, connect_request: ConnectRequest):
 
@@ -95,6 +106,10 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         # Tell the new guy about ME
         self.server.write(PlayerJoin.from_agent(self.party_agent))
 
+        # Tell the new guy about the monsters
+        for monster_agent in self.npc_service.get_monsters():
+            self.server.write(PlayerJoin.from_agent(monster_agent))
+
         self.log(f"Player '{agent.name}' has joined with network_id={network_id}, multiplayer_id={agent.multiplayer_id}")
 
 
@@ -108,6 +123,9 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         assert (not self.server) and (not self.client), f"Cannot connect to host: server={self.server}, client={self.client}"
         self.client: DarkSocketClient[ProtocolFormat] = DarkSocketClient[ProtocolFormat](host, port, self.protocol)
         self.client.write(ConnectRequest.from_agent(self.party_agent))
+
+        # Sync the protocol object factory to the party's current location
+        self.multiplayer_protocol_module_event_listener.level_changed(self.party_agent.location)
 
     def read_server_updates(self):
 
@@ -139,7 +157,9 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             if isinstance(named_tuple, ConnectAccept):
                 named_tuple.update_agent(self.party_agent)
                 self.log(f"Connnection to server accepted, multiplayer_id={named_tuple.multiplayer_id}")
-                return
+            else:
+                self.log(f"ERROR: Dropping unexpected message: {named_tuple}")
+
         self.log(f"WARNING: Have not received ConnectAccept, so no multiplayer_id is yet assigned.")
 
     def _accept_connect_terminate(self):

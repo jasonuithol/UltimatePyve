@@ -121,4 +121,15 @@ class CombatAgent(NpcAgent):
         self.coord = coord
         self._spent_action_points = 0
 
+    #
+    # MULTIPLAYER
+    #
+
+    @property
+    def multiplayer_id(self) -> int:
+        return id(self)
+    
+
+        
+
         

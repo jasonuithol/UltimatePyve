@@ -22,7 +22,7 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
         self._party_location: GlobalLocation = None
 
     MONSTER_SPAWN_RADIUS: float = 10
-    MONSTER_SPAWN_PROBABILITY: float = 0.02
+    MONSTER_SPAWN_PROBABILITY: float = 0.20
     MAXIMUM_MONSTER_COUNT = 10
 
     npc_service: NpcService
@@ -53,10 +53,10 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
         if self._party_location.location_index != 0: return
 
         # have enough monsters now.
-        if len(self.npc_service._active_npcs) >= __class__.MAXIMUM_MONSTER_COUNT: return
+        if len(self.npc_service.get_npcs()) >= __class__.MAXIMUM_MONSTER_COUNT: return
 
         # the magic 8-ball said no.
-        if random.randint(1,int(1/__class__.MONSTER_SPAWN_PROBABILITY)) > 1: return
+        if random.randint(1, int(1/__class__.MONSTER_SPAWN_PROBABILITY)) > 1: return
 
         # randomly choose location of monster somewhere on (not in) a circle around the player
         blocked_coords = self.map_cache_service.get_blocked_coords(self._party_location.location_index, self._party_location.level_index, transport_mode_index = 0)
@@ -86,4 +86,8 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
 
         # create monster
         self._spawn_monster(monster_tile_id_enum.value, monster_coord)
-        self.log(f"Spawned {monster_tile_id_enum.name} at {monster_coord}, totalling {len(self.npc_service._active_npcs)} (alternate count={len(self.npc_service.get_npcs())}) active monsters")
+        self.log(
+            f"Spawned {monster_tile_id_enum.name} at {monster_coord}, totalling {len(self.npc_service._active_npcs)}"
+            + 
+            f" (alternate count={len(self.npc_service.get_npcs())}) active monsters"
+        )

@@ -18,6 +18,10 @@ class AnimatedTileLoader(LoggerMixin):
         (238,4),    # flag
         (250,2),    # clock
         (252,2),    # bellows
+
+        (308,4),    # guy sitting south
+        (312,4)    # guy sitting north
+        
     ]
 
     def register_sprites(self):
