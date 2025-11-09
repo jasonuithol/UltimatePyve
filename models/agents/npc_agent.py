@@ -9,11 +9,12 @@ from models.tile import Tile
 
 class NpcAgent(LoggerMixin):
 
-    def __init__(self):
+    def __init__(self, action_points: float):
         super().__init__()
 
         # for deciding who has the next turn
-        self._spent_action_points = 0
+        self._spent_action_points = action_points
+        self._action_points_frozen = False
 
     @property
     def tile_id(self) -> int: ...
@@ -37,10 +38,23 @@ class NpcAgent(LoggerMixin):
     def spent_action_points(self) -> float:
         return self._spent_action_points
 
+    @spent_action_points.setter
+    def spent_action_points(self, value: float):
+        self._spent_action_points = value
+
     def spend_action_quanta(self, turns: int = 1):
-        one_quanta = ((30 - self.dexterity) / 10 + 1)
-        self._spent_action_points += one_quanta * turns
-        
+        if self._action_points_frozen == False:
+            one_quanta = ((30 - self.dexterity) / 10 + 1)
+            self._spent_action_points += one_quanta * turns
+
+    def freeze_action_points(self):
+        self._action_points_frozen = True
+        self._frozen_action_points = self._spent_action_points
+
+    def unfreeze_action_points(self):
+        self._action_points_frozen = False
+        self._spent_action_points = self._frozen_action_points
+        self._frozen_action_points = None
     #
     # AI Moves
     #

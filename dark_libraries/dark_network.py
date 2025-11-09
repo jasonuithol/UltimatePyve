@@ -74,7 +74,7 @@ class DarkNetworkConnection(LoggerMixin):
                 time.sleep(0) # yield thread
 
         except Exception as e:
-            self.log(f"ERROR: Reader failed for {self.network_id}: {e}")
+            self.log(f"ERROR: Reader failed for {self.network_id}: {e.with_traceback()}")
             self.error_queue.put((self, e))
         finally:
             self.log("Reader thread finished.")
@@ -102,7 +102,7 @@ class DarkNetworkConnection(LoggerMixin):
             self.log(f"Outgoing queue empty, writer thread finished.")
 
         except Exception as e:
-            self.log(f"ERROR: Writer failed for {self.network_id}: {e}")
+            self.log(f"ERROR: Writer failed for {self.network_id}: {e.with_traceback()}")
             self.error_queue.put((self, e))
         finally:
             self.log("DEBUG: writer thread finished.")

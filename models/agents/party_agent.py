@@ -19,7 +19,7 @@ class PartyAgent(NpcAgent):
     global_registry: GlobalRegistry
 
     def __init__(self):
-        super().__init__()
+        super().__init__(action_points = 0.0)
 
     location_stack = list[GlobalLocation]()
     party_members  = list[PartyMemberAgent]()

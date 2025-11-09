@@ -136,12 +136,6 @@ class InfoPanelService(DarkEventListenerMixin, LoggerMixin):
         if finish_index < item_count:
             down = True
 
-        self.log(
-            f"DEBUG: up={up}, down={down}, highlighted_index={highlighted_index}, start_index={start_index},"
-            +
-            f" finish_index={finish_index}, view_height={view_height}, item_count={item_count}"
-        )
-
         if   up and not down:   arrow = self._up_arrow
         elif down and not up:   arrow = self._down_arrow
         elif up and down:       arrow = self._both_arrow

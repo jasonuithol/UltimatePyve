@@ -21,9 +21,12 @@ class ReadyController:
 
     party_agent: PartyAgent
 
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
         if event.key == pygame.K_r:
             self.ready()
+            return True
+        else:
+            return False
 
     def ready(self):
         self._ready()

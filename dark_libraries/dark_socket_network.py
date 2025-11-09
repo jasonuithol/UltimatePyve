@@ -133,7 +133,7 @@ class DarkSocketServer[TMessage](DarkNetworkServer[TMessage]):
                 self.log(f"Spawned client handler for {transport.address}")
 
             except Exception as e:
-                self.log(f"ERROR: Listener failure: {e}")
+                self.log(f"ERROR: Listener failure: {e.with_traceback()}")
                 break
 
             time.sleep(0) # yield thread

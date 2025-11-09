@@ -126,29 +126,31 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
             party_member.enter_combat(spawn_coord)
             self.npc_service.add_npc(party_member)
 
-    def _dispatch_player_event(self, combat_map: CombatMap, party_member: PartyMemberAgent, event: pygame.event.Event):
+    def _dispatch_player_event(self, combat_map: CombatMap, party_member: PartyMemberAgent, event: pygame.event.Event) -> bool:
 
         # Wait dispatch handler
         if event.key == pygame.K_SPACE:
             self.log("DEBUG: Wait command received")
             party_member.spend_action_quanta()
+            return True
 
         # hand event to sub-controllers
-        self.active_member_controller.handle_event(event)
-        self.ready_controller.handle_event(event)
-        self.cast_controller.handle_event(event, spell_caster = party_member, combat_map = combat_map)
+        if self.active_member_controller.handle_event(event): return True
+        if self.ready_controller.handle_event(event): return True
+        if self.cast_controller.handle_event(event, spell_caster = party_member, combat_map = combat_map): return True
 
         # Attack dispatch handler
         if event.key == pygame.K_a:
             self._attack_handler(combat_map, party_member)
+            return True
 
         # Move dispatch handler
         move_offset = DIRECTION_MAP.get(event.key, None)
         if not move_offset is None:
             self._move_handler(party_member, move_offset)
+            return True
 
-        # No more dispatchers.            
-        self.log(f"DEBUG: Received non-processable event: {event.key}")
+        return False
 
     def _attack_handler(self, combat_map: CombatMap, party_member: PartyMemberAgent):
 
@@ -303,7 +305,12 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                 #
                 event = self.input_service.get_next_event()
 
-                self._dispatch_player_event(combat_map, party_member, event)
+                while not self._dispatch_player_event(combat_map, party_member, event):
+                    #
+                    # Do background tasks here.
+                    #
+                    event = self.input_service.get_next_event()
+
                 self.view_port_service.remove_cursor(CursorType.OUTLINE)
  
             # last player might have left the map

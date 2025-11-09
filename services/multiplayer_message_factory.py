@@ -114,6 +114,7 @@ class MultiplayerMessageFactory(LoggerMixin):
             sprite    = sprite,
             dexterity = message.dexterity,
             location  = message.get_location(),
+            action_points = self.party_agent.spent_action_points,
 
             remote_multiplayer_id = remote_multiplayer_id
         )
@@ -123,12 +124,15 @@ class MultiplayerMessageFactory(LoggerMixin):
         if isinstance(agent, PartyAgent) and isinstance(message, ConnectAccept):
             agent.set_multiplayer_id(message.multiplayer_id)
             agent.change_coord(message.get_coord())
+            agent.freeze_action_points()
 
         elif isinstance(agent, MultiplayerPartyAgent) and isinstance(message, LocationUpdate):
             agent.location = message.get_location()
             sprite = self.global_registry.sprites.get(message.tile_id)
             assert sprite, f"Could not find sprite for tile_id={message.tile_id}"
             agent.set_sprite(sprite)
+
+            # TODO: Depends on if I'm a client or server
 
         else:
             assert False, f"Unknown agent/message combination: {agent.__class__.__name__}|{message.__class__.__name__}"        

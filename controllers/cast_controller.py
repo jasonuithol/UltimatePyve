@@ -45,9 +45,12 @@ class CastController(DarkEventListenerMixin, LoggerMixin):
 
     view_port_service: ViewPortService
 
-    def handle_event(self, event: pygame.event.Event, spell_caster: PartyMemberAgent, combat_map: CombatMap):
+    def handle_event(self, event: pygame.event.Event, spell_caster: PartyMemberAgent, combat_map: CombatMap) -> bool:
         if event.key == pygame.K_c:
             self.cast(spell_caster, combat_map)
+            return True
+        else:
+            return False
 
     def cast(self, spell_caster: PartyMemberAgent, combat_map: CombatMap):
         self._cast(spell_caster, combat_map)

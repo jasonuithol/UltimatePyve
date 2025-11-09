@@ -7,14 +7,12 @@ from data.global_registry     import GlobalRegistry
 
 from models.enums.cursor_type   import CursorType
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
-from models.agents.party_agent  import PartyAgent
 
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
 
 from services.multiplayer_service import MultiplayerService
 from services.view_port_service import ViewPortService
-from view.info_panel import InfoPanel
 
 BIBLICALLY_ACCURATE_RANGE_TWEAK = 0.5
 
@@ -23,13 +21,16 @@ class SyntheticQuit:
         self.key = -1
         self.type = -1
 
+class EmptyEvent:
+    def __init__(self):
+        self.key = -1
+        self.type = -1
+
 class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
 
-    party_agent:     PartyAgent
     display_service: DisplayService
     console_service: ConsoleService
     global_registry: GlobalRegistry
-    info_panel:      InfoPanel
     dark_event_service: DarkEventService
     view_port_service:  ViewPortService
     multiplayer_service: MultiplayerService
@@ -119,34 +120,29 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
             
     def get_next_event(self) -> pygame.event.Event:
 
-        while not self._has_quit:
+        #
+        # Waiting for input ? Poll the multiplayer_service for updates
+        #  
+        self.multiplayer_service.read_updates()
 
-            # NOTE: Technically this might skip events.  We can live with that for now.
-            for event in pygame.event.get():
+        #
+        # Waiting for input ? Render frames, ensuring that animations happen etc.
+        #  
+        self.display_service.render()
 
-                if self._check_quit(event):
-                    return self._fake_quit_event                
 
-                elif event.type != pygame.KEYDOWN:
-                    continue
+        # NOTE: Technically this might skip events.  We can live with that for now.
+        for event in pygame.event.get():
 
-                return event
+            if self._check_quit(event):
+                return self._fake_quit_event                
 
-            #
-            # Waiting for input ? Poll the multiplayer_service for updates
-            #  
-            self.multiplayer_service.read_updates()
+            elif event.type != pygame.KEYDOWN:
+                continue
 
-            #
-            # Waiting for input ? Render frames, ensuring that animations happen etc.
-            #  
-            self.display_service.render()
-        
-        # Failsafe - exiting this loop to get here means quitting the game.
-        self.log("Exiting the get_next_event loop - switching to Quit Game mode.")
-        if not self._has_quit:
-            self.dark_event_service.quit()
-        return self._fake_quit_event
+            return event
+
+        return EmptyEvent()
 
     def discard_events(self):
         num = 0
@@ -154,4 +150,6 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
             num += 1
         if num > 0:
             self.log(f"DEBUG: Discarded {num} events")
-    
+
+#    def inject_event(self, event: pygame.event.Event):
+

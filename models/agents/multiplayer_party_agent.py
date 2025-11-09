@@ -7,9 +7,9 @@ from models.tile import Tile
 
 class MultiplayerPartyAgent(NpcAgent):
 
-    def __init__(self, name: str, tile_id: int, sprite: Sprite, dexterity: int, location: GlobalLocation, remote_multiplayer_id: str = None):
+    def __init__(self, name: str, tile_id: int, sprite: Sprite, dexterity: int, location: GlobalLocation, action_points: float, remote_multiplayer_id: str = None):
 
-        super().__init__()
+        super().__init__(action_points = action_points)
 
         self._name      = name
         self._tile_id   = tile_id

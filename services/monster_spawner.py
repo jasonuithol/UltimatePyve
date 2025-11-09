@@ -41,11 +41,15 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
 
         sprite = self.global_registry.sprites.get(npc_tile_id)
         npc_metadata = self.global_registry.npc_metadata.get(npc_tile_id)
-        npc_agent = MonsterAgent(monster_coord, sprite, npc_metadata)
+        npc_agent = MonsterAgent(
+            coord         = monster_coord, 
+            sprite        = sprite, 
+            npc_metadata  = npc_metadata, 
+            action_points = self.party_agent.spent_action_points
+        )
         if npc_agent.maximum_hitpoints == 0:
             self.log("ERROR: Aborting spawning of enemy with 0 maximum hit points to avoid a div/0")
             return
-        npc_agent._spent_action_points = self.party_agent._spent_action_points
 
         self.multiplayer_service.monster_spawned(npc_agent)
         self.npc_service.add_npc(npc_agent)

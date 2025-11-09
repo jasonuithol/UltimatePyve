@@ -1,8 +1,12 @@
+import threading
+import time
 import traceback
 
 from typing import Callable, NamedTuple
 
-from dark_libraries.dark_events import DarkEventListenerMixin
+import pygame
+
+from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
 from dark_libraries.dark_socket_network import DarkSocketClient, DarkSocketServer
 from dark_libraries.dark_tuple_network_protocol import DarkNamedTupleProtocol
 from dark_libraries.logging import LoggerMixin
@@ -14,6 +18,7 @@ from models.agents.multiplayer_party_agent import MultiplayerPartyAgent
 from models.agents.party_agent import PartyAgent
 from models.multiplayer_protocol import ConnectAccept, ConnectRequest, ConnectTerminate, LocationUpdate, PlayerJoin, PlayerLeave
 
+from services.console_service import ConsoleService
 from services.info_panel_service import InfoPanelService
 from services.multiplayer_message_factory import MultiplayerMessageFactory
 from services.npc_service import NpcService
@@ -22,12 +27,17 @@ from services.npc_service import NpcService
 ProtocolFormat     = NamedTuple
 ProtocolDefinition = models.multiplayer_protocol
 
+ACTION_POINTS_PER_SECOND: float = 2.5
+TURN_LENGTH: float = 1.0
+
 class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
     npc_service: NpcService
     party_agent: PartyAgent
     info_panel_service: InfoPanelService
     multiplayer_message_factory: MultiplayerMessageFactory
+    dark_event_service: DarkEventService
+    console_service: ConsoleService
 
     def __init__(self):
         super().__init__()
@@ -48,13 +58,58 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.server: DarkSocketServer[ProtocolFormat] = DarkSocketServer[ProtocolFormat](self.protocol)
         self.server.launch()
         self.party_agent.set_multiplayer_id()
+        self.old_agent_name = self.party_agent.name
         self.party_agent.party_members[0]._character_record.name = "SERVER"
         self.info_panel_service.update_party_summary()
+
+        #
+        # Real-time action points
+        #
+        self.realtime_action_point_timer_thread_is_alive = True
+        self.realtime_action_point_timer_thread = threading.Thread(
+            target = self.realtime_action_point_thread_runner, 
+            daemon = True
+        )
+        self.realtime_action_point_timer_thread.start()
 
     def monster_spawned(self, monster_agent: MonsterAgent):
         if self.server:
             player_join_message = self.multiplayer_message_factory.player_join(monster_agent)
             self.server.write(player_join_message)
+
+    # NOTE: This runs in it's own thread
+    def realtime_action_point_thread_runner(self):
+        self.log("realtime_action_point_thread_runner started")
+
+        ticks_at_launch = pygame.time.get_ticks()
+        ticks_until_next_turn = ticks_at_launch + int(TURN_LENGTH * 1000)
+        action_points_at_launch = self.party_agent.spent_action_points
+
+        try:
+            while self.realtime_action_point_timer_thread_is_alive:
+
+                current_ticks = pygame.time.get_ticks()
+
+                action_point_delta = ((current_ticks - ticks_at_launch) / 1000) * ACTION_POINTS_PER_SECOND
+                realtime_action_points = action_points_at_launch + action_point_delta
+
+                self.party_agent.spent_action_points = realtime_action_points
+
+                for client_agent in self.client_agents.values():
+                    client_agent.spent_action_points = realtime_action_points
+
+                if ticks_until_next_turn < current_ticks:
+                    ticks_until_next_turn = current_ticks + int(TURN_LENGTH * 1000)
+
+                    self.console_service.print_ascii("tick")
+                    self.dark_event_service.pass_time(self.party_agent.location)
+
+                time.sleep(0.1)
+
+        except Exception as e:
+            self.log(f"ERROR: realtime_action_point_thread_runner encountered error: {e.with_traceback()}")
+
+        self.log("realtime_action_point_thread_runner finished")
 
     def read_client_updates(self):
 
@@ -177,11 +232,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
     def _accept_connect_terminate(self):
         self.log(f"Server terminating connection, removing remote players and closing client connection.")
-        for agent in self.client_agents.values():
-            self.npc_service.remove_npc(agent)
-        self.client_agents.clear()
-        self.client.close()
-        self.client = None
+        self.quit()
 
     # ===============================
     #
@@ -267,14 +318,22 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.server.write(ConnectTerminate())
             self.server.close()
             self.server = None
+            self.client_agents.clear()
             self.party_agent.clear_multiplayer_id()
+
+            self.party_agent.party_members[0]._character_record.name = self.old_agent_name
+            self.info_panel_service.update_party_summary()
+            self.realtime_action_point_timer_thread_is_alive = False
+            self.realtime_action_point_timer_thread.join()
 
         elif self.client:
             self.client.write(PlayerLeave(self.party_agent.multiplayer_id))
             self.client.close()
             self.client = None
+            self.client_agents.clear()
             self.npc_service.leave_server()
             self.party_agent.clear_multiplayer_id()
+            self.party_agent.unfreeze_action_points()
     #
     # DarkEventListenerMixin: End
                 

@@ -63,13 +63,12 @@ class PartyMemberAgent(CombatAgent):
     global_registry: GlobalRegistry
 
     def __init__(self, sprite: Sprite[Tile], character_record: CharacterRecord):
-        super().__init__(coord = None, sprite = sprite)
+        super().__init__(coord = None, sprite = sprite, action_points = 0.0)
         self._character_record = character_record
         self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value.value
 
     def enter_combat(self, coord: Coord[int]):
         self.coord = coord
-        self._spent_action_points = 0
 
     def exit_combat(self):
         self.coord = None

@@ -11,8 +11,8 @@ from .npc_agent import NpcAgent
 
 class CombatAgent(NpcAgent):
 
-    def __init__(self, coord: Coord[int], sprite: Sprite[Tile]):
-        super().__init__()
+    def __init__(self, coord: Coord[int], sprite: Sprite[Tile], action_points: float):
+        super().__init__(action_points = action_points)
         self._coord = coord
         self._sprite = sprite
         self._sprite_time_offset = sprite.create_random_time_offset()

@@ -1,7 +1,5 @@
-import datetime
 import random
 
-import pygame
 from dark_libraries.dark_math   import Coord
 from dark_libraries.logging     import LoggerMixin
 from dark_libraries.dark_events import DarkEventListenerMixin
@@ -65,6 +63,9 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
         self._party_location = party_location
     # IMPLEMENTATION END: DarkEventListenerMixin
 
+    #
+    # Multiplayer support
+    #
     def join_server(self):
         self._has_joined_server = True
         self._freeze_active_npcs()

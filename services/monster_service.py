@@ -171,7 +171,8 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
 
             if old_coord != new_coord:
                 occupied_coords.add(new_coord)
-                occupied_coords.remove(old_coord)
+                if old_coord in occupied_coords:
+                    occupied_coords.remove(old_coord)
 
             monster_agent.spend_action_quanta()
 

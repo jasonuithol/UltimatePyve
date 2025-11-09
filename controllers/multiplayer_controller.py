@@ -12,18 +12,20 @@ class MultiplayerController:
     console_service: ConsoleService
     input_service: InputService
 
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
 
         if event.type != pygame.KEYDOWN:
-            return
+            return False
 
         if event.key == pygame.K_F1:
             self.host_server()
             self.input_service.discard_events()
+            return True
 
         elif event.key == pygame.K_F2:
             self.join_server()
             self.input_service.discard_events()
+            return True
 
     def host_server(self):
         if self.multiplayer_service.client:

@@ -20,15 +20,18 @@ class ActiveMemberController:
     input_service: InputService
 
     # This never passes time or consumes items or nuffin
-    def handle_event(self, event: pygame.event.Event):
+    def handle_event(self, event: pygame.event.Event) -> bool:
         if event.key == pygame.K_0:
             self.party_agent.set_active_member(None)
             self.console_service.print_ascii(f"Set active player: None !")
+            return True
 
         active_member_index = active_player_keymap.get(event.key, None)
 
         if active_member_index is None:
-            return
+            return False
         
         self.party_agent.set_active_member(active_member_index)
         self.console_service.print_ascii(f"Set active player: {self.party_agent.get_active_member().name} !")
+        return True
+    

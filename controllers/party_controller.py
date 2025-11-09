@@ -74,6 +74,9 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
             should_pass_time = self.dispatch_input()
             
+            #
+            # TODO: Real-time action points might have something to say about this.
+            #
             if should_pass_time:
 
                 self.party_agent.spend_action_quanta()
@@ -84,34 +87,28 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
                 # Internal pass_time (e.g. torches going out)
                 self.pass_time_internal()
 
-                enemy_npc = self.npc_service.get_attacking_npc()
-                
-                if not enemy_npc is None:
+            enemy_npc = self.npc_service.get_attacking_npc()
+            
+            if not enemy_npc is None:
+                #
+                # C O M B A T
+                #
+                if self.party_agent.transport_state.transport_mode == TransportMode.SKIFF:
                     #
-                    # C O M B A T
+                    # TODO: implement party damage from overworld attacks like cannon, fireball, being attacked in a skiff, walking into cactus, etc
                     #
-                    if self.party_agent.transport_state.transport_mode == TransportMode.SKIFF:
-                        #
-                        # TODO: implement party damage from overworld attacks like cannon, fireball, being attacked in a skiff, walking into cactus, etc
-                        #
-                        self.console_service.print_ascii("TODO: Take damage to party")
-                    else:
-                        self.combat_controller.enter_combat(enemy_npc)
+                    self.console_service.print_ascii("TODO: Take damage to party")
+                else:
+                    self.combat_controller.enter_combat(enemy_npc)
 
     def dispatch_input(self) -> bool:
         
         event = self.input_service.get_next_event()
 
-        self.multiplayer_controller.handle_event(event)
-        self.active_member_controller.handle_event(event)
-        self.ready_controller.handle_event(event)
-        self.cast_controller.handle_event(event, spell_caster = self.party_agent.get_active_member(), combat_map = None)
-
-        '''
-        mods = pygame.key.get_mods()
-        if mods != 0:
-            return DONT_PASS_TIME
-        '''
+        if self.multiplayer_controller.handle_event(event): return DONT_PASS_TIME
+        if self.active_member_controller.handle_event(event): return PASS_TIME
+        if self.ready_controller.handle_event(event): return PASS_TIME
+        if self.cast_controller.handle_event(event, spell_caster = self.party_agent.get_active_member(), combat_map = None): return PASS_TIME
 
         #
         # Received key input, call appropriate handler.
