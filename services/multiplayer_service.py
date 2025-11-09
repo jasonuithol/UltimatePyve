@@ -252,6 +252,8 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         elif self.client:
             self.write_server_updates()           
 
+    # DarkEventListenerMixin: Start
+    #
     def pass_time(self, party_location):
         self.read_updates()
         self.write_updates()
@@ -266,6 +268,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.client.close()
             self.client = None
             self.npc_service.leave_server()
-
+    #
+    # DarkEventListenerMixin: End
                 
         

@@ -4,7 +4,6 @@ from data.global_registry import GlobalRegistry
 from models.agents.multiplayer_party_agent import MultiplayerPartyAgent
 from models.agents.party_agent             import PartyAgent
 from models.agents.combat_agent            import CombatAgent
-from models.enums.npc_tile_id import NpcTileId
 from models.multiplayer_protocol import ConnectAccept, ConnectRequest, ConnectTerminate, LocationUpdate, PlayerJoin, PlayerLeave
 
 class MultiplayerMessageFactory(LoggerMixin):
@@ -83,6 +82,7 @@ class MultiplayerMessageFactory(LoggerMixin):
 
         return LocationUpdate(
             multiplayer_id = agent.multiplayer_id,
+            tile_id        = agent.tile_id,
 
             location_index = location.location_index,
             level_index    = location.level_index,
@@ -106,9 +106,7 @@ class MultiplayerMessageFactory(LoggerMixin):
             assert False, f"Unknown message: {message.__class__.__name__}"
 
         sprite = self.global_registry.sprites.get(message.tile_id)
-        if sprite is None:
-            self.log(f"WARNING: Could not obtain sprite for tile_id={message.tile_id}")
-            sprite = self.global_registry.sprites.get(NpcTileId.JESTER.value)
+        assert sprite, f"Could not obtain sprite for tile_id={message.tile_id}"
 
         return MultiplayerPartyAgent(
             name      = message.name,
@@ -128,6 +126,9 @@ class MultiplayerMessageFactory(LoggerMixin):
 
         elif isinstance(agent, MultiplayerPartyAgent) and isinstance(message, LocationUpdate):
             agent.location = message.get_location()
+            sprite = self.global_registry.sprites.get(message.tile_id)
+            assert sprite, f"Could not find sprite for tile_id={message.tile_id}"
+            agent.set_sprite(sprite)
 
         else:
             assert False, f"Unknown agent/message combination: {agent.__class__.__name__}|{message.__class__.__name__}"        

@@ -281,6 +281,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         transport_mode_value = (self.party_agent.transport_state.transport_mode.value + 1) % len(TransportMode)
         self.party_agent._transport_state.transport_mode = TransportMode(transport_mode_value)
         self.party_agent._update_sprite()
+        self.dark_event_service.pass_time(self.party_agent.location)
 
     def _set_window_title(self):
         party_location = self.party_agent.get_current_location()

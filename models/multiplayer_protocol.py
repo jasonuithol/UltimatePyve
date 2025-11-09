@@ -54,6 +54,7 @@ class PlayerLeave(NamedTuple):
     
 class LocationUpdate(NamedTuple):
     multiplayer_id: str
+    tile_id: int
 
     location_index: int
     level_index: int

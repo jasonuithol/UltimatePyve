@@ -74,7 +74,8 @@ class PartyAgent(NpcAgent):
     # NPC_AGENT IMPLEMENTATION: start
     #
     @property
-    def tile_id(self) -> int: ...
+    def tile_id(self) -> int:
+        return self.transport_state.get_transport_tile_id()
 
     @property
     def name(self) -> str: return self.party_members[0].name
