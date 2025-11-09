@@ -168,7 +168,7 @@ class DarkSocketClient[TMessage](LoggerMixin, DarkNetworkClient[TMessage]):
         super().__init__(connection = conn)
 
     def close(self):
-        super().close()
+        super().close() # TODO: does nothing ?
         self._connection.close() # Job done
         self._sock.close() # Job done
         self.log("Client has closed")

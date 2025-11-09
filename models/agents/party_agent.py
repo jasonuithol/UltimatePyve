@@ -116,6 +116,9 @@ class PartyAgent(NpcAgent):
             # client mode
             self._multiplayer_id = remote_multiplayer_id
 
+    def clear_multiplayer_id(self):
+        self._multiplayer_id = None
+
     #
     # Location
     #

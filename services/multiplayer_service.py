@@ -199,9 +199,12 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.log(f"Another player has joined this session: remote_multiplayer_id={player_join.multiplayer_id}")
 
     def _accept_player_leave(self, player_leave: PlayerLeave, network_id: str = None):
-        agent = self.client_agents[player_leave.multiplayer_id]
+
+        agent = self.client_agents.get(player_leave.multiplayer_id, None)
         if agent is None:
-            self.log(f"WARNING: Got leave notice for unknown multiplayer_id: {player_leave.multiplayer_id}")
+            self.log(f"ERROR: Got leave notice for unknown multiplayer_id: {player_leave.multiplayer_id}")
+            return
+        
         del self.client_agents[player_leave.multiplayer_id]            
         self.npc_service.remove_npc(agent)
 
@@ -259,15 +262,19 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.write_updates()
 
     def quit(self):
+
         if self.server:
             self.server.write(ConnectTerminate())
             self.server.close()
             self.server = None
+            self.party_agent.clear_multiplayer_id()
+
         elif self.client:
             self.client.write(PlayerLeave(self.party_agent.multiplayer_id))
             self.client.close()
             self.client = None
             self.npc_service.leave_server()
+            self.party_agent.clear_multiplayer_id()
     #
     # DarkEventListenerMixin: End
                 

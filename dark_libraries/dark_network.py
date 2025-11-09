@@ -154,7 +154,7 @@ class DarkNetworkServer[TMessage](LoggerMixin, DarkNetworkInterface[TMessage]):
         client = self.remote_clients[network_id]
         client.close()
         del self.remote_clients[network_id]
-        self.log(f"Closed and removed client connection: {network_id}")
+        self.log(f"Closed and removed client connection: network_id={network_id}.  Remaining clients: {len(self.remote_clients)}")
 
     def read_all(self) -> Iterable[tuple[str, TMessage]]:
         messages = []
@@ -170,6 +170,7 @@ class DarkNetworkServer[TMessage](LoggerMixin, DarkNetworkInterface[TMessage]):
 
     def write_to(self, network_id: int, message: TMessage):
         client = self.remote_clients[network_id]
+        assert client.is_alive, f"Cannot write to a dead client network_id={network_id}, message={message}"
         assert not client.outgoing.full(), "Outgoing queue was allowed to fill up"
         client.outgoing.put(message)
 
