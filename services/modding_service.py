@@ -47,6 +47,9 @@ class ModdingService(LoggerMixin):
 
     def load_modded_transport_soundtracks(self):
         modded_soundtracks = self._load_mod_files("music/transport", lambda path: path.resolve())
+        #
+        # TODO: Do we even TransportMode here ?
+        #
         for transport_mode_index, soundtrack_path in modded_soundtracks:
             self.global_registry.transport_soundtracks.register_modded_content(transport_mode_index, soundtrack_path)
 

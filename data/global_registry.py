@@ -44,10 +44,6 @@ class GlobalRegistry:
         self.item_types = Registry[int,            ItemType]() # item_id (NOT InventoryOffset ?!?!?!)
         self.world_loot = Registry[GlobalLocation, WorldItem]()
 
-        # TODO: OVER-ENGINEERING ????????
-        # player oriented features.
-        self.transport_modes = Registry[int, str]() # transport_mode_index
-
         # display oriented features.
         self.colors   = Registry[EgaPaletteValues, int]() 
         self.tiles    = Registry[int, Tile]()     # tile_id

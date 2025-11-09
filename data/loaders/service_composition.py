@@ -19,13 +19,13 @@ from data.loaders.save_game_loader import SavedGameLoader
 from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
 from data.loaders.spell_rune_loader import SpellRuneLoader
 from data.loaders.spell_type_loader import SpellTypeLoader
+from data.loaders.transport_sprite_loader import TransportSpriteLoader
 from services.light_map_level_baker       import LightMapLevelBaker
 
 from data.loaders.npc_sprite_builder        import NpcSpriteBuilder
 from data.loaders.terrain_loader            import TerrainLoader
 
 from data.loaders.tileset_loader        import TileLoader
-from data.loaders.transport_mode_loader import TransportModeLoader
 from data.loaders.u5_font_loader        import U5FontLoader
 from data.loaders.u5_glyph_loader       import U5GlyphLoader
 
@@ -54,7 +54,7 @@ def compose(provider: ServiceProvider):
 
     provider.register(ColorLoader)
     provider.register(TileLoader)
-    provider.register(TransportModeLoader)
+    provider.register(TransportSpriteLoader)
     provider.register(U5FontLoader)
     provider.register(U5GlyphLoader)
     provider.register(BlueBorderGlyphFactory)

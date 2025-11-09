@@ -11,6 +11,7 @@ from data.global_registry import GlobalRegistry
 from models.agents.npc_agent                import NpcAgent
 from models.enums.combat_map_location_index import COMBAT_MAP_LOCATION_INDEX
 from models.enums.projectile_type           import ProjectileType
+from models.enums.transport_mode import TransportMode
 from models.global_location                 import GlobalLocation
 from models.agents.monster_agent            import MonsterAgent
 from models.u5_map                          import U5Map
@@ -106,7 +107,7 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
             #
             # TODO: get the terrain type of the monster to get real transport mode index
             #
-            forbidden_coords = self.map_cache_service.get_blocked_coords(COMBAT_MAP_LOCATION_INDEX, 0, transport_mode_index = 0) | self.npc_service.get_occupied_coords()
+            forbidden_coords = self.map_cache_service.get_blocked_coords(COMBAT_MAP_LOCATION_INDEX, 0, transport_mode = TransportMode.WALK) | self.npc_service.get_occupied_coords()
 
             combat_map: U5Map = self.global_registry.maps.get(COMBAT_MAP_LOCATION_INDEX)
             monster_agent.move_towards(closest_party_member.coord, forbidden_coords, combat_map.get_size().to_rect(Coord[int](0, 0)))
@@ -138,7 +139,7 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
         blocked_coords = self.map_cache_service.get_blocked_coords(
             party_location.location_index, 
             party_location.level_index, 
-            transport_mode_index = 0
+            transport_mode = TransportMode.WALK
         )
 
         current_map = self.global_registry.maps.get(party_location.location_index)

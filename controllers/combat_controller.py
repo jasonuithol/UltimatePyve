@@ -18,6 +18,7 @@ from models.enums.cursor_type import CursorType
 from models.enums.direction_map import DIRECTION_MAP
 from models.enums.hit_point_level import get_hp_level_text
 from models.enums.projectile_type import ProjectileType
+from models.enums.transport_mode import TransportMode
 from models.global_location import GlobalLocation
 
 from models.location_metadata import LocationMetadata
@@ -80,11 +81,15 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     _last_attacked_monster = dict[str, MonsterAgent]()
 
     def _enter_combat_arena(self, enemy_party: MonsterAgent) -> CombatMap:
-        party_transport_mode_index, _ = self.party_agent.get_transport_state()
+
+        party_transport_mode = self.party_agent.transport_state.transport_mode
 
         combat_map = self.combat_map_service.get_combat_map(
             self.party_agent.get_current_location(),
-            party_transport_mode_index,
+
+            # This actually helps determine which map gets loaded e.g. pirate encounters
+            party_transport_mode,
+
             enemy_party
         )
 
@@ -218,7 +223,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
         move_outcome = self.move_controller.move(
             GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, party_member.coord), 
             move_offset, 
-            'walk'
+            TransportMode.WALK
         )
 
         party_member.spend_action_quanta()

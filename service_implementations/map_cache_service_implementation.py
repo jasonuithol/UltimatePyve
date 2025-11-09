@@ -5,6 +5,7 @@ from dark_libraries.logging   import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
+from models.enums.transport_mode import TransportMode
 from models.global_location import GlobalLocation
 from models.u5_map  import U5Map
 
@@ -56,12 +57,11 @@ class MapCacheServiceImplementation(LoggerMixin, DarkEventListenerMixin):
     def get_map_level_contents(self, location_index: int, level_index: int) -> MapLevelContents:
         return self._map_level_content_dict[(location_index, level_index)]
 
-    def get_blocked_coords(self, location_index: int, level_index: int, transport_mode_index: int) -> set[Coord[int]]:
+    def get_blocked_coords(self, location_index: int, level_index: int, transport_mode: TransportMode) -> set[Coord[int]]:
         map_level_contents: MapLevelContents = self.get_map_level_contents(location_index, level_index)
-        transport_mode_name = self.global_registry.transport_modes.get(transport_mode_index)
         blocked_coords = {
             coord 
-            for coord, coord_content in map_level_contents 
-            if getattr(coord_content.get_terrain(), transport_mode_name) == False
+            for coord, coord_content in map_level_contents
+            if not transport_mode.can_traverse(coord_content.get_terrain())
         }
         return blocked_coords

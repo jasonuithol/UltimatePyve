@@ -14,7 +14,6 @@ from .multiplayer_service import MultiplayerService
 from .console_service   import ConsoleService
 from .display_service import DisplayService
 from .font_mapper       import FontMapper
-from .avatar_sprite_factory    import AvatarSpriteFactory
 from .field_of_view_calculator import FieldOfViewCalculator
 from .info_panel_data_provider import InfoPanelDataProvider
 from .info_panel_service import InfoPanelService
@@ -56,8 +55,6 @@ def compose(provider: ServiceProvider):
     provider.register_mapping(SoundService, SoundServiceImplementation)
     provider.register_mapping(ConsoleService, ConsoleServiceImplementation)
     provider.register_mapping(SurfaceFactory, SurfaceFactoryImplementation)
-
-    provider.register(AvatarSpriteFactory)
 
     provider.register(DoorInstanceFactory) # <== SCHEDULED FOR DEMOLITION
 

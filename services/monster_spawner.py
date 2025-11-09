@@ -7,6 +7,7 @@ from dark_libraries.logging   import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 from models.agents.party_agent import PartyAgent
+from models.enums.transport_mode import TransportMode
 from models.global_location import GlobalLocation
 from models.enums.npc_tile_id   import NpcTileId
 
@@ -68,7 +69,14 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
         if random.randint(1, int(1/__class__.MONSTER_SPAWN_PROBABILITY)) > 1: return
 
         # randomly choose location of monster somewhere on (not in) a circle around the player
-        blocked_coords = self.map_cache_service.get_blocked_coords(self._party_location.location_index, self._party_location.level_index, transport_mode_index = 0)
+        blocked_coords = self.map_cache_service.get_blocked_coords(
+            self._party_location.location_index, 
+            self._party_location.level_index, 
+            #
+            # TODO: Actually use the transport mode of the monster.
+            #
+            transport_mode = TransportMode.WALK
+        )
         occupied_coords = self.npc_service.get_occupied_coords()
 
         monster_coord = None

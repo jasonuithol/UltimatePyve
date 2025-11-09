@@ -27,9 +27,6 @@ class Terrain:
     windowed: bool = False
 
     entry_point: bool = False
-
-    def can_traverse(self, transport_mode: str) -> bool:
-        return getattr(self, transport_mode)
     
 '''
 moveable_tiles = [

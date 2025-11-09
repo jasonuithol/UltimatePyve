@@ -3,6 +3,7 @@ from dark_libraries.dark_math import Coord, Vector2
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
+from models.enums.transport_mode import TransportMode
 from models.global_location import GlobalLocation
 from models.interactable import Interactable
 from models.move_into_result import MoveIntoResult
@@ -42,7 +43,7 @@ class MoveController(LoggerMixin):
     global_registry: GlobalRegistry
     npc_service: NpcService
 
-    def move(self, current_location: GlobalLocation, move_offset: Vector2, transport_mode_name: str) -> MoveOutcome:
+    def move(self, current_location: GlobalLocation, move_offset: Vector2, transport_mode: TransportMode) -> MoveOutcome:
 
         current_map: U5Map = self.global_registry.maps.get(current_location.location_index)
         target_location = current_location + move_offset
@@ -57,7 +58,7 @@ class MoveController(LoggerMixin):
                 return MoveOutcome(exit_map=True)
 
         # This may perform a "move_into" operation on an interactable.
-        move_into_result: MoveIntoResult = self._try_move_into(current_location, target_location.coord, transport_mode_name)
+        move_into_result: MoveIntoResult = self._try_move_into(current_location, target_location.coord, transport_mode)
         got_blocked = (not move_into_result.traversal_allowed) and (not move_into_result.alternative_action_taken)
         if not move_into_result.traversal_allowed:
             if got_blocked:
@@ -106,7 +107,7 @@ class MoveController(LoggerMixin):
         self.log(f"DEBUG: Move to {target_location} succeeded.")
         return MoveOutcome(success=True)
         
-    def _try_move_into(self, current_location: GlobalLocation, target: Coord, transport_mode_name: str) -> MoveIntoResult:
+    def _try_move_into(self, current_location: GlobalLocation, target: Coord, transport_mode: TransportMode) -> MoveIntoResult:
 
         interactable: Interactable = self.global_registry.interactables.get(target)      
         if interactable:
@@ -122,7 +123,7 @@ class MoveController(LoggerMixin):
         terrain: Terrain    = self.global_registry.terrains.get(target_tile_id)
 
         return MoveIntoResult(
-            traversal_allowed = terrain.can_traverse(transport_mode_name),
+            traversal_allowed = transport_mode.can_traverse(terrain),
             alternative_action_taken = False
         )    
 

@@ -18,7 +18,7 @@ from data.loaders.spell_rune_loader import SpellRuneLoader
 from data.loaders.spell_type_loader import SpellTypeLoader
 from data.loaders.tileset_loader        import TileLoader
 from data.loaders.terrain_loader        import TerrainLoader
-from data.loaders.transport_mode_loader import TransportModeLoader
+from data.loaders.transport_sprite_loader import TransportSpriteLoader
 from data.loaders.u5_map_loader         import U5MapLoader
 
 from data.loaders.animated_tile_loader  import AnimatedTileLoader
@@ -39,6 +39,9 @@ from data.loaders.u5_glyph_loader import U5GlyphLoader
 from services.modding_service import ModdingService
 from services.light_map_level_baker  import LightMapLevelBaker
 
+#
+# TODO: Make a Loader base class and then iterate over this class's properties to call .load(u5_path: str) on all of them
+#
 class GlobalRegistryLoader(LoggerMixin):
 
     # Injectable
@@ -55,6 +58,7 @@ class GlobalRegistryLoader(LoggerMixin):
     animated_tile_loader:        AnimatedTileLoader
     flame_sprite_loader:         FlameSpriteLoader
     cursor_loader:               CursorLoader
+    transport_sprite_loader:     TransportSpriteLoader
 
     door_type_loader:            DoorTypeLoader
 
@@ -66,7 +70,6 @@ class GlobalRegistryLoader(LoggerMixin):
     light_map_builder:           LightMapBuilder
     light_map_level_baker:       LightMapLevelBaker
     npc_sprite_builder:          NpcSpriteBuilder
-    transport_mode_loader:       TransportModeLoader
 
     combat_map_loader:           CombatMapLoader
     npc_metadata_loader:         NpcMetadataLoader
@@ -111,6 +114,7 @@ class GlobalRegistryLoader(LoggerMixin):
         self.animated_tile_loader.register_sprites()
         self.flame_sprite_loader.register_sprites()
 
+
         self.combat_map_loader.load(u5_path)
 
         # font
@@ -119,8 +123,7 @@ class GlobalRegistryLoader(LoggerMixin):
         self.blue_border_glyph_factory.load()
         self.scroll_border_glyph_factory.load()
 
-        # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
-        #       one day maybe even the avatar's transports could be these ?
+        # TODO: Deprecated
         self.door_type_loader.load()
 
         self.equipable_item_type_loader.build()
@@ -132,8 +135,8 @@ class GlobalRegistryLoader(LoggerMixin):
 
         # npc
         self.npc_sprite_builder.register_npc_sprites()
-        self.transport_mode_loader.load()
         self.npc_metadata_loader.load()
+        self.transport_sprite_loader.load()
 
         # magic
         self.spell_rune_loader.load()

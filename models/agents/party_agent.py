@@ -1,31 +1,22 @@
-# file: game/player_state.py
 from datetime import datetime
-from typing   import Tuple
 
-from dark_libraries.dark_math import Coord
+from dark_libraries.dark_math import Coord, Vector2
 
+from data.global_registry import GlobalRegistry
+from models.enums.transport_mode import TRANSPORT_MODE_DEXTERITY_MAP
 from models.global_location import GlobalLocation
 from models.sprite import Sprite
 from models.tile import Tile
 
-from services.avatar_sprite_factory import AvatarSpriteFactory
+from models.transport_state import TransportState
 
 from .npc_agent import NpcAgent
 from .party_member_agent import PartyMemberAgent
 
-transport_mode_dexterity_map = {
-    0 : 15, # walk
-    1 : 20, # horse
-    2 : 25, # carpet
-    3 : 10, # skiff
-    4 : 15, # ship
-    5 : 20  # sail
-}
-
 class PartyAgent(NpcAgent):
 
-    # Injectable
-    avatar_sprite_factory: AvatarSpriteFactory    
+    #Injectable
+    global_registry: GlobalRegistry
 
     def __init__(self):
         super().__init__()
@@ -34,17 +25,16 @@ class PartyAgent(NpcAgent):
     party_members  = list[PartyMemberAgent]()
     _active_member_index: int = None
 
-    # options: walk, horse, carpet, skiff, ship
-    transport_mode: int = None
-    last_east_west: int = None
-    last_nesw_dir: int = None
+    # options: [walk, horse, carpet, skiff, ship, sail]
+    # (facing north, east, west or south)
+    _transport_state: TransportState = None
+
     sprite: Sprite[Tile] = None
-    sprite_time_offset: float = 0.0
+    sprite_time_offset: float = None
 
     # torch, light spell
     light_radius: int = None
     light_expiry: datetime = None
-
 
     _multiplayer_id: int = None
 
@@ -103,8 +93,7 @@ class PartyAgent(NpcAgent):
 
     @property
     def dexterity(self) -> int:
-        transport_mode, _ = self.get_transport_state()
-        return transport_mode_dexterity_map[transport_mode]
+        return TRANSPORT_MODE_DEXTERITY_MAP[self._transport_state.transport_mode]
 
     @property
     def slept(self) -> bool:
@@ -120,8 +109,10 @@ class PartyAgent(NpcAgent):
 
     def set_multiplayer_id(self, remote_multiplayer_id: str = None):
         if remote_multiplayer_id is None:
+            # server mode
             self._multiplayer_id = str(id(self))
         else:
+            # client mode
             self._multiplayer_id = remote_multiplayer_id
 
     #
@@ -150,6 +141,12 @@ class PartyAgent(NpcAgent):
         self.location_stack[-1] = new_location
         self.log(f"DEBUG: Moved party {old_location} -> {new_location} with {self.spent_action_points} spent action points.")
 
+    def apply_move_offset(self, move_offset: Vector2[int]):
+        x, y = self.coord + move_offset
+        self.change_coord(Coord(x,y))
+        self.transport_state.apply_move_offset(move_offset)
+        self._update_sprite()
+
     def get_current_location(self) -> GlobalLocation:
         return self.location_stack[-1]
 
@@ -164,26 +161,23 @@ class PartyAgent(NpcAgent):
         return self.location_stack[-1]
 
     #
-    # Transport mode.
+    # Transport state.
     #
-    def set_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
-        self.transport_mode = transport_mode
-        self.last_east_west = last_east_west
-        self.last_nesw_dir = last_nesw_dir
+    @property
+    def transport_state(self) -> TransportState:
+        return self._transport_state
+    
+    @transport_state.setter
+    def transport_state(self, value: TransportState):
+        self._transport_state = value
+        self._update_sprite()
 
-        _, direction = self.get_transport_state()
-        self.sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
-        self.sprite_time_offset = self.sprite.create_random_time_offset()
-
-    def get_transport_state(self) -> Tuple[int, int]:
-        assert not self.transport_mode is None, "Must call set_transport_state first."
-        if self.transport_mode == 0:
-            direction = 0 # no one cares.
-        elif self.transport_mode < 3:
-            direction = self.last_east_west
-        else:
-            direction = self.last_nesw_dir
-        return self.transport_mode, direction
+    def _update_sprite(self):
+        sprite = self.global_registry.sprites.get(self.transport_state.get_transport_tile_id())
+        assert sprite, f"Could not obtain sprite from transport_state={self.transport_state}"
+        self.sprite = sprite
+        if self.sprite_time_offset is None:
+            self.sprite_time_offset = sprite.create_random_time_offset()
 
     #
     # Light radius

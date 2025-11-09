@@ -1,6 +1,7 @@
 from dark_libraries.logging import LoggerMixin
 from data.global_registry   import GlobalRegistry
 
+from models.enums.transport_mode import TransportMode
 from models.global_location import GlobalLocation
 from models.agents.npc_agent       import NpcAgent
 from models.terrain         import Terrain
@@ -68,9 +69,9 @@ class CombatMapService(LoggerMixin):
     # Injectable
     global_registry: GlobalRegistry
 
-    def _get_combat_map_index(self, player_location: GlobalLocation, transport_mode_index: int, enemy_npc_agent: NpcAgent):
+    def _get_combat_map_index(self, player_location: GlobalLocation, transport_mode: TransportMode, enemy_npc_agent: NpcAgent):
 
-        assert transport_mode_index != 3, "Cannot enter combat in a skiff."
+        assert transport_mode != TransportMode.SKIFF, "Cannot enter combat in a skiff."
 
         u5_map: U5Map = self.global_registry.maps.get(player_location.location_index)
         enemy_terrain_tile_id = u5_map.get_tile_id(player_location.level_index, enemy_npc_agent.coord)
@@ -93,7 +94,7 @@ class CombatMapService(LoggerMixin):
         if player_location.is_in_town(): return          COMBAT_MAP_COBBLESTONE
 
         # party using land transport
-        if transport_mode_index in [0,1,2]:
+        if transport_mode in [TransportMode.WALK, TransportMode.HORSE, TransportMode.CARPET]:
 
             if enemy_npc_agent.tile_id == PIRATE: return COMBAT_MAP_SHIP_ATTACKING_SHIP_FROM_LAND
 
@@ -108,7 +109,7 @@ class CombatMapService(LoggerMixin):
             return                                       COMBAT_MAP_GRASS
 
         # party on ship
-        elif transport_mode_index in [4,5]:
+        elif transport_mode in [TransportMode.SAIL, TransportMode.SHIP]:
 
             if enemy_npc_agent.tile_id == PIRATE: return COMBAT_MAP_SHIP_TO_SHIP
             elif enemy_terrain_is_water: return          COMBAT_MAP_SHIP_IN_OCEAN
@@ -118,8 +119,8 @@ class CombatMapService(LoggerMixin):
         # TODO: Dungeon combat
         #
         
-    def get_combat_map(self, player_location: GlobalLocation, transport_mode_index: int, enemy_npc_agent: NpcAgent):
-         combat_map_index = self._get_combat_map_index(player_location, transport_mode_index, enemy_npc_agent)
+    def get_combat_map(self, player_location: GlobalLocation, transport_mode: TransportMode, enemy_npc_agent: NpcAgent):
+         combat_map_index = self._get_combat_map_index(player_location, transport_mode, enemy_npc_agent)
          return self.global_registry.combat_maps.get(combat_map_index)
 
     

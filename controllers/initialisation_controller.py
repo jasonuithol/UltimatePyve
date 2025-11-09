@@ -10,6 +10,7 @@ from data.global_registry           import GlobalRegistry
 from data.global_registry_loader    import GlobalRegistryLoader
 
 from controllers.party_controller   import PartyController
+from models.enums.transport_mode import TransportMode
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
 from services.info_panel_data_provider import InfoPanelDataProvider
@@ -68,7 +69,7 @@ class InitialisationController(LoggerMixin):
         self.party_controller.load_location(saved_location)
 
         # TODO: read from saved_game
-        self.party_controller.load_transport_state(0,0,1) # on foot, "facing" east
+        self.party_controller.load_transport_state(TransportMode.WALK)
 
         self.world_clock.set_world_time(saved_game.read_current_datetime())
      

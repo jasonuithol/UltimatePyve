@@ -13,14 +13,11 @@ class MultiplayerPartyAgent(NpcAgent):
 
         self._name      = name
         self._tile_id   = tile_id
-        self._sprite    = sprite
-        self._sprite_time_offset = sprite.create_random_time_offset()
+        self._sprite_time_offset: float = None
+        self.set_sprite(sprite)
 
         self._dexterity = dexterity
         self._location  = location
-
-        self._transport_mode_index = 0 # walk
-        self._transport_direction  = 0 # east
 
         if remote_multiplayer_id is None:
             # I'm the server, and am the authoritative source of multiplayer_id's
@@ -90,7 +87,5 @@ class MultiplayerPartyAgent(NpcAgent):
 
     def set_sprite(self, sprite: Sprite):
         self._sprite = sprite
-        '''
         if self._sprite_time_offset is None:
             self._sprite_time_offset = sprite.create_random_time_offset()
-        '''

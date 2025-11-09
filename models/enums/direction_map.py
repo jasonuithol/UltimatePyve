@@ -1,3 +1,4 @@
+from enum import Enum
 import pygame
 
 from dark_libraries.dark_math import Vector2
@@ -7,6 +8,12 @@ SOUTH = Vector2[int]( 0, +1)
 EAST  = Vector2[int](+1,  0)
 WEST  = Vector2[int](-1,  0)
 
+class DirectionVector(Enum):
+    NORTH = NORTH
+    SOUTH = SOUTH
+    EAST  = EAST
+    WEST  = WEST
+    
 DIRECTION_MAP = {
     pygame.K_LEFT  : WEST,
     pygame.K_RIGHT : EAST,

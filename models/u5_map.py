@@ -8,7 +8,11 @@ from models.location_metadata import LocationMetadata
 class U5Map(tuple):
 
     def __new__(cls, levels: dict[int, U5MapLevel], location_metadata: LocationMetadata):
-        size = cls._get_first_map(levels).get_size()
+        first_map = cls._get_first_map(levels)
+
+        assert first_map, f"Could not find first_map from levels dict={levels}, map name={location_metadata.name}"
+
+        size = first_map.get_size()
 
         return tuple.__new__(cls, (levels, location_metadata, size))
 
