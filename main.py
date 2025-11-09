@@ -2,6 +2,7 @@ from pathlib import Path
 import colorama
 
 from configure import get_u5_path, check_python_version
+from services.multiplayer_service import MultiplayerService
 
 check_python_version()
 
@@ -48,7 +49,12 @@ pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
 pygame.mixer.init()
 
 party_controller: PartyController = provider.resolve(PartyController)
-party_controller.run()
+multiplayer_service: MultiplayerService = provider.resolve(MultiplayerService)
 
+try:
+    party_controller.run()
+except Exception as e:
+    multiplayer_service.quit()
+    raise
 
 
