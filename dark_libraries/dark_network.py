@@ -78,21 +78,25 @@ class DarkNetworkConnection(LoggerMixin):
             self.error_queue.put((self, e))
         finally:
             self.log("Reader thread finished.")
+            self.incoming.shutdown(immediate=True)
                 
     def writer(self):
         try:
             while self.is_alive:
-                if not self.outgoing.empty():
-                    msg = self.outgoing.get()
-                    self.log(f"DEBUG: Sending message from {self.network_id}: {msg}")
-                    self.transport.send(self.protocol.encode(msg))
+                while not self.outgoing.empty():
+                    try:
+                        msg = self.outgoing.get(timeout=1.0)
+                        self.log(f"DEBUG: Sending message to {self.network_id}: {msg}")
+                        self.transport.send(self.protocol.encode(msg))
+                    except queue.Empty:
+                        pass
                 time.sleep(0) # yield thread
 
             self.log(f"Flushing {self.outgoing.qsize()} remaining outgoing messages")
 
             while not self.outgoing.empty():
                 msg = self.outgoing.get()
-                self.log(f"DEBUG: Sending message from {self.network_id}: {msg}")
+                self.log(f"DEBUG: Sending message to {self.network_id}: {msg}")
                 self.transport.send(self.protocol.encode(msg))
 
             self.log(f"Outgoing queue empty, writer thread finished.")
@@ -102,6 +106,7 @@ class DarkNetworkConnection(LoggerMixin):
             self.error_queue.put((self, e))
         finally:
             self.log("DEBUG: writer thread finished.")
+            self.outgoing.shutdown(immediate=True)
 
     def close(self):
 
@@ -171,7 +176,12 @@ class DarkNetworkServer[TMessage](LoggerMixin, DarkNetworkInterface[TMessage]):
     def write_to(self, network_id: int, message: TMessage):
         client = self.remote_clients[network_id]
         assert client.is_alive, f"Cannot write to a dead client network_id={network_id}, message={message}"
-        assert not client.outgoing.full(), "Outgoing queue was allowed to fill up"
+        assert not client.outgoing.full(), f"Outgoing queue was allowed to fill up. network_id={network_id}"
+
+        qsize = client.outgoing.qsize()
+        if qsize > QUEUE_SIZE // 2:
+            self.log(f"WARNING: Outgoing queue is filling up: network_id={network_id}, qsize={qsize}")
+
         client.outgoing.put(message)
 
     @abstractmethod
