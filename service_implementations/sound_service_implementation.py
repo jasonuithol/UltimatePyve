@@ -30,17 +30,21 @@ class PlaySfxHandle:
 
     def __init__(self, sound_handle: pygame.mixer.Sound, channel_handle: pygame.mixer.Channel):
 
-        # Main thread only
+        #
+        # Main allowed to read/write these properties
+        #
         self.sound_handle = sound_handle
         self.channel_handle = channel_handle
-
-        # Things that worker threads might want to query
         self.is_busy = True
-
-        # Things that worker threads might want to set
         self.stopped = False
+        self.discard = False
 
+    #
+    # Worker methods can only call these.
+    #
     def get_busy(self):
+        if not self.is_busy:
+            self.discard = True
         return self.is_busy
     
     def stop(self):
@@ -210,10 +214,14 @@ class SoundServiceImplementation(LoggerMixin):
             sfx_handle = PlaySfxHandle(sh, ch)
             self._sfx_handles[id(sfx_entry)] = sfx_handle
 
-        for sfx_handle in self._sfx_handles.snapshot().values():
-            if sfx_handle.stopped:
+        for handle_id, sfx_handle in self._sfx_handles.snapshot().items():
+            if sfx_handle.discard:
+                del self._sfx_handles[handle_id]
+            elif sfx_handle.stopped:
                 sfx_handle.channel_handle.stop()
-            sfx_handle.is_busy = sfx_handle.channel_handle.get_busy()
+                del self._sfx_handles[handle_id]
+            else:
+                sfx_handle.is_busy = sfx_handle.channel_handle.get_busy()
 
 
 #
