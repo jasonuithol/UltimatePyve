@@ -67,9 +67,6 @@ class PartyMemberAgent(CombatAgent):
         self._character_record = character_record
         self._tile_id = CharacterClassToTileId.__dict__[character_record.char_class].value.value
 
-    def enter_combat(self, coord: Coord[int]):
-        self.coord = coord
-
     def exit_combat(self):
         self.coord = None
 
