@@ -1,3 +1,4 @@
+import datetime
 import math
 import random
 import threading
@@ -55,11 +56,20 @@ class SfxLibraryService(LoggerMixin):
     def _play_and_wait(self, dark_wave: DarkWave | DarkWaveStereo):
 
         sfx_handle_id = self.sound_service.play_sound(dark_wave)
+        self._wait_for_sound(sfx_handle_id)
 
+    def _wait_for_handle(self, sfx_handle_id: int) -> PlaySfxHandle:
+    
         # Keep rendering until the sound finished, but don't take any more input
         while (sfx_handle := self.sound_service.get_handle(sfx_handle_id)) is None:
             self.input_service.discard_events()
             time.sleep(0.05)
+
+        return sfx_handle
+
+    def _wait_for_sound(self, sfx_handle_id: int):
+
+        sfx_handle = self._wait_for_handle(sfx_handle_id)
 
         while sfx_handle.get_busy():
             self.input_service.discard_events()
@@ -67,12 +77,10 @@ class SfxLibraryService(LoggerMixin):
 
     def _wait_seconds(self, seconds: float):
 
-        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
-
-        deadline_ticks = pygame.time.get_ticks() + (seconds * 1000)
-        while pygame.time.get_ticks() < deadline_ticks:
-#            self.display_service.render()
+        deadline_seconds = datetime.datetime.now() + datetime.timedelta(seconds = seconds)
+        while datetime.datetime.now() < deadline_seconds:
             self.input_service.discard_events()
+            time.sleep(0.001)
 
     def _create_motion(self, start_tile_coord: Coord[int], finish_tile_coord: Coord[int]) -> Motion:
         return Motion(
@@ -215,7 +223,7 @@ class SfxLibraryService(LoggerMixin):
         noise_wave = generator.white_noise(hz = 1200.0, sec = 10.0).to_stereo()
 
         # Fire and forget, allowing this sound, and the following animation to play simultaneously
-        _, noise_handle = self.sound_service.play_sound(noise_wave)
+        noise_handle_id = self.sound_service.play_sound(noise_wave)
 
         # ANIMATION: Now we play the rays fanning out from the spell-caster.
         for magic_ray_set in magic_ray_set_playlist:
@@ -223,6 +231,7 @@ class SfxLibraryService(LoggerMixin):
             self.view_port_service.set_magic_rays(magic_ray_set)
 
         # Once the animation is finished, halt the sound effect.
+        noise_handle = self._wait_for_handle(noise_handle_id)
         noise_handle.stop()
 
         self.log(f"DEBUG: Magic ray finished.  Endpoints stopped at {magic_ray_set.end_points}")

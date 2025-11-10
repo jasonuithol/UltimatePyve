@@ -311,6 +311,7 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
                     # Do background tasks here.
                     #
                     event = self.input_service.get_next_event()
+                    time.sleep(0.05)
 
                 self.view_port_service.remove_cursor(CursorType.OUTLINE)
  

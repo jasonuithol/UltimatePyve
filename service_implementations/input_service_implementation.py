@@ -1,6 +1,7 @@
 import queue
 from typing import Iterable
 import pygame
+import time
 
 from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
 from dark_libraries.dark_math import Coord, Rect, Vector2
@@ -76,6 +77,8 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
             if not direction is None:
                 self.console_service.print_ascii(DIRECTION_NAMES[direction] + " !")
                 return direction
+            
+            time.sleep(0.1)
 
         return None
             
@@ -111,14 +114,15 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
             else:
                 direction: Vector2[int] = DIRECTION_MAP.get(event.key, None)
 
-                if direction is None:
-                    continue
+                if not direction is None:
 
-                # Move the cursor
-                target = cursor + direction
-                if boundary_rect.is_in_bounds(target) and starting_coord.pythagorean_distance(target) <= range_ + BIBLICALLY_ACCURATE_RANGE_TWEAK:
-                    cursor = target
-                    self.view_port_service.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
+                    # Move the cursor
+                    target = cursor + direction
+                    if boundary_rect.is_in_bounds(target) and starting_coord.pythagorean_distance(target) <= range_ + BIBLICALLY_ACCURATE_RANGE_TWEAK:
+                        cursor = target
+                        self.view_port_service.set_cursor(CursorType.CROSSHAIR.value, cursor, crosshair_cursor_sprite)
+
+            time.sleep(0.1)
 
         # We're done
         self.view_port_service.remove_cursor(CursorType.CROSSHAIR.value)
@@ -145,12 +149,13 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
         while not self._event_queue.empty():
             self._event_queue.get()
             num += 1
+            time.sleep(0.001)
+
         if num > 0:
             self.log(f"DEBUG: Discarded {num} events")
 
     def inject_events(self, events: Iterable[pygame.event.Event]):
 
-        
         self.log(f"DEBUG: Injecting {len(events)} events.")
 
         for event in events:

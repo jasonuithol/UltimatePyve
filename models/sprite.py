@@ -1,10 +1,11 @@
-import threading
-import pygame
+import datetime
 import random
 
 from dark_libraries.logging import LoggerMixin
 
 DEFAULT_FRAME_DURATION_SECONDS: float = 0.5
+
+MODULE_EPOC = datetime.datetime.now()
 
 class Sprite[TFrame](LoggerMixin):
 
@@ -26,13 +27,8 @@ class Sprite[TFrame](LoggerMixin):
             self.frame_duration_ranges.append(frame_range)
             frame_duration_accumulator += frame_duration
 
-    @classmethod
-    def _seconds_since_init(cls) -> float:
-        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
-        return pygame.time.get_ticks() / 1000
-
-    def _get_current_frame_index(self, time_offset_seconds) -> int:
-        total_seconds_elapsed:          float = __class__._seconds_since_init() + time_offset_seconds
+    def _get_current_frame_index(self, time_offset_seconds: float) -> int:
+        total_seconds_elapsed:          float = (datetime.datetime.now() - MODULE_EPOC).total_seconds() + time_offset_seconds
         seconds_since_last_cycle_start: float = total_seconds_elapsed % self.frame_cycle_duration
 
         for frame_index, frame_duration_range in enumerate(self.frame_duration_ranges):

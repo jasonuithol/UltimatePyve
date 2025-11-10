@@ -37,8 +37,15 @@ class PlaySfxHandle:
         # Things that worker threads might want to query
         self.is_busy = True
 
+        # Things that worker threads might want to set
+        self.stopped = False
+
     def get_busy(self):
         return self.is_busy
+    
+    def stop(self):
+        self.stopped = True
+
 
 class SoundServiceImplementation(LoggerMixin):
 
@@ -204,8 +211,11 @@ class SoundServiceImplementation(LoggerMixin):
             self._sfx_handles[id(sfx_entry)] = sfx_handle
 
         for sfx_handle in self._sfx_handles.snapshot().values():
+            if sfx_handle.stopped:
+                sfx_handle.channel_handle.stop()
             sfx_handle.is_busy = sfx_handle.channel_handle.get_busy()
-            
+
+
 #
 # MAIN
 #
