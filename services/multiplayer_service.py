@@ -45,6 +45,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.client: DarkSocketClient[ProtocolFormat] = None
         self.client_agents = dict[str, MultiplayerPartyAgent]()
         self.protocol = DarkNamedTupleProtocol(ProtocolDefinition)
+        self._reader_thread_is_alive: bool = None
 
     # =====================================
     #
@@ -110,7 +111,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
                 time.sleep(0.1)
 
         except Exception as e:
-            self.log(f"ERROR: realtime_action_point_thread_runner encountered error: {e.with_traceback()}")
+            self.log(f"ERROR: realtime_action_point_thread_runner encountered error: {e}\n{traceback.format_exc()}")
 
         self.log("realtime_action_point_thread_runner finished")
 

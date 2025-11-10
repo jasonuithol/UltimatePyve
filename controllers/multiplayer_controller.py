@@ -14,7 +14,6 @@ class MultiplayerController:
 
     def __init__(self):
         super().__init__()
-        self._reader_thread_is_alive: bool = None
 
     def handle_event(self, event: pygame.event.Event) -> bool:
 

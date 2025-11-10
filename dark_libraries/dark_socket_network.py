@@ -2,6 +2,7 @@ import ipaddress
 import time
 import queue
 import socket
+import traceback
 
 from dark_libraries.dark_network import DarkNetworkClient, DarkNetworkConnection, DarkNetworkListener, DarkNetworkProtocol, DarkNetworkServer, DarkNetworkTransport
 from dark_libraries.logging import LoggerMixin
@@ -86,10 +87,15 @@ class DarkSocketListener(LoggerMixin, DarkNetworkListener):
                 return DarkSocketTransport(socket_connection, address)
             except socket.timeout:
                 return None
+            finally:
+                time.sleep(0.0)
+
         self.log("Listener has stopped accepting incoming connections.")
 
-    def close(self):
+    def stop(self):
         self._is_alive = False
+
+    def close(self):
         self._sock.close()
         self.log("Listener has closed")
 
@@ -133,7 +139,7 @@ class DarkSocketServer[TMessage](DarkNetworkServer[TMessage]):
                 self.log(f"Spawned client handler for {transport.address}")
 
             except Exception as e:
-                self.log(f"ERROR: Listener failure: {e.with_traceback()}")
+                self.log(f"ERROR: Listener failure: {e}\n{traceback.format_exc()}")
                 break
 
             time.sleep(0) # yield thread
@@ -141,8 +147,9 @@ class DarkSocketServer[TMessage](DarkNetworkServer[TMessage]):
         self.log(f"Server stopped listening on {self.host}:{self.port}")
 
     def close(self):
-        self.listener.close() # Job done
+        self.listener.stop()
         super().close()
+        self.listener.close() # Job done
 
 class DarkSocketClient[TMessage](LoggerMixin, DarkNetworkClient[TMessage]):
 

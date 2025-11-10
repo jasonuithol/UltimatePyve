@@ -1,4 +1,5 @@
 import time
+import traceback
 from typing import Iterable, Protocol
 from abc import ABC, abstractmethod
 
@@ -32,6 +33,7 @@ class DarkNetworkTransport(Protocol):
 class DarkNetworkListener(Protocol):
     def listen(self): ...
     def accept(self) -> DarkNetworkTransport: ...
+    def stop(self): ...
     def close(self): ...
 
 class DarkNetworkProtocol[TMessage](Protocol):
@@ -74,7 +76,7 @@ class DarkNetworkConnection(LoggerMixin):
                 time.sleep(0) # yield thread
 
         except Exception as e:
-            self.log(f"ERROR: Reader failed for {self.network_id}: {e.with_traceback()}")
+            self.log(f"ERROR: Reader failed for {self.network_id}: {e}\n{traceback.format_exc()}")
             self.error_queue.put((self, e))
         finally:
             self.log("Reader thread finished.")
@@ -102,7 +104,7 @@ class DarkNetworkConnection(LoggerMixin):
             self.log(f"Outgoing queue empty, writer thread finished.")
 
         except Exception as e:
-            self.log(f"ERROR: Writer failed for {self.network_id}: {e.with_traceback()}")
+            self.log(f"ERROR: Writer failed for {self.network_id}: {e}\n{traceback.format_exc()}")
             self.error_queue.put((self, e))
         finally:
             self.log("DEBUG: writer thread finished.")
