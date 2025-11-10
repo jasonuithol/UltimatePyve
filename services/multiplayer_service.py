@@ -64,56 +64,13 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.info_panel_service.update_party_summary()
 
         self.start_reader_thread()
+        self.start_realtime_action_point_thread()
 
-        #
-        # Real-time action points
-        #
-        self.realtime_action_point_timer_thread_is_alive = True
-        self.realtime_action_point_timer_thread = threading.Thread(
-            target = self.realtime_action_point_thread_runner, 
-            daemon = True
-        )
-
-        self.realtime_action_point_timer_thread.start()
 
     def monster_spawned(self, monster_agent: MonsterAgent):
         if self.server:
             player_join_message = self.multiplayer_message_factory.player_join(monster_agent)
             self.server.write(player_join_message)
-
-    # NOTE: This runs in it's own thread
-    def realtime_action_point_thread_runner(self):
-        self.log("realtime_action_point_thread_runner started")
-
-        ticks_at_launch = pygame.time.get_ticks()
-        ticks_until_next_turn = ticks_at_launch + int(TURN_LENGTH * 1000)
-        action_points_at_launch = self.party_agent.spent_action_points
-
-        try:
-            while self.realtime_action_point_timer_thread_is_alive:
-
-                current_ticks = pygame.time.get_ticks()
-
-                action_point_delta = ((current_ticks - ticks_at_launch) / 1000) * ACTION_POINTS_PER_SECOND
-                realtime_action_points = action_points_at_launch + action_point_delta
-
-                self.party_agent.spent_action_points = realtime_action_points
-
-                for client_agent in self.client_agents.values():
-                    client_agent.spent_action_points = realtime_action_points
-
-                if ticks_until_next_turn < current_ticks:
-                    ticks_until_next_turn = current_ticks + int(TURN_LENGTH * 1000)
-
-                    self.console_service.print_ascii("tick")
-                    self.dark_event_service.pass_time(self.party_agent.location)
-
-                time.sleep(0.1)
-
-        except Exception as e:
-            self.log(f"ERROR: realtime_action_point_thread_runner encountered error: {e}\n{traceback.format_exc()}")
-
-        self.log("realtime_action_point_thread_runner finished")
 
     def read_client_updates(self):
 
@@ -331,9 +288,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.info_panel_service.update_party_summary()
 
             self.stop_reader_thread()
-
-            self.realtime_action_point_timer_thread_is_alive = False
-            self.realtime_action_point_timer_thread.join()
+            self.stop_realtime_action_point_thread()
 
         elif self.client:
             self.client.write(PlayerLeave(self.party_agent.multiplayer_id))
@@ -344,6 +299,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.party_agent.clear_multiplayer_id()
 
             self.stop_reader_thread()
+            self.stop_realtime_action_point_thread()
 
             self.party_agent.unfreeze_action_points()
     #
@@ -367,6 +323,60 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self._reader_thread_handle.join()
 
     def reader_thread_runner(self):
-        while self._reader_thread_is_alive:
-            self.read_updates()
-            time.sleep(0.1)
+        self.log("reader_thread_runner started")
+        try:
+            while self._reader_thread_is_alive:
+                self.read_updates()
+                time.sleep(0.1)
+        except Exception as e:
+            self.log(f"ERROR: reader_thread_runner encountered error: {e}\n{traceback.format_exc()}")
+        self.log("reader_thread_runner finished")
+
+    #
+    # Real-time action point thread
+    #
+
+    def start_realtime_action_point_thread(self):
+        self.realtime_action_point_timer_thread_is_alive = True
+        self.realtime_action_point_timer_thread = threading.Thread(
+            target = self.realtime_action_point_thread_runner, 
+            daemon = True
+        )
+        self.realtime_action_point_timer_thread.start()
+
+    def stop_realtime_action_point_thread(self):
+        self.realtime_action_point_timer_thread_is_alive = False
+        self.realtime_action_point_timer_thread.join()
+
+    def realtime_action_point_thread_runner(self):
+        self.log("realtime_action_point_thread_runner started")
+
+        ticks_at_launch = pygame.time.get_ticks()
+        ticks_until_next_turn = ticks_at_launch + int(TURN_LENGTH * 1000)
+        action_points_at_launch = self.party_agent.spent_action_points
+
+        try:
+            while self.realtime_action_point_timer_thread_is_alive:
+
+                current_ticks = pygame.time.get_ticks()
+
+                action_point_delta = ((current_ticks - ticks_at_launch) / 1000) * ACTION_POINTS_PER_SECOND
+                realtime_action_points = action_points_at_launch + action_point_delta
+
+                self.party_agent.spent_action_points = realtime_action_points
+
+                for client_agent in self.client_agents.values():
+                    client_agent.spent_action_points = realtime_action_points
+
+                if ticks_until_next_turn < current_ticks:
+                    ticks_until_next_turn = current_ticks + int(TURN_LENGTH * 1000)
+
+                    self.console_service.print_ascii("tick")
+                    self.dark_event_service.pass_time(self.party_agent.location)
+
+                time.sleep(0.1)
+
+        except Exception as e:
+            self.log(f"ERROR: realtime_action_point_thread_runner encountered error: {e}\n{traceback.format_exc()}")
+
+        self.log("realtime_action_point_thread_runner finished")    
