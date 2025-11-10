@@ -258,7 +258,7 @@ class SfxLibraryService(LoggerMixin):
             new_end_offset = ORIGIN.from_polar_coords(ray_angle, new_length).math_to_screen()
             new_end_coord = start_coord + new_end_offset
 
-            self.log(f"DEBUG: Growing magic ray angle={ray_angle}, length={current_length} -> {new_length}, end_coord={current_end_coord} -> {new_end_coord}")
+            self.log(f"DEBUG: Growing magic ray angle={ray_angle:.2f}, length={current_length} -> {new_length}, end_coord={current_end_coord} -> {new_end_coord}")
 
             # This check requires that the unit of length is TILES.
             if ray_boundaries.is_in_bounds(new_end_coord):

@@ -30,7 +30,7 @@ class MainThreadController(LoggerMixin, DarkEventListenerMixin):
             self.display_service.render()
 
             self.sound_service.render()
-            
+
             events = [e for e in pygame.event.get() if e.type in [pygame.QUIT, pygame.KEYDOWN]]
             if any(events):
                 self.input_service.inject_events(events)
@@ -39,7 +39,7 @@ class MainThreadController(LoggerMixin, DarkEventListenerMixin):
 
         self.log("Exiting")
 
-    def stop(self):
+    def quit(self):
         self.is_alive = False
 
 
