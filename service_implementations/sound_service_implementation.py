@@ -1,9 +1,14 @@
+import queue
 import random
-from typing import Union
+import threading
 import pygame
+
 import numpy as np
 import numpy.typing as npt
 
+from typing import NamedTuple, Union
+
+from dark_libraries.dark_collections import LockedDict, LockedSet
 from dark_libraries.dark_wave import DarkNote, DarkWave, DarkWaveGenerator, DarkWaveStereo, DarkWaveFloatArray, set_frequency_sample_rate as set_dark_wave_frequency_sample_rate
 from dark_libraries.logging import LoggerMixin
 
@@ -18,9 +23,29 @@ BitSampledWaveArrayType = Union[NDArrayInt8, NDArrayUInt8, NDArrayInt16, NDArray
 FADEIN_MILLISECONDS  = 5000
 FADEOUT_MILLISECONDS = 5000
 
+class PlaySfxEntry(NamedTuple):
+    input_wave: DarkWave | DarkWaveStereo
+
+class PlaySfxHandle:
+
+    def __init__(self, sound_handle: pygame.mixer.Sound, channel_handle: pygame.mixer.Channel):
+
+        # Main thread only
+        self.sound_handle = sound_handle
+        self.channel_handle = channel_handle
+
+        # Things that worker threads might want to query
+        self.is_busy = True
+
+    def get_busy(self):
+        return self.is_busy
+
 class SoundServiceImplementation(LoggerMixin):
 
     def init(self):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
+
         pygame.mixer.init()
         self.frequency_sample_rate, self.sound_format, self.channels = pygame.mixer.get_init()
         self.log(
@@ -56,6 +81,9 @@ class SoundServiceImplementation(LoggerMixin):
         self.set_sfx_volume(0.35)
         self.set_soundtrack_volume(0.35)
 
+        self._sfx_queue   = queue.Queue(10)
+        self._sfx_handles = LockedDict[int, PlaySfxHandle]()
+
         self.log(f"Sound service initialised: amplitude_sampling_range={self.amplitude_sampling_range}, output data type={dtype_type.__name__}")
 
     #
@@ -70,6 +98,9 @@ class SoundServiceImplementation(LoggerMixin):
         return self.sfx_volume
 
     def set_soundtrack_volume(self, value: float) -> None:
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
+
         self.soundtrack_volume = max(0.0, min(1.0, value))
         pygame.mixer.music.set_volume(self.soundtrack_volume)
         self.log(f"DEBUG: Soundtrack volume set to {self.soundtrack_volume}")
@@ -88,7 +119,18 @@ class SoundServiceImplementation(LoggerMixin):
     def _to_amplitude_sampled_wave(self, input_wave: DarkWaveFloatArray) -> BitSampledWaveArrayType:
         return (input_wave * self.amplitude_sampling_range).astype(self.dtype)
     
-    def play_sound(self, input_wave: DarkWave | DarkWaveStereo) -> tuple[pygame.mixer.Sound, pygame.mixer.Channel]:
+
+    def play_sound(self, input_wave: DarkWave | DarkWaveStereo) -> int:
+        entry = PlaySfxEntry(input_wave)
+        self._sfx_queue.put(entry)
+        return id(entry)
+
+    def get_handle(self, sfx_handle_id: int) -> PlaySfxHandle:
+        return self._sfx_handles.get(sfx_handle_id)
+
+    def _play_sound_main_thread(self, input_wave: DarkWave | DarkWaveStereo) -> tuple[pygame.mixer.Sound, pygame.mixer.Channel]:
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
 
         #
         # TODO: automatically split/mix input into required output arity.
@@ -124,6 +166,9 @@ class SoundServiceImplementation(LoggerMixin):
     #
 
     def play_music(self, path):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
+
         if path is None:
             return
         pygame.mixer.music.stop()
@@ -136,11 +181,31 @@ class SoundServiceImplementation(LoggerMixin):
         pygame.mixer.music.play(loops = 0, fade_ms = FADEIN_MILLISECONDS)
 
     def stop_music(self):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
+
         pygame.mixer.music.stop()
 
     def fade_music(self):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
+
         pygame.mixer.music.fadeout(FADEOUT_MILLISECONDS)
 
+    # Called by main thread to execute queued sounds
+    def render(self):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
+
+        while not self._sfx_queue.empty():
+            sfx_entry: PlaySfxEntry = self._sfx_queue.get()
+            sh, ch = self._play_sound_main_thread(sfx_entry.input_wave)
+            sfx_handle = PlaySfxHandle(sh, ch)
+            self._sfx_handles[id(sfx_entry)] = sfx_handle
+
+        for sfx_handle in self._sfx_handles.snapshot().values():
+            sfx_handle.is_busy = sfx_handle.channel_handle.get_busy()
+            
 #
 # MAIN
 #

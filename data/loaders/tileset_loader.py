@@ -1,4 +1,5 @@
 # file: maps/tileset.py
+import threading
 import pygame, struct
 from pathlib import Path
 
@@ -89,6 +90,9 @@ class TileLoader(LoggerMixin):
         return tile
 
     def _create_surface(self, tile: Tile) -> pygame.Surface:
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
+
         assert tile.surface is None, "Surface already created !"
 
         #

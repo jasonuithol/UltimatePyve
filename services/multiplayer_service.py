@@ -62,6 +62,8 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.party_agent.party_members[0]._character_record.name = "SERVER"
         self.info_panel_service.update_party_summary()
 
+        self.start_reader_thread()
+
         #
         # Real-time action points
         #
@@ -70,6 +72,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             target = self.realtime_action_point_thread_runner, 
             daemon = True
         )
+
         self.realtime_action_point_timer_thread.start()
 
     def monster_spawned(self, monster_agent: MonsterAgent):
@@ -194,6 +197,8 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.client.write(connect_request_message)
 
         self.npc_service.join_server()
+
+        self.start_reader_thread()
 
     def read_server_updates(self):
 
@@ -323,6 +328,9 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
             self.party_agent.party_members[0]._character_record.name = self.old_agent_name
             self.info_panel_service.update_party_summary()
+
+            self.stop_reader_thread()
+
             self.realtime_action_point_timer_thread_is_alive = False
             self.realtime_action_point_timer_thread.join()
 
@@ -333,8 +341,31 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.client_agents.clear()
             self.npc_service.leave_server()
             self.party_agent.clear_multiplayer_id()
+
+            self.stop_reader_thread()
+
             self.party_agent.unfreeze_action_points()
     #
     # DarkEventListenerMixin: End
-                
-        
+
+    #
+    # update reader thread
+    #
+
+    def start_reader_thread(self):
+        assert self._reader_thread_is_alive != True, "reader_thread already running"
+        self._reader_thread_is_alive = True
+        self._reader_thread_handle = threading.Thread(
+            target = self.reader_thread_runner,
+            daemon = True
+        )
+        self._reader_thread_handle.start()
+
+    def stop_reader_thread(self):
+        self._reader_thread_is_alive = False
+        self._reader_thread_handle.join()
+
+    def reader_thread_runner(self):
+        while self._reader_thread_is_alive:
+            self.read_updates()
+            time.sleep(0.1)

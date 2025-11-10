@@ -1,3 +1,4 @@
+import threading
 import pygame
 import random
 
@@ -27,6 +28,7 @@ class Sprite[TFrame](LoggerMixin):
 
     @classmethod
     def _seconds_since_init(cls) -> float:
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
         return pygame.time.get_ticks() / 1000
 
     def _get_current_frame_index(self, time_offset_seconds) -> int:

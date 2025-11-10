@@ -1,3 +1,4 @@
+import time
 import pygame
 import random
 
@@ -335,6 +336,8 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
 
                 # All party members have left the combat map.
                 break
+
+            time.sleep(0.05)
 
         self._exit_combat_arena(enemy_party)
 

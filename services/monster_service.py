@@ -51,7 +51,7 @@ class MonsterService(LoggerMixin, DarkEventListenerMixin):
         # Let's simulate the monster taking a real-world-time moment to think about what it's going to do.
         decision_time = pygame.time.get_ticks() + (MONSTER_THOUGHT_SECS * 1000)
         while pygame.time.get_ticks() < decision_time:
-            self.display_service.render()
+#            self.display_service.render()
             self.input_service.discard_events()
 
         active_party_members = self.npc_service.get_party_members()

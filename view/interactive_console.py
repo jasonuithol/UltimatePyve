@@ -1,4 +1,5 @@
-from typing import Iterable
+import queue
+from typing import Iterable, NamedTuple
 from dark_libraries.dark_math import Coord, Vector2
 
 from data.global_registry import GlobalRegistry
@@ -10,6 +11,11 @@ from .scalable_component import ScalableComponent
 from .display_config     import DisplayConfig
 from .border_drawer      import BorderDrawer
 
+class PrintQueueEntry(NamedTuple):
+     glyphs:                  Iterable[U5Glyph]
+     include_carriage_return: bool
+     no_prompt:               bool
+
 class InteractiveConsole(ScalableComponent):
 
     # Injectable
@@ -19,6 +25,7 @@ class InteractiveConsole(ScalableComponent):
     def __init__(self):
         self._cursor_x: int = 0
         self._border_drawer: BorderDrawer = None
+        self._print_queue = queue.Queue(100)
 
     def _after_inject(self):
         super().__init__(self.display_config.CONSOLE_SIZE * self.display_config.FONT_SIZE, self.display_config.SCALE_FACTOR)
@@ -35,9 +42,13 @@ class InteractiveConsole(ScalableComponent):
         )
         self._blank_glyph = self.global_registry.font_glyphs.get(GlyphKey("IBM.CH", 0))
 
+    def print_glyphs(self, glyphs: Iterable[U5Glyph], include_carriage_return: bool = True, no_prompt = False):
+        entry = PrintQueueEntry(glyphs, include_carriage_return, no_prompt)
+        self._print_queue.put(entry)
+
     # This will print at the bottom of the screen and scroll by rolling the component surface upwards.
     # It maintains an x-axis cursor state.
-    def print_glyphs(self, glyphs: Iterable[U5Glyph], include_carriage_return: bool = True, no_prompt = False):
+    def _print_glyphs_main_thread(self, glyphs: Iterable[U5Glyph], include_carriage_return: bool = True, no_prompt = False):
 
         target = self.get_input_surface()
         for glyph in glyphs:
@@ -88,5 +99,9 @@ class InteractiveConsole(ScalableComponent):
         #
         # NOTE: We preserve whatever already exists on the input surface, apart from animating the cursor
         #
+        while not self._print_queue.empty():
+            entry: PrintQueueEntry = self._print_queue.get()
+            self._print_glyphs_main_thread(entry.glyphs, entry.include_carriage_return, entry.no_prompt)
+
         self._erase_cursor()
         self._draw_cursor()

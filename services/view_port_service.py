@@ -1,4 +1,5 @@
 from enum import Enum
+import threading
 import pygame
 
 from dark_libraries.dark_math import Coord, Rect
@@ -13,7 +14,6 @@ from models.sprite import Sprite
 from models.tile import Tile
 from models.u5_glyph import U5Glyph
 
-from services.surface_factory import SurfaceFactory
 from view.display_config import DisplayConfig
 from view.view_port import ViewPort
 
@@ -138,9 +138,11 @@ class ViewPortService(LoggerMixin):
 
         if self._mode == ViewPortMode.PartyMode:
             view_port_data: ViewPortData = self.view_port_data_provider.get_party_map_data(self.view_rect)
-        else:
+        elif self._mode == ViewPortMode.CombatMode:
             view_port_data: ViewPortData = self.view_port_data_provider.get_combat_map_data(self.view_rect)
-            
+        else:
+            return
+
         for world_coord in self.view_rect:
             tile = view_port_data[world_coord]
             self.draw_world_tile(world_coord, tile)
@@ -150,6 +152,9 @@ class ViewPortService(LoggerMixin):
         self.view_port.draw_tile_to_view_coord(view_coord, tile, self._invert_colors)
 
     def draw_projectile(self):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
+
         # Coords are in unscaled pixels.
         current_ticks = pygame.time.get_ticks()
 

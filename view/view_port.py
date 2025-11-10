@@ -1,3 +1,4 @@
+import threading
 import pygame
 from dark_libraries.dark_math import Coord, Rect
 from dark_libraries.dark_surface import DarkSurface
@@ -45,6 +46,7 @@ class ViewPort(ScalableComponent, LoggerMixin):
         )
 
     def draw_unscaled_line(self, start_coord: Coord[int], end_coord: Coord[int], rgb_mapped_color: int):
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
         pygame.draw.line(
             surface   = self.get_input_surface(),
             color     = rgb_mapped_color,

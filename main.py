@@ -1,7 +1,10 @@
 from pathlib import Path
+import threading
 import colorama
 
 from configure import get_u5_path, check_python_version
+from controllers.main_thread_controller import MainThreadController
+from services.display_service import DisplayService
 from services.multiplayer_service import MultiplayerService
 
 check_python_version()
@@ -49,10 +52,18 @@ pygame.key.set_repeat(300, 50)  # Start repeating after 300ms, repeat every 50ms
 pygame.mixer.init()
 
 party_controller: PartyController = provider.resolve(PartyController)
+main_thread_controller: MainThreadController = provider.resolve(MainThreadController)
 multiplayer_service: MultiplayerService = provider.resolve(MultiplayerService)
+display_service: DisplayService = provider.resolve(DisplayService)
+
+thread_handle = threading.Thread(
+    target = party_controller.run,
+    daemon = True
+)
+thread_handle.start()
 
 try:
-    party_controller.run()
+    main_thread_controller.enter_main_loop()
 except Exception as e:
     multiplayer_service.quit()
     raise

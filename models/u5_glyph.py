@@ -1,3 +1,4 @@
+import threading
 import pygame
 
 from typing import Self
@@ -25,6 +26,7 @@ class U5Glyph(tuple, DarkSurface):
         return self._surface
 
     def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord[int], inverted = False):
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
         target_surface.blit(
             source = self._surface,
             dest   = pixel_offset.to_tuple()
@@ -37,14 +39,17 @@ class U5Glyph(tuple, DarkSurface):
         self.blit_to_surface(target, pixel_coord)
 
     def rotate_90(self) -> Self:
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
         new_surface = pygame.transform.rotate(self._surface, 90)
         return __class__.from_surface(new_surface)
 
     def flip(self, flip_x: bool = False, flip_y: bool = False) -> Self:
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
         new_surface = pygame.transform.flip(self._surface, flip_x, flip_y)
         return __class__.from_surface(new_surface)
     
     def overlay_with(self, overlay: Self, transparent_mapped_rgb: int) -> Self:
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
         existing_color_key = overlay._surface.get_colorkey()
         overlay._surface.set_colorkey(transparent_mapped_rgb)
 
@@ -55,6 +60,7 @@ class U5Glyph(tuple, DarkSurface):
         return __class__.from_surface(new_surface)
 
     def replace_color(self, old_mapped_rgb: int, new_mapped_rbg: int) -> Self:
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
 
         new_surface = self._surface.copy()
 
@@ -65,6 +71,7 @@ class U5Glyph(tuple, DarkSurface):
         return __class__.from_surface(new_surface)
     
     def invert_colors(self) -> Self:
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
 
         new_surface = self._surface.copy()
 

@@ -1,3 +1,4 @@
+import threading
 from typing import Iterable
 from dark_libraries.dark_math import Coord, Rect, Size, Vector2
 
@@ -78,6 +79,7 @@ class InfoPanel(ScalableComponent):
         super()._after_inject()
 
     def _clear(self):
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
         self.get_input_surface().fill((0,0,0))
 
     def set_highlighted_item(self, item_index: int):

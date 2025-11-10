@@ -1,4 +1,5 @@
 from datetime import timedelta
+import time
 
 import pygame
 
@@ -100,6 +101,8 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
                     self.console_service.print_ascii("TODO: Take damage to party")
                 else:
                     self.combat_controller.enter_combat(enemy_npc)
+
+            time.sleep(0.05)
 
     def dispatch_input(self) -> bool:
         

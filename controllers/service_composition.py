@@ -1,6 +1,7 @@
 # file: animation/service_composition.py
 from controllers.active_member_controller import ActiveMemberController
 from controllers.cast_controller import CastController
+from controllers.main_thread_controller import MainThreadController
 from controllers.move_controller import MoveController
 from controllers.multiplayer_controller import MultiplayerController
 from controllers.ready_controller import ReadyController
@@ -21,6 +22,7 @@ def compose(provider: ServiceProvider):
     provider.register(ReadyController)
     provider.register(CastController)
     provider.register(MultiplayerController)
+    provider.register(MainThreadController)
 
     compose_spell_controllers(provider)
 

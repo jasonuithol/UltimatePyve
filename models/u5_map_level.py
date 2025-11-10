@@ -1,4 +1,5 @@
 import colorsys
+import threading
 import pygame
 from dark_libraries.dark_math import Coord, Size
 from dark_libraries.registry import Registry
@@ -26,6 +27,8 @@ class U5MapLevel:
         return self._data.items().__iter__()
 
     def render_to_surface(self, tiles: Registry[int, Tile]) -> pygame.Surface:
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
 
         if tiles:
             scale = list(tiles.values())[0]._get_size()
@@ -56,7 +59,8 @@ class U5MapLevel:
 
     def render_to_disk(self, name: str):
 
-        from models.tile import Tile
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
+
         from data.global_registry import GlobalRegistry
         from data.loaders.tileset_loader import TileLoader
         from view.display_config import DisplayConfig

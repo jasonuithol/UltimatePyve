@@ -1,3 +1,5 @@
+import queue
+from typing import Iterable
 import pygame
 
 from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
@@ -20,11 +22,13 @@ class SyntheticQuit:
     def __init__(self):
         self.key = -1
         self.type = -1
+        self.mod = 0
 
 class EmptyEvent:
     def __init__(self):
         self.key = -1
         self.type = -1
+        self.mod = 0
 
 class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
 
@@ -40,6 +44,8 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
 
         # An object designed to prevent event handlers blowing up
         self._fake_quit_event = SyntheticQuit()        
+
+        self._event_queue = queue.Queue(100)
 
     def _check_quit(self, event: pygame.event.Event):
         if event.type == pygame.QUIT:
@@ -120,36 +126,35 @@ class InputServiceImplementation(DarkEventListenerMixin, LoggerMixin):
             
     def get_next_event(self) -> pygame.event.Event:
 
-        #
-        # Waiting for input ? Poll the multiplayer_service for updates
-        #  
-        self.multiplayer_service.read_updates()
-
-        #
-        # Waiting for input ? Render frames, ensuring that animations happen etc.
-        #  
-        self.display_service.render()
-
-
-        # NOTE: Technically this might skip events.  We can live with that for now.
-        for event in pygame.event.get():
+        try:
+            event = self._event_queue.get_nowait()
 
             if self._check_quit(event):
                 return self._fake_quit_event                
 
-            elif event.type != pygame.KEYDOWN:
-                continue
-
             return event
+            
+        except queue.Empty:
+            pass
 
         return EmptyEvent()
 
     def discard_events(self):
+
         num = 0
-        for event in pygame.event.get():
+        while not self._event_queue.empty():
+            self._event_queue.get()
             num += 1
         if num > 0:
             self.log(f"DEBUG: Discarded {num} events")
 
-#    def inject_event(self, event: pygame.event.Event):
+    def inject_events(self, events: Iterable[pygame.event.Event]):
 
+        
+        self.log(f"DEBUG: Injecting {len(events)} events.")
+
+        for event in events:
+            try:
+                self._event_queue.put_nowait(event)
+            except queue.Full:
+                self.log(f"ERROR: Input queue full, dropping event: {event}")

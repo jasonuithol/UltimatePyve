@@ -70,7 +70,7 @@ class ViewPortDataProviderImplementation(LoggerMixin):
         map_level: U5MapLevel = u5_map.get_map_level(level_index)
 
         npcs = self.npc_service.get_npcs()
-        assert len(npcs) > 0, "Must have at least 1 NPC (the player) to draw"
+#        assert len(npcs) > 0, "Must have at least 1 NPC (the player) to draw"
 
         def get_frame(world_coord: Coord[int]) -> Tile:
             

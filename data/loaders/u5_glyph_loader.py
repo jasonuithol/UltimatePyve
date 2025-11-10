@@ -1,3 +1,4 @@
+import threading
 import pygame
 
 from dark_libraries.logging import LoggerMixin
@@ -31,6 +32,8 @@ class U5GlyphLoader(LoggerMixin):
             self.log(f"Registered {glyph_count} u5glyphs from {font_name}")
 
     def _build_glyph(self, data: bytearray) -> U5Glyph:
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
 
         surf = self.surface_factory.create_surface(self.display_config.FONT_SIZE)
 

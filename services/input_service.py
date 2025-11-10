@@ -1,6 +1,6 @@
 import pygame
 
-from typing import Protocol
+from typing import Iterable, Protocol
 from dark_libraries.dark_math import Coord, Rect, Vector2
 
 def keycode_to_char(keycode):
@@ -31,8 +31,11 @@ def keycode_to_char(keycode):
 
 class InputService(Protocol):
 
+    # All now are worker thread friendly
     def obtain_action_direction(self) -> Vector2[int]: ...
     def obtain_cursor_position(self, starting_coord: Coord[int], boundary_rect: Rect[int], range_: int) -> Coord[int]: ...
     def get_next_event(self) -> pygame.event.Event: ...
     def discard_events(self): ...
-#    def inject_event(self, event: pygame.event.Event): ...
+
+    # technically worker thread friendly, although you're probably calling it from main.  That's also safe.
+    def inject_events(self, events: Iterable[pygame.event.Event]): ...

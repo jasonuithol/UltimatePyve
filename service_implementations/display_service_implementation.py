@@ -1,4 +1,5 @@
 # file: display/display_engine.py
+import threading
 import pygame
 
 from dark_libraries.logging   import LoggerMixin
@@ -27,6 +28,8 @@ class DisplayServiceImplementation(LoggerMixin):
 
     def init(self):
 
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
+
         self.screen = pygame.display.set_mode(
             size  = self.main_display.scaled_size().to_tuple(),
             flags = pygame.SCALED | pygame.DOUBLEBUF, 
@@ -37,13 +40,12 @@ class DisplayServiceImplementation(LoggerMixin):
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
 
-    def get_fps(self):
-        return self.clock.get_fps()
-
     def set_window_title(self, window_title: str):
         self._window_title = window_title
 
     def render(self):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
 
         #
         # Window Title
@@ -103,3 +105,4 @@ class DisplayServiceImplementation(LoggerMixin):
 
         # allow reporting of FPS
         self.clock.tick()
+        

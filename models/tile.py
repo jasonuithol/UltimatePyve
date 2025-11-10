@@ -1,3 +1,4 @@
+import threading
 import pygame
 import numpy as np
 
@@ -22,6 +23,9 @@ class Tile(DarkSurface):
         return Size[int](len(self.pixels[0]), len(self.pixels))
 
     def set_surface(self, surface: pygame.Surface):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
+        
         self.surface = surface
 
         if surface:
@@ -40,6 +44,7 @@ class Tile(DarkSurface):
             return self.surface
 
     def blit_to_surface(self, target_surface: pygame.Surface, pixel_offset: Coord[int] = Coord[int](0,0), inverted = False):
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method from a worker thread"
         target_surface.blit(self.get_surface(inverted), pixel_offset.to_tuple())
     #
     # IMPLEMENTATION FINISH: DarkSurface

@@ -1,5 +1,7 @@
 import math
 import random
+import threading
+import time
 
 import pygame
 
@@ -17,8 +19,7 @@ from models.projectile import Projectile
 from services.console_service import ConsoleService
 from services.display_service import DisplayService
 from services.input_service import InputService
-from services.sound_service import SoundService
-
+from services.sound_service import SoundService, PlaySfxHandle
 from services.view_port_service import ViewPortService
 from view.display_config import DisplayConfig
 
@@ -53,17 +54,24 @@ class SfxLibraryService(LoggerMixin):
 
     def _play_and_wait(self, dark_wave: DarkWave | DarkWaveStereo):
 
-        _, channel_handle = self.sound_service.play_sound(dark_wave)
+        sfx_handle_id = self.sound_service.play_sound(dark_wave)
 
         # Keep rendering until the sound finished, but don't take any more input
-        while channel_handle.get_busy():
-            self.display_service.render()
+        while (sfx_handle := self.sound_service.get_handle(sfx_handle_id)) is None:
             self.input_service.discard_events()
+            time.sleep(0.05)
+
+        while sfx_handle.get_busy():
+            self.input_service.discard_events()
+            time.sleep(0.05)
 
     def _wait_seconds(self, seconds: float):
+
+        assert threading.current_thread() is threading.main_thread(), "Cannot call this method in a worker thread"
+
         deadline_ticks = pygame.time.get_ticks() + (seconds * 1000)
         while pygame.time.get_ticks() < deadline_ticks:
-            self.display_service.render()
+#            self.display_service.render()
             self.input_service.discard_events()
 
     def _create_motion(self, start_tile_coord: Coord[int], finish_tile_coord: Coord[int]) -> Motion:
@@ -114,7 +122,8 @@ class SfxLibraryService(LoggerMixin):
         self._play_and_wait(whoosh_wave)
 
         while not projectile.can_stop():
-            self.display_service.render()
+#            self.display_service.render()
+            pass
 
     def damage(self, coord: Coord[int]):
         # ANIMATION: Show The flashy explody tile.
