@@ -313,11 +313,12 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
             self.client.close()
             self.client = None
             self.client_agents.clear()
-            self.npc_service.leave_server()
+#            self.npc_service.leave_server()
             self.party_agent.clear_multiplayer_id()
 
             self.stop_reader_thread()
-            self.stop_realtime_action_point_thread()
+
+            self.dark_event_service.left_server()
 
             self.party_agent.unfreeze_action_points()
     #
@@ -351,7 +352,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.log("reader_thread_runner finished")
 
     #
-    # Real-time action point thread
+    # Real-time action point thread (server only)
     #
 
     def start_realtime_action_point_thread(self):
