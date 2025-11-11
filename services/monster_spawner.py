@@ -51,7 +51,6 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
             self.log("ERROR: Aborting spawning of enemy with 0 maximum hit points to avoid a div/0")
             return
 
-        self.multiplayer_service.monster_spawned(npc_agent)
         self.npc_service.add_npc(npc_agent)
 
     def pass_time(self, party_location: GlobalLocation):

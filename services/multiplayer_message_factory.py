@@ -66,9 +66,9 @@ class MultiplayerMessageFactory(LoggerMixin):
             y              = coord.y
         )
 
-    def player_leave(self) -> PlayerLeave:
+    def player_leave(self, agent: PartyAgent | CombatAgent | MultiplayerPartyAgent) -> PlayerLeave:
         return PlayerLeave(
-            multiplayer_id = self.party_agent.multiplayer_id
+            multiplayer_id = agent.multiplayer_id
         )
 
     def location_update(self, agent: PartyAgent | MultiplayerPartyAgent | CombatAgent) -> LocationUpdate:

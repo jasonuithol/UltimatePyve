@@ -66,11 +66,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         self.start_reader_thread()
         self.start_realtime_action_point_thread()
 
-
-    def monster_spawned(self, monster_agent: MonsterAgent):
-        if self.server:
-            player_join_message = self.multiplayer_message_factory.player_join(monster_agent)
-            self.server.write(player_join_message)
+        self.dark_event_service.started_hosting()
 
     def read_client_updates(self):
 
@@ -90,6 +86,7 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
                 self.log(f"ERROR: Error whilst processing message ({named_tuple}) from client {network_id}: {error_traceback}")
 
     def write_client_updates(self):
+        pass
 
         location_update: Callable[[NpcAgent], LocationUpdate] = self.multiplayer_message_factory.location_update
 
@@ -127,17 +124,32 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
         # Tell the new guy about all the other people in the lobby
         for other_agent in self.client_agents.values():
-            self.server.write(player_join(other_agent))
+            self.server.write_to(network_id, player_join(other_agent))
 
         # Tell the new guy about ME
-        self.server.write(player_join(self.party_agent))
+        self.server.write_to(network_id, player_join(self.party_agent))
 
         # Tell the new guy about the monsters
         for monster_agent in self.npc_service.get_monsters():
-            self.server.write(player_join(monster_agent))
+            self.server.write_to(network_id, player_join(monster_agent))
 
         self.log(f"Player '{agent.name}' has joined with network_id={network_id}, multiplayer_id={agent.multiplayer_id}")
 
+    # DarkEventListenerMixin: Start
+    #
+
+    def npc_added(self, npc_agent: NpcAgent):
+        if self.server:
+            player_join_message = self.multiplayer_message_factory.player_join(npc_agent)
+            self.server.write(player_join_message)
+
+    def npc_removed(self, npc_agent: NpcAgent):
+        if self.server:
+            player_leave_message = self.multiplayer_message_factory.player_leave(npc_agent)
+            self.server.write(player_leave_message)
+
+    #
+    # DarkEventListenerMixin: End
 
     # ======================================================
     #
@@ -154,9 +166,12 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
         connect_request_message = self.multiplayer_message_factory.connect_request()
         self.client.write(connect_request_message)
 
-        self.npc_service.join_server()
+#        self.npc_service.join_server()
 
         self.start_reader_thread()
+
+        self.dark_event_service.joined_server()
+
 
     def read_server_updates(self):
 
@@ -289,6 +304,9 @@ class MultiplayerService(LoggerMixin, DarkEventListenerMixin):
 
             self.stop_reader_thread()
             self.stop_realtime_action_point_thread()
+
+            self.dark_event_service.stopped_hosting()
+
 
         elif self.client:
             self.client.write(PlayerLeave(self.party_agent.multiplayer_id))

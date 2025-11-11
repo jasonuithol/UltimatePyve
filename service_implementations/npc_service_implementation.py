@@ -27,7 +27,10 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
 
         self._party_location: GlobalLocation = None
         self._attacking_npc: NpcAgent = None
+
+        # Multiplayer
         self._has_joined_server = False
+        self._has_started_hosting = False
 
     def _freeze_active_npcs(self):
         self.log(f"Freezing {len(self._active_npcs)} NPCs.")
@@ -40,6 +43,9 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
         self._frozen_npcs = []
 
     # IMPLEMENTATION START: DarkEventListenerMixin
+    #
+    # (please do not raise dark_events here)
+    #
     def loaded(self, party_location: GlobalLocation):
         self._party_location = party_location
 
@@ -61,18 +67,26 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
 
     def party_moved(self, party_location: GlobalLocation):
         self._party_location = party_location
-    # IMPLEMENTATION END: DarkEventListenerMixin
 
     #
-    # Multiplayer support
+    # Multiplayer support - Client
     #
-    def join_server(self):
+    def started_hosting(self):
+        self._has_started_hosting = True
+
+    def stopped_hosting(self):
+        self._has_started_hosting = False
+
+    def joined_server(self):
         self._has_joined_server = True
         self._freeze_active_npcs()
 
-    def leave_server(self):
+    def left_server(self):
         self._has_joined_server = False
         self._unfreeze_active_npcs()
+    #
+    # IMPLEMENTATION END: DarkEventListenerMixin
+
 
     def get_npcs(self) -> dict[Coord[int], NpcAgent]:
         registered = {npc.coord: npc for npc in self._active_npcs}
@@ -83,10 +97,14 @@ class NpcServiceImplementation(LoggerMixin, DarkEventListenerMixin):
     def add_npc(self, npc_agent: NpcAgent):
         if not npc_agent in self._active_npcs:
             self._active_npcs.append(npc_agent)
+            if self._has_started_hosting:
+                self.dark_event_service.npc_added(npc_agent)
 
     def remove_npc(self, npc_agent: NpcAgent):
         if npc_agent in self._active_npcs:
             self._active_npcs.remove(npc_agent)
+            if self._has_started_hosting:
+                self.dark_event_service.npc_removed(npc_agent)
 
     def get_attacking_npc(self) -> NpcAgent:
         return self._attacking_npc

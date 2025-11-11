@@ -1,0 +1,33 @@
+from dark_libraries.dark_events import DarkEventService
+from dark_libraries.dark_math   import Coord
+
+from data.global_registry import GlobalRegistry
+
+from models.agents.monster_agent      import MonsterAgent
+from models.agents.party_agent        import PartyAgent
+from models.agents.party_member_agent import PartyMemberAgent
+from models.character_record          import CharacterRecord
+from models.npc_metadata              import NpcMetadata
+from models.sprite                    import Sprite
+from models.tile                      import Tile
+
+class AgentFactory:
+
+    # Injectable
+    party_agent:        PartyAgent
+    global_registry:    GlobalRegistry
+    dark_event_service: DarkEventService
+
+    def monster(self, coord: Coord[int], sprite: Sprite[Tile], npc_metadata: NpcMetadata, action_points: float) -> MonsterAgent:
+        agent = MonsterAgent(coord, sprite, npc_metadata, action_points)
+        agent.dark_event_service = self.dark_event_service
+        return agent
+    
+    def party_member(self, sprite: Sprite[Tile], character_record: CharacterRecord) -> PartyMemberAgent:
+        agent = PartyMemberAgent(sprite, character_record)
+        agent.global_registry
+        agent.dark_event_service = self.dark_event_service
+        return agent
+
+    def update_party(self):
+        self.party_agent.dark_event_service = self.dark_event_service
