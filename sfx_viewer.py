@@ -1,3 +1,4 @@
+import threading
 from typing import Iterable
 import pygame
 
@@ -188,7 +189,7 @@ sound_service: SoundService = provider.resolve(SoundService)
 
 blank_tile = Tile(255, None, None)
 blank_tile_surface = surface_factory.create_surface(TILE_SIZE * SCALE_FACTOR)
-blank_tile_surface.fill((0,0,0))
+blank_tile_surface.fill((128,128,128))
 blank_tile.set_surface(blank_tile_surface)
 view_port_data_provider.set_default_tile(blank_tile)
 
@@ -243,7 +244,24 @@ def call_with_dict(obj, method_name: str, arg_dict: dict[str, object]):
     except TypeError as e:
         raise ValueError(f"Bad arguments for {method_name}: {e}")
 
-    return func(**arg_dict)
+    print("Executing effect")
+    #
+    # NOTE: This will do hang if sound_service.render isn't being called in the main thread
+    #       ergo this must be called by a worker
+    #
+    thread = threading.Thread(
+        target = func,
+        kwargs = arg_dict
+    )
+    thread.start()
+    while thread.is_alive():
+        dummy_display_service.render()
+        sound_service.render()
+        clock.tick(60)   # prevent 100% CPU spin
+        pygame.event.pump()
+
+
+    print("Execution finished")
 
 #
 # MAIN LOOP
@@ -271,8 +289,10 @@ while True:
                 }
 
                 call_with_dict(sfx_library_service, public_methods[current_method_index], arguments)
+                break # skipp the rest of the events
 
         pygame.display.set_caption(public_methods[current_method_index])
 
     dummy_display_service.render()
+    sound_service.render()
     clock.tick(60)   # prevent 100% CPU spin
