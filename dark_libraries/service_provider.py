@@ -1,11 +1,12 @@
 # file: dark_libraries/service_provider.py
-import inspect, typing, sys
+import inspect, sys
 
+from typing import Self, Callable, get_type_hints
 from dark_libraries.logging import LoggerMixin
 
 class ServiceProvider(LoggerMixin):
 
-    _instance: typing.Self = None
+    _instance: Self = None
 
     @classmethod
     def get_provider(cls):
@@ -17,8 +18,11 @@ class ServiceProvider(LoggerMixin):
         assert self.__class__._instance is None, "Cannot instantiate multiple ServiceProvider roots."
 
         super().__init__()
-        self._instances = {}
-        self._mappings = {}
+        self._instances     = dict[type, object]()
+        self._mappings      = dict[type, type]()
+        self._factory_funcs = dict[type, Callable[[], object]]()
+
+        # This instance, too, is a singleton
         self.__class__._instance = self
 
     def _assert_is_class(self, cls, needs_empty_constructor=True):
@@ -42,14 +46,18 @@ class ServiceProvider(LoggerMixin):
     def _assert_is_instance(self, obj):
         assert not inspect.isclass(obj), f"obj is not an instance, but instead is a class object ({obj!r})"
 
-    def register(self, cls):
+    def _assert_is_parameterless_callable(self, func):
+        assert callable(func), f"object must be callable, got {func!r}"
+        assert func.__code__.co_argcount == 0
+
+    def register(self, cls: type):
         self._assert_is_class(cls)
         instance = cls()
         self._instances[cls] = instance
         self.log(f"DEBUG: Registered {cls.__name__} as new instance")
         return instance
 
-    def register_instance(self, obj, as_type=None):
+    def register_instance(self, obj: object | type, as_type=None):
         self._assert_is_instance(obj)
         if not as_type is None:
             self._assert_is_class(as_type)
@@ -57,12 +65,17 @@ class ServiceProvider(LoggerMixin):
         self._instances[key] = obj
         self.log(f"DEBUG: Registered pre-instantiated singleton: {key.__name__}")
 
-    def register_mapping(self, abstract, concrete):
+    def register_mapping(self, abstract: type, concrete: type):
         self._assert_is_class(abstract, needs_empty_constructor=False)
         self._assert_is_class(concrete)
         self.register(concrete)
         self._mappings[abstract] = concrete
         self.log(f"DEBUG: Mapped {abstract.__name__} → {concrete.__name__}")
+
+    def register_instance_factory(self, abstract: type, factory_func: Callable[[], object]):
+        self._assert_is_class(abstract, needs_empty_constructor=False)
+        self._assert_is_parameterless_callable(factory_func)
+        self._factory_funcs[abstract] = factory_func
 
     def _is_property_injectable(self, instance: object, name: str, anno_type, use_logging = True) -> bool:
 
@@ -83,7 +96,7 @@ class ServiceProvider(LoggerMixin):
             return False
 
         # 3. Skip non-resolvable.
-        dep = self._resolve_type(anno_type)
+        dep = self._resolve_injectable_type(anno_type)
         if dep is None:
             log(f"WARNING: No matching dependency for {instance.__class__.__name__}.{name} on type {anno_type.__name__} (skipped)")
             return False
@@ -93,7 +106,7 @@ class ServiceProvider(LoggerMixin):
         #
         return True
 
-    def _resolve_type(self, type_) -> typing.Any:
+    def _resolve_injectable_type(self, type_) -> object:
         if type_ in self._instances:
             return self._instances[type_]
         if type_ in self._mappings:
@@ -101,29 +114,40 @@ class ServiceProvider(LoggerMixin):
             if concrete not in self._instances:
                 self.register(concrete)
             return self._instances[concrete]
-        
+
+        '''
+        if type_ in self._factory_funcs:
+            return self._factory_funcs[type_]()
+        '''
+
         # not registered
         return None
 
+    def inject_properties(self, instance: object):
+        cls = instance.__class__
+        try:
+            annotations = get_type_hints(cls, globalns=sys.modules[cls.__module__].__dict__)
+        except NameError as e:
+            raise RuntimeError(f"Failed to resolve type hints for {cls.__name__}: {e}")
+        for name, anno_type in annotations.items():
+            if self._is_property_injectable(instance, name, anno_type):
+                # Resolve and inject
+                dep = self._resolve_injectable_type(anno_type)
+                setattr(instance, name, dep)
+                self.log(f"DEBUG: Injected {anno_type.__name__} into {instance.__class__.__name__}.{name}")
+
+    def call_after_inject(self, instance: object):
+        if hasattr(instance, '_after_inject'):
+            self.log(f"DEBUG: Found _after_inject handler for {instance.__class__.__name__}, invoking...")
+            instance._after_inject()
+
     def inject_all(self):
         for instance in self._instances.values():
-            cls = instance.__class__
-            try:
-                annotations = typing.get_type_hints(cls, globalns=sys.modules[cls.__module__].__dict__)
-            except NameError as e:
-                raise RuntimeError(f"Failed to resolve type hints for {cls.__name__}: {e}")
-            for name, anno_type in annotations.items():
-                if self._is_property_injectable(instance, name, anno_type):
-                    # Resolve and inject
-                    dep = self._resolve_type(anno_type)
-                    setattr(instance, name, dep)
-                    self.log(f"DEBUG: Injected {anno_type.__name__} into {instance.__class__.__name__}.{name}")
+            self.inject_properties(instance)
 
         self.log("Injection complete. Calling _after_inject handlers.")
         for instance in self._instances.values():
-            if hasattr(instance, '_after_inject'):
-                self.log(f"DEBUG: Found _after_inject handler for {instance.__class__.__name__}, invoking...")
-                instance._after_inject()
+            self.call_after_inject(instance)
 
     def resolve(self, type_):
         """Fetch an instance manually, honoring mappings and singletons."""
@@ -132,11 +156,18 @@ class ServiceProvider(LoggerMixin):
             return self._instances[type_]
 
         # Abstract → concrete mapping
-        if type_ in self._mappings:
+        elif type_ in self._mappings:
             concrete = self._mappings[type_]
             if concrete not in self._instances:
                 self.register(concrete)
             return self._instances[concrete]
+        
+        # Factory instance - NOT SINGLETONS !
+        elif type_ in self._factory_funcs:
+            instance = self._factory_funcs[type_]()
+            self.inject_properties(instance)
+            self.call_after_inject(instance)
+            return instance
 
         raise KeyError(f"No instance or mapping found for {type_.__name__}")
 
@@ -172,6 +203,17 @@ if __name__ == "__main__":
 
     demo2 = provider.resolve(Demo2)
     assert demo1 == demo2.demo1, "previously registered singleton not injected into referencing type."
+
+    class Demo3():
+        demo1: Demo1
+
+    provider.register_instance_factory(Demo3, lambda: Demo3())
+    provider.inject_all()
+
+    demo3a = provider.resolve(Demo3)
+    demo3b = provider.resolve(Demo3)
+    assert demo3a != demo3b, "instance factory not returning unique instances."
+    assert demo3a.demo1 == demo3b.demo1, "instance factory somehow injecting unique instances of singletons into parents"
 
     #
     # Skip private property test
