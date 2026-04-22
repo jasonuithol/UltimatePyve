@@ -223,6 +223,9 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
             return
 
         if not move_outcome.enter_map is None:
+            if move_outcome.new_coord is not None:
+                self._update_transport_state(move_offset)
+                self.party_agent.change_coord(move_outcome.new_coord)
             self.party_agent.push_location(move_outcome.enter_map)
 
             new_map: U5Map = self.global_registry.maps.get(move_outcome.enter_map.location_index)

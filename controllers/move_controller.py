@@ -81,7 +81,7 @@ class MoveController(LoggerMixin):
         # entry points
         if target_terrain.entry_point == True:
             new_location: GlobalLocation = self.global_registry.entry_triggers.get(target_location)
-            return MoveOutcome(enter_map = new_location)
+            return MoveOutcome(enter_map = new_location, new_coord = target_location.coord)
 
         #
         # TODO: This could be entering the over or underworld from a dungeon room
