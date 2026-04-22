@@ -2,7 +2,61 @@ from typing import Iterable
 from dark_libraries.logging import LoggerMixin
 from data.global_registry   import GlobalRegistry
 from models.enums.npc_tile_id   import NpcTileId
+from models.enums.terrain_category import TerrainCategory
 from models.npc_metadata    import NpcMetadata
+
+# Wilderness spawn rules — see docs/SPAWN_RULES.md.
+# Shape: NpcTileId -> (overworld, underworld, {TerrainCategory, ...}).
+# NPCs absent from this table are never wilderness-spawned (quest NPCs,
+# town-resident humans, the Avatar sprite, etc).
+G, S, F, Sw, D, M, W = (
+    TerrainCategory.GRASS,
+    TerrainCategory.SCRUB,
+    TerrainCategory.FOREST,
+    TerrainCategory.SWAMP,
+    TerrainCategory.DESERT,
+    TerrainCategory.MOUNTAIN,
+    TerrainCategory.WATER,
+)
+SPAWN_RULES: dict[NpcTileId, tuple[bool, bool, set[TerrainCategory]]] = {
+    # Roaming humans
+    NpcTileId.BARD:         (True,  False, {G, S, F}),
+    NpcTileId.MAGE:         (True,  False, {G, S, F}),
+
+    # Land-dwellers, surface and underworld
+    NpcTileId.ORC:          (True,  True,  {G, S, F, Sw}),
+    NpcTileId.SKELETON:     (True,  True,  {G, S, F, Sw}),
+    NpcTileId.HEADLESS:     (True,  True,  {G, S, F}),
+    NpcTileId.ETTIN:        (True,  True,  {M, F}),
+    NpcTileId.TROLL:        (True,  True,  {M, F, Sw}),
+    NpcTileId.MONGBAT:      (True,  True,  {M, F}),
+    NpcTileId.GARGOYLE:     (True,  True,  {M}),
+    NpcTileId.DRAGON:       (True,  True,  {M}),
+    NpcTileId.SNAKE:        (True,  True,  {G, S, Sw, D}),
+    NpcTileId.ROTWORM:      (True,  True,  {G, S, Sw}),
+    NpcTileId.GIANT_SPIDER: (True,  True,  {F, Sw}),
+    NpcTileId.INSECT_SWARM: (True,  True,  {Sw, F}),
+    NpcTileId.CORPSER:      (True,  True,  {Sw}),
+    NpcTileId.REAPER:       (True,  True,  {F, Sw}),
+    NpcTileId.WISP:         (True,  True,  {F}),
+    NpcTileId.SAND_TRAP:    (True,  True,  {D}),
+
+    # Underworld-only
+    NpcTileId.DAEMON:       (False, True,  {M, Sw}),
+    NpcTileId.SLIME:        (False, True,  {G, S, Sw}),
+    NpcTileId.GIANT_RAT:    (False, True,  {G, S, Sw}),
+    NpcTileId.BAT:          (False, True,  {F, M}),
+    NpcTileId.GHOST:        (False, True,  {G, F, Sw}),
+    NpcTileId.GREMLIN:      (False, True,  {G, S, M}),
+    NpcTileId.MIMIC:        (False, True,  {M, F}),
+    NpcTileId.GAZER:        (False, True,  {G, S}),
+
+    # Sea creatures (overworld water only)
+    NpcTileId.SHARK:        (True,  False, {W}),
+    NpcTileId.SEA_HORSE:    (True,  False, {W}),
+    NpcTileId.SQUID:        (True,  False, {W}),
+    NpcTileId.SEA_SERPENT:  (True,  False, {W}),
+}
 
 HUMAN_DATA = """
 Name|Str|Dex|Int|Armor|Damage|HP|Max n.|Treasure %|Special Attacks|Exp|Additional Notes
@@ -155,8 +209,18 @@ class NpcMetadataLoader(LoggerMixin):
                 continue
             yield self._build_meta(line.split("|"))
 
+    def _apply_spawn_rules(self, meta: NpcMetadata):
+        rule = SPAWN_RULES.get(NpcTileId(meta.npc_tile_id))
+        if rule is None:
+            return
+        overworld, underworld, terrain_categories = rule
+        meta.abilities_terrain.overworld  = overworld
+        meta.abilities_terrain.underworld = underworld
+        meta.abilities_terrain.allowed_terrain_spawns = set(terrain_categories)
+
     def load(self):
         for meta in self._build(HUMAN_DATA + MONSTER_DATA + QUEST_DATA + LORD_BRITISH_DATA):
+            self._apply_spawn_rules(meta)
             self.global_registry.npc_metadata.register(meta.npc_tile_id, meta)
         self.log(f"Registered {len(self.global_registry.npc_metadata)} metadata records for NPCs")
 

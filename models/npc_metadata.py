@@ -48,9 +48,10 @@ class NpcAbilitiesTerrain:
     overworld:          bool = False
     underworld:         bool = False
 
-    # terrain types
-    allowed_terrain_spawns = set[TerrainCategory]()
-    allowed_terrain_travel = set[TerrainCategory]()
+    def __init__(self):
+        # terrain types — per-instance so updates don't leak across NPCs
+        self.allowed_terrain_spawns: set[TerrainCategory] = set()
+        self.allowed_terrain_travel: set[TerrainCategory] = set()
 
 class NpcMetadata:
 

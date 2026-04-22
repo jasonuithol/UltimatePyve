@@ -1,5 +1,6 @@
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
+from models.enums.terrain_category import TerrainCategory
 from models.terrain import Terrain
 
 class TerrainLoader(LoggerMixin):
@@ -133,6 +134,21 @@ class TerrainLoader(LoggerMixin):
             187     # door locked, window   [WINDOWED]
         ]:
             terrains[i].windowed = True
+
+        # Terrain categories (used by the monster spawner — see docs/SPAWN_RULES.md)
+        terrain_category_tiles = {
+            TerrainCategory.WATER:    [1, 2, 3],
+            TerrainCategory.SWAMP:    [4],
+            TerrainCategory.GRASS:    [5],
+            TerrainCategory.SCRUB:    [6, 8],
+            TerrainCategory.DESERT:   [7, 28, 47],
+            TerrainCategory.FOREST:   [9, 10],
+            TerrainCategory.MOUNTAIN: [11, 12, 14, 15],
+            TerrainCategory.BRIDGE:   [106, 107],
+        }
+        for category, tile_ids in terrain_category_tiles.items():
+            for i in tile_ids:
+                terrains[i].terrain_category = category
 
         # Enterable (i.e. can be entry triggers)
         for i in [

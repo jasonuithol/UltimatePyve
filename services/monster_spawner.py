@@ -68,22 +68,37 @@ class MonsterSpawner(LoggerMixin, DarkEventListenerMixin):
             num_iterations += 1
             assert num_iterations < 100, "Infinite loop detected"
             monster_coord = self._party_location.coord.translate_polar(__class__.MONSTER_SPAWN_RADIUS, random.uniform(-math.pi, math.pi))
-#        monster_global_location = GlobalLocation(self._party_location.location_index, self._party_location.level_index, monster_coord)
 
-        # randomly choose kind of monster (that can live on monster_global_location)
-#        coord_contents = self.map_cache_service.get_location_contents(monster_global_location)
-#        u5_map = self.global_registry.maps.get(self._party_location.location_index)
-#        terrain_tile_id = u5_map.get_tile_id(self._party_location.level_index, monster_coord)
-#        terrain: Terrain = self.global_registry.terrains.get(terrain_tile_id)
+        # Look up the terrain category at the chosen coord.
+        u5_map = self.global_registry.maps.get(self._party_location.location_index)
+        terrain_tile_id = u5_map.get_tile_id(self._party_location.level_index, monster_coord)
+        terrain: Terrain = self.global_registry.terrains.get(terrain_tile_id)
+        if terrain is None or terrain.terrain_category is None:
+            return
+        terrain_category = terrain.terrain_category
 
-        #
-        # TODO: limit the monster selection to those appropriate for the terrain.
-        #
-        terrain_appropriate_monsters = list(NpcTileId)
+        # Scope flag comes from the current level (see docs/SPAWN_RULES.md).
+        is_underworld = self._party_location.level_index == 255
 
-        monster_tile_id_enum = random.choice(terrain_appropriate_monsters)
+        # Filter the spawn pool to NPCs allowed on this scope + terrain.
+        candidates: list[NpcTileId] = []
+        for npc_tile_id_enum in NpcTileId:
+            meta = self.global_registry.npc_metadata.get(npc_tile_id_enum.value)
+            if meta is None:
+                continue
+            terrain_abilities = meta.abilities_terrain
+            scope_allowed = terrain_abilities.underworld if is_underworld else terrain_abilities.overworld
+            if not scope_allowed:
+                continue
+            if terrain_category not in terrain_abilities.allowed_terrain_spawns:
+                continue
+            candidates.append(npc_tile_id_enum)
 
+        if not candidates:
+            return
+
+        monster_tile_id_enum = random.choice(candidates)
 
         # create monster
         self._spawn_monster(monster_tile_id_enum.value, monster_coord)
-        self.log(f"Spawned {monster_tile_id_enum.name} at {monster_coord}, totalling {len(self.npc_service._active_npcs)} (alternate count={len(self.npc_service.get_npcs())}) active monsters")
+        self.log(f"Spawned {monster_tile_id_enum.name} at {monster_coord} ({terrain_category.name}), totalling {len(self.npc_service._active_npcs)} (alternate count={len(self.npc_service.get_npcs())}) active monsters")
