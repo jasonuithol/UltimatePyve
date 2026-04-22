@@ -1,10 +1,14 @@
 from pathlib import Path
+
+import pygame
+
 from dark_libraries.logging   import LoggerMixin
 
 from data.loaders.save_game_loader import SavedGameLoader
 from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
 from models.enums.character_class_to_tile_id import CharacterClassToTileId
+from models.enums.npc_tile_id import NpcTileId
 
 from data.global_registry           import GlobalRegistry
 from data.global_registry_loader    import GlobalRegistryLoader
@@ -54,6 +58,8 @@ class InitialisationController(LoggerMixin):
         self.display_service.init()
 
         self.global_registry_loader.load(u5_path)
+
+        self._set_window_icon(NpcTileId.ADVENTURER.value)
 
         # --------------------------------------------------
         #
@@ -116,4 +122,15 @@ class InitialisationController(LoggerMixin):
         self.console_service.print_runes(list(range(128)))
 
         self.log("Initialisation completed.")
+
+    def _set_window_icon(self, tile_id: int):
+        sprite = self.global_registry.sprites.get(tile_id)
+        if sprite is None:
+            return
+        tile = sprite.get_current_frame(0.0)
+        surface = tile.get_surface()
+        if surface is None:
+            return
+        icon = pygame.transform.scale(surface, (64, 64))
+        pygame.display.set_icon(icon)
 
