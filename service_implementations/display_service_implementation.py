@@ -33,6 +33,7 @@ class DisplayServiceImplementation(LoggerMixin):
             vsync = 1
         )
         self.clock = pygame.time.Clock()
+        self._last_caption_update_ms = 0
         self.set_window_title("Initialising....")
 
         self.log(f"Initialised {__class__.__name__}(id={hex(id(self))})")
@@ -46,9 +47,12 @@ class DisplayServiceImplementation(LoggerMixin):
     def render(self):
 
         #
-        # Window Title
+        # Window Title (throttled to ~1Hz)
         #
-        pygame.display.set_caption(self._window_title + f", fps={self.clock.get_fps()}")
+        now_ms = pygame.time.get_ticks()
+        if now_ms - self._last_caption_update_ms >= 1000:
+            pygame.display.set_caption(self._window_title + f", fps={self.clock.get_fps():.0f}")
+            self._last_caption_update_ms = now_ms
 
         scaled_border_thiccness = self.display_config.FONT_SIZE.w * self.display_config.SCALE_FACTOR
 
