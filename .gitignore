@@ -2,6 +2,7 @@ u5/
 *.png
 __pycache__/
 .vscode/
+docs/
 
 dependencies.svg
 dependencies.txt
