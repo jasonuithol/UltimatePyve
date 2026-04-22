@@ -24,7 +24,8 @@ class MoveOutcome:
         move_up:   bool           = False,
         move_down: bool           = False,
         enter_map: GlobalLocation = None,
-        exit_map:  bool           = False
+        exit_map:  bool           = False,
+        new_coord: Coord          = None,
     ):
         self.success   = success
         self.blocked   = blocked
@@ -32,6 +33,7 @@ class MoveOutcome:
         self.move_down = move_down
         self.enter_map = enter_map
         self.exit_map  = exit_map
+        self.new_coord = new_coord
 
     def __str__(self) -> str:
         return self.__class__.__name__ + ": " + ", ".join([f"{n}={v}" for n,v in vars(self).items()])
@@ -87,21 +89,22 @@ class MoveController(LoggerMixin):
         # map level change checks.
         new_level_index = current_location.level_index
 
-        # ladders                
+        # ladders
         if target_terrain.move_up == True:
-            return MoveOutcome(move_up=True)
+            return MoveOutcome(move_up=True, new_coord=target_location.coord)
 
         if target_terrain.move_down == True:
-            return MoveOutcome(move_down=True)
+            return MoveOutcome(move_down=True, new_coord=target_location.coord)
 
         # stairs
         if target_terrain.stairs == True:
             # NOTE: This is just a guess, but seems to be working out ok.
             # Stairs always lead from the default spawn level to the one above it, and then back again.
+            # Stairs also complete the triggering horizontal step in the same turn.
             if current_location.level_index == current_map.default_level_index:
-                return MoveOutcome(move_up=True)
+                return MoveOutcome(move_up=True, new_coord=target_location.coord)
             else:
-                return MoveOutcome(move_down=True)
+                return MoveOutcome(move_down=True, new_coord=target_location.coord)
 
         self.log(f"DEBUG: Move to {target_location} succeeded.")
         return MoveOutcome(success=True)

@@ -230,11 +230,17 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
             return
 
         if move_outcome.move_up:
+            if move_outcome.new_coord is not None:
+                self._update_transport_state(move_offset)
+                self.party_agent.change_coord(move_outcome.new_coord)
             self.party_agent.change_level(party_location.level_index + 1)
             self.console_service.print_ascii("Up !")
             return
 
         if move_outcome.move_down:
+            if move_outcome.new_coord is not None:
+                self._update_transport_state(move_offset)
+                self.party_agent.change_coord(move_outcome.new_coord)
             self.party_agent.change_level(party_location.level_index - 1)
             self.console_service.print_ascii("Down !")
             return
