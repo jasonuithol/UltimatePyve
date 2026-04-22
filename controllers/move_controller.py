@@ -4,10 +4,10 @@ from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.global_location import GlobalLocation
-from models.interactable import Interactable
 from models.move_into_result import MoveIntoResult
 from models.terrain import Terrain
 from models.u5_map import U5Map
+from services.door_state_service import DoorStateService
 from services.npc_service import NpcService
 
 #
@@ -43,6 +43,7 @@ class MoveController(LoggerMixin):
 
     global_registry: GlobalRegistry
     npc_service: NpcService
+    door_state_service: DoorStateService
 
     def move(self, current_location: GlobalLocation, move_offset: Vector2, transport_mode_name: str) -> MoveOutcome:
 
@@ -111,23 +112,18 @@ class MoveController(LoggerMixin):
         
     def _try_move_into(self, current_location: GlobalLocation, target: Coord, transport_mode_name: str) -> MoveIntoResult:
 
-        interactable: Interactable = self.global_registry.interactables.get(target)      
-        if interactable:
-
-            #
-            # NOTE: This might result in a door opening, or a piece of loot being taken, rather than actual movement.
-            #
-            return interactable.move_into()
-
-        # It's just regular terrain.
         current_map: U5Map  = self.global_registry.maps.get(current_location.location_index)
         target_tile_id: int = current_map.get_tile_id(current_location.level_index, target)
-        terrain: Terrain    = self.global_registry.terrains.get(target_tile_id)
 
+        if DoorStateService.is_door_tile(target_tile_id):
+            door_location = GlobalLocation(current_location.location_index, current_location.level_index, target)
+            return self.door_state_service.try_move_into(door_location)
+
+        terrain: Terrain = self.global_registry.terrains.get(target_tile_id)
         return MoveIntoResult(
             traversal_allowed = terrain.can_traverse(transport_mode_name),
             alternative_action_taken = False
-        )    
+        )
 
 
 

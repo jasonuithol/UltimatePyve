@@ -81,10 +81,6 @@ class ViewPortDataProviderImplementation(LoggerMixin):
             if not npc is None:
                 return npc.current_tile
 
-            interactable = self.global_registry.interactables.get(world_coord)
-            if not interactable is None:
-                return self.global_registry.tiles.get(interactable.get_current_tile_id())
-
             coord_contents = map_level_contents.get_coord_contents(world_coord)
             if coord_contents:
                 return coord_contents.get_renderable_frame()

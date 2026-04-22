@@ -34,20 +34,15 @@ class FieldOfViewCalculator:
             # Calculate allows_light
             #
 
-            interactable = self.global_registry.interactables.get(world_coord)
-            if interactable is None:
-                coord_contents = map_level_contents.get_coord_contents(world_coord)
-                if coord_contents is None:
-                    #
-                    # TODO: Review this bullshit
-                    #
-                    allows_light = True # was False, which is wrong
-                else:
-                    terrain = coord_contents.get_terrain()
-                    allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)        
+            coord_contents = map_level_contents.get_coord_contents(world_coord)
+            if coord_contents is None:
+                #
+                # TODO: Review this bullshit
+                #
+                allows_light = True # was False, which is wrong
             else:
-                terrain = self.global_registry.terrains.get(interactable.get_current_tile_id())
-                allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)        
+                terrain = coord_contents.get_terrain()
+                allows_light = not terrain.blocks_light or (world_coord in windowed_coords and terrain.windowed)
 
             if allows_light or world_coord == fov_centre_location.coord:
                 #

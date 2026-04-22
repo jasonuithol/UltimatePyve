@@ -1,9 +1,8 @@
-from dark_libraries.dark_math      import Coord
+from dark_libraries.dark_math import Coord
 from dark_libraries.registry import Registry
 
 from models.combat_map import CombatMap, DungeonRoom
 from models.data_ovl import DataOVL
-from models.door_type import DoorType
 from models.enums.ega_palette_values import EgaPaletteValues
 from models.enums.projectile_type import ProjectileType
 from models.glyph_key import GlyphKey
@@ -22,7 +21,6 @@ from models.world_item import WorldItem
 from models.light_map       import LightMap
 from models.u5_glyph        import U5Glyph
 from models.global_location import GlobalLocation
-from models.interactable    import Interactable
 from models.border_glyphs import BorderGlyphs
 
 class GlobalRegistry:
@@ -35,10 +33,6 @@ class GlobalRegistry:
         self.maps     = Registry[int, U5Map]()    # location_index
         self.terrains = Registry[int, Terrain]()  # tile_id
         self.entry_triggers = Registry[GlobalLocation, GlobalLocation]()
-
-        # This is over-engineering, but I was getting circular imports and so this happened.
-        self.door_types     = Registry[int,   DoorType]()
-        self.interactables  = Registry[Coord, Interactable](can_be_empty=True)
 
         # item oriented features.
         self.item_types = Registry[int,            ItemType]() # item_id (NOT InventoryOffset ?!?!?!)

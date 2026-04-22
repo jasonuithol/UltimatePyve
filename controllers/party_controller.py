@@ -15,7 +15,6 @@ from data.global_registry     import GlobalRegistry
 
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
 from models.global_location     import GlobalLocation
-from models.interactable        import Interactable
 from models.party_inventory import PartyInventory
 from models.u5_map              import U5Map
 from models.enums.inventory_offset import InventoryOffset
@@ -24,6 +23,7 @@ from models.enums.inventory_offset import InventoryOffset
 from models.agents.party_agent import PartyAgent
 
 from services.display_service import DisplayService
+from services.door_state_service import DoorStateService
 from services.input_service import InputService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
@@ -52,6 +52,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
     cast_controller: CastController
+    door_state_service: DoorStateService
 
     view_port_service: ViewPortService
     
@@ -249,10 +250,14 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
             return
 
     def jimmy(self, direction: Vector2[int]):
-        target_coord = self.party_agent.get_current_location().coord.add(direction)
-        interactable: Interactable = self.global_registry.interactables.get(target_coord)      
-        if interactable:
-            interactable.jimmy()
+        party_location = self.party_agent.get_current_location()
+        target_coord = party_location.coord.add(direction)
+        current_map: U5Map = self.global_registry.maps.get(party_location.location_index)
+        target_tile_id = current_map.get_tile_id(party_location.level_index, target_coord)
+        if DoorStateService.is_door_tile(target_tile_id):
+            self.door_state_service.try_jimmy(
+                GlobalLocation(party_location.location_index, party_location.level_index, target_coord)
+            )
 
     def ignite_torch(self):
         TORCH_RADIUS = 3

@@ -22,7 +22,6 @@ from data.loaders.transport_mode_loader import TransportModeLoader
 from data.loaders.u5_map_loader         import U5MapLoader
 
 from data.loaders.animated_tile_loader  import AnimatedTileLoader
-from data.loaders.door_type_loader      import DoorTypeLoader
 from data.loaders.flame_sprite_loader   import FlameSpriteLoader
 
 from data.loaders.consumable_item_type_loader import ConsumableItemTypeLoader
@@ -55,8 +54,6 @@ class GlobalRegistryLoader(LoggerMixin):
     animated_tile_loader:        AnimatedTileLoader
     flame_sprite_loader:         FlameSpriteLoader
     cursor_loader:               CursorLoader
-
-    door_type_loader:            DoorTypeLoader
 
     equipable_item_type_loader:  EquipableItemTypeLoader
     consumable_item_type_loader: ConsumableItemTypeLoader
@@ -118,10 +115,6 @@ class GlobalRegistryLoader(LoggerMixin):
         self.u5_glyph_loader.register_glyphs()
         self.blue_border_glyph_factory.load()
         self.scroll_border_glyph_factory.load()
-
-        # NOTE: this will include chests, orientable furniture, maybe movable furniture ?
-        #       one day maybe even the avatar's transports could be these ?
-        self.door_type_loader.load()
 
         self.equipable_item_type_loader.build()
         self.consumable_item_type_loader.register_item_types()

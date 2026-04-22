@@ -17,7 +17,7 @@ from .info_panel_data_provider import InfoPanelDataProvider
 from .info_panel_service import InfoPanelService
 from .lighting_service import LightingService
 
-from .door_instance_factory    import DoorInstanceFactory
+from .door_state_service import DoorStateService
 
 from .input_service import InputService
 from .monster_service import MonsterService
@@ -56,7 +56,7 @@ def compose(provider: ServiceProvider):
 
     provider.register(AvatarSpriteFactory)
 
-    provider.register(DoorInstanceFactory) # <== SCHEDULED FOR DEMOLITION
+    provider.register(DoorStateService)
 
     # TODO: World Loot might be a service
 

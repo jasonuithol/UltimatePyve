@@ -7,7 +7,6 @@ from data.loaders.combat_map_loader import CombatMapLoader
 from data.loaders.consumable_item_type_loader import ConsumableItemTypeLoader
 from data.loaders.cursor_loader import CursorLoader
 from data.loaders.data_ovl_loader import DataOVLLoader
-from data.loaders.door_type_loader            import DoorTypeLoader
 from data.loaders.entry_trigger_loader        import EntryTriggerLoader
 
 from data.loaders.equipable_item_type_loader  import EquipableItemTypeLoader
@@ -38,7 +37,6 @@ def compose(provider: ServiceProvider):
 
     provider.register(AnimatedTileLoader)
     provider.register(ConsumableItemTypeLoader)
-    provider.register(DoorTypeLoader)
     provider.register(EntryTriggerLoader)
 
     provider.register(CombatMapLoader)

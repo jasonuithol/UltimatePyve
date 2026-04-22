@@ -13,7 +13,10 @@ class U5MapLevel:
     def get_tile_id(self, coord: Coord[int]):
         # Allow out-of-bounds queries.
         return self._data.get(coord, None)
-    
+
+    def set_tile_id(self, coord: Coord[int], tile_id: int):
+        self._data[coord] = tile_id
+
     def get_size(self):
         return self._size
 
