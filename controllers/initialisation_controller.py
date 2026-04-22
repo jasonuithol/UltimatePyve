@@ -9,6 +9,7 @@ from models.agents.party_agent import PartyAgent
 from models.agents.party_member_agent import PartyMemberAgent
 from models.enums.character_class_to_tile_id import CharacterClassToTileId
 from models.enums.npc_tile_id import NpcTileId
+from models.enums.transport_mode import TransportMode
 
 from data.global_registry           import GlobalRegistry
 from data.global_registry_loader    import GlobalRegistryLoader
@@ -74,7 +75,7 @@ class InitialisationController(LoggerMixin):
         self.party_controller.load_location(saved_location)
 
         # TODO: read from saved_game
-        self.party_controller.load_transport_state(0,0,1) # on foot, "facing" east
+        self.party_controller.load_transport_state(TransportMode.WALK, 0, 1) # on foot, "facing" east
 
         self.world_clock.set_world_time(saved_game.read_current_datetime())
      

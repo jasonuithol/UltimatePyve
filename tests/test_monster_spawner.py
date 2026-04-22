@@ -43,7 +43,7 @@ class _FakeNpcService:
 
 
 class _FakeMapCacheService:
-    def get_blocked_coords(self, _location_index, _level_index, transport_mode_index):
+    def get_blocked_coords(self, _location_index, _level_index, transport_mode):
         return set()
 
 

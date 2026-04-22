@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 from models.enums.terrain_category import TerrainCategory
+from models.enums.transport_mode   import TransportMode
 
 @dataclass
 class Terrain:
@@ -28,8 +29,8 @@ class Terrain:
 
     entry_point: bool = False
 
-    def can_traverse(self, transport_mode: str) -> bool:
-        return getattr(self, transport_mode)
+    def can_traverse(self, transport_mode: TransportMode) -> bool:
+        return getattr(self, transport_mode.name.lower())
     
 '''
 moveable_tiles = [

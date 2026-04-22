@@ -25,6 +25,7 @@ from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
 from models.u5_map import U5Map
 from models.equipable_item_type import EquipableItemType # for syntax highlighting
+from models.enums.transport_mode import TransportMode
 
 from services.combat_map_service import CombatMapService
 from services.console_service import ConsoleService
@@ -80,11 +81,11 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     _last_attacked_monster = dict[str, MonsterAgent]()
 
     def _enter_combat_arena(self, enemy_party: MonsterAgent) -> CombatMap:
-        party_transport_mode_index, _ = self.party_agent.get_transport_state()
+        party_transport_mode, _ = self.party_agent.get_transport_state()
 
         combat_map = self.combat_map_service.get_combat_map(
             self.party_agent.get_current_location(),
-            party_transport_mode_index,
+            party_transport_mode,
             enemy_party
         )
 
@@ -216,9 +217,9 @@ class CombatController(DarkEventListenerMixin, LoggerMixin):
     def _move_handler(self, party_member: PartyMemberAgent, move_offset: Vector2[int]):
 
         move_outcome = self.move_controller.move(
-            GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, party_member.coord), 
-            move_offset, 
-            'walk'
+            GlobalLocation(COMBAT_MAP_LOCATION_INDEX, 0, party_member.coord),
+            move_offset,
+            TransportMode.WALK
         )
 
         party_member.spend_action_quanta()

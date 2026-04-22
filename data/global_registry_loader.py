@@ -18,7 +18,6 @@ from data.loaders.spell_rune_loader import SpellRuneLoader
 from data.loaders.spell_type_loader import SpellTypeLoader
 from data.loaders.tileset_loader        import TileLoader
 from data.loaders.terrain_loader        import TerrainLoader
-from data.loaders.transport_mode_loader import TransportModeLoader
 from data.loaders.u5_map_loader         import U5MapLoader
 
 from data.loaders.animated_tile_loader  import AnimatedTileLoader
@@ -63,7 +62,6 @@ class GlobalRegistryLoader(LoggerMixin):
     light_map_builder:           LightMapBuilder
     light_map_level_baker:       LightMapLevelBaker
     npc_sprite_builder:          NpcSpriteBuilder
-    transport_mode_loader:       TransportModeLoader
 
     combat_map_loader:           CombatMapLoader
     npc_metadata_loader:         NpcMetadataLoader
@@ -125,7 +123,6 @@ class GlobalRegistryLoader(LoggerMixin):
 
         # npc
         self.npc_sprite_builder.register_npc_sprites()
-        self.transport_mode_loader.load()
         self.npc_metadata_loader.load()
 
         # magic

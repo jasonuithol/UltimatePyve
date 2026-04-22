@@ -1,5 +1,6 @@
 from data.global_registry import GlobalRegistry
 
+from models.enums.transport_mode import TransportMode
 from models.sprite import Sprite
 from models.tile import Tile
 
@@ -10,14 +11,13 @@ class AvatarSpriteFactoryImplementation:
 
     # Injectable
     global_registry: GlobalRegistry
-    cache = dict[tuple[int,int], Sprite]()
+    cache = dict[tuple[TransportMode, int], Sprite]()
 
     # --- Factory function for the Avatar sprites ---
-    def create_player(self, transport_mode: int, direction: int) -> Sprite[Tile]:
+    def create_player(self, transport_mode: TransportMode, direction: int) -> Sprite[Tile]:
         key = transport_mode, direction
         if not key in self.cache.keys():
-            transport_name = ["walk","horse","carpet","skiff","ship","sail"][transport_mode]
-            func = getattr(self, f"create_player_{transport_name}")
+            func = getattr(self, f"create_player_{transport_mode.name.lower()}")
             self.cache[key] = func(direction)
         return self.cache[key]
 

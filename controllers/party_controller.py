@@ -14,6 +14,7 @@ from dark_libraries.logging     import LoggerMixin
 from data.global_registry     import GlobalRegistry
 
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
+from models.enums.transport_mode import TransportMode
 from models.global_location     import GlobalLocation
 from models.party_inventory import PartyInventory
 from models.u5_map              import U5Map
@@ -167,7 +168,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
             self.log(f"Set party location to outer={outer_location}, inner={location}")
 
-    def load_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
+    def load_transport_state(self, transport_mode: TransportMode, last_east_west: int, last_nesw_dir: int):
         self.party_agent.set_transport_state(
             transport_mode = transport_mode,
             last_east_west = last_east_west,
@@ -183,20 +184,28 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         )
 
     def _update_transport_state(self, move_offset: Vector2[int]):
+        last_east_west = self.party_agent.last_east_west
+        last_nesw_dir  = self.party_agent.last_nesw_dir
         if move_offset.x == 1:
             # east
-            self.party_agent.last_east_west = 0
-            self.party_agent.last_nesw_dir = 1
+            last_east_west = 0
+            last_nesw_dir = 1
         elif move_offset.x == -1:
             # west
-            self.party_agent.last_east_west = 1
-            self.party_agent.last_nesw_dir = 3
+            last_east_west = 1
+            last_nesw_dir = 3
         elif move_offset.y == 1:
             # south
-            self.party_agent.last_nesw_dir = 2
+            last_nesw_dir = 2
         elif move_offset.y == -1:
             # north
-            self.party_agent.last_nesw_dir = 0
+            last_nesw_dir = 0
+
+        self.party_agent.set_transport_state(
+            self.party_agent.transport_mode,
+            last_east_west,
+            last_nesw_dir,
+        )
 
 
     #
@@ -204,8 +213,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     #
     def move(self, move_offset: Vector2[int]):
         party_location = self.party_agent.get_current_location()
-        transport_mode_name = self.global_registry.transport_modes.get(self.party_agent.transport_mode)
-        move_outcome: MoveOutcome = self.move_controller.move(party_location, move_offset, transport_mode_name)
+        move_outcome: MoveOutcome = self.move_controller.move(party_location, move_offset, self.party_agent.transport_mode)
 
         if move_outcome.exit_map:
             current_map = self.global_registry.maps.get(party_location.location_index)
@@ -297,8 +305,8 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         self.party_agent.change_level(new_level_index)
 
     def rotate_transport(self):
-        transport_mode = (self.party_agent.transport_mode + 1) % len(self.global_registry.transport_modes)
-        self.party_agent.set_transport_state(transport_mode, self.party_agent.last_east_west, self.party_agent.last_nesw_dir)
+        next_value = (self.party_agent.transport_mode.value + 1) % len(TransportMode)
+        self.party_agent.set_transport_state(TransportMode(next_value), self.party_agent.last_east_west, self.party_agent.last_nesw_dir)
 
     def _set_window_title(self):
         party_location = self.party_agent.get_current_location()

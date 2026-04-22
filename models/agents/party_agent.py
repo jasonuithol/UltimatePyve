@@ -4,6 +4,7 @@ from typing   import Tuple
 
 from dark_libraries.dark_math import Coord
 
+from models.enums.transport_mode import TransportMode
 from models.global_location import GlobalLocation
 from models.sprite import Sprite
 from models.tile import Tile
@@ -14,12 +15,12 @@ from .npc_agent import NpcAgent
 from .party_member_agent import PartyMemberAgent
 
 transport_mode_dexterity_map = {
-    0 : 15, # walk
-    1 : 20, # horse
-    2 : 25, # carpet
-    3 : 10, # skiff
-    4 : 15, # ship
-    5 : 20  # sail
+    TransportMode.WALK:   15,
+    TransportMode.HORSE:  20,
+    TransportMode.CARPET: 25,
+    TransportMode.SKIFF:  10,
+    TransportMode.SHIP:   15,
+    TransportMode.SAIL:   20,
 }
 
 class PartyAgent(NpcAgent):
@@ -34,8 +35,7 @@ class PartyAgent(NpcAgent):
     party_members  = list[PartyMemberAgent]()
     _active_member_index: int = None
 
-    # options: walk, horse, carpet, skiff, ship
-    transport_mode: int = None
+    transport_mode: TransportMode = None
     last_east_west: int = None
     last_nesw_dir: int = None
     sprite: Sprite[Tile] = None
@@ -148,7 +148,7 @@ class PartyAgent(NpcAgent):
     #
     # Transport mode.
     #
-    def set_transport_state(self, transport_mode: int, last_east_west: int, last_nesw_dir: int):
+    def set_transport_state(self, transport_mode: TransportMode, last_east_west: int, last_nesw_dir: int):
         self.transport_mode = transport_mode
         self.last_east_west = last_east_west
         self.last_nesw_dir = last_nesw_dir
@@ -157,11 +157,11 @@ class PartyAgent(NpcAgent):
         self.sprite = self.avatar_sprite_factory.create_player(transport_mode, direction)
         self.sprite_time_offset = self.sprite.create_random_time_offset()
 
-    def get_transport_state(self) -> Tuple[int, int]:
+    def get_transport_state(self) -> Tuple[TransportMode, int]:
         assert not self.transport_mode is None, "Must call set_transport_state first."
-        if self.transport_mode == 0:
+        if self.transport_mode == TransportMode.WALK:
             direction = 0 # no one cares.
-        elif self.transport_mode < 3:
+        elif self.transport_mode in (TransportMode.HORSE, TransportMode.CARPET):
             direction = self.last_east_west
         else:
             direction = self.last_nesw_dir

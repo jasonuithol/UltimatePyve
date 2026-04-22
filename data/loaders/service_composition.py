@@ -24,7 +24,6 @@ from data.loaders.npc_sprite_builder        import NpcSpriteBuilder
 from data.loaders.terrain_loader            import TerrainLoader
 
 from data.loaders.tileset_loader        import TileLoader
-from data.loaders.transport_mode_loader import TransportModeLoader
 from data.loaders.u5_font_loader        import U5FontLoader
 from data.loaders.u5_glyph_loader       import U5GlyphLoader
 
@@ -52,7 +51,6 @@ def compose(provider: ServiceProvider):
 
     provider.register(ColorLoader)
     provider.register(TileLoader)
-    provider.register(TransportModeLoader)
     provider.register(U5FontLoader)
     provider.register(U5GlyphLoader)
     provider.register(BlueBorderGlyphFactory)
