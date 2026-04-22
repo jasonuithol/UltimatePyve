@@ -29,27 +29,30 @@ SPAWN_RULES: dict[NpcTileId, tuple[bool, bool, set[TerrainCategory]]] = {
     NpcTileId.HEADLESS:     (True,  True,  {G, S, F}),
     NpcTileId.ETTIN:        (True,  True,  {M, F}),
     NpcTileId.TROLL:        (True,  True,  {M, F, Sw}),
-    NpcTileId.MONGBAT:      (True,  True,  {M, F}),
-    NpcTileId.GARGOYLE:     (True,  True,  {M}),
     NpcTileId.DRAGON:       (True,  True,  {M}),
     NpcTileId.SNAKE:        (True,  True,  {G, S, Sw, D}),
     NpcTileId.ROTWORM:      (True,  True,  {G, S, Sw}),
     NpcTileId.GIANT_SPIDER: (True,  True,  {F, Sw}),
     NpcTileId.INSECT_SWARM: (True,  True,  {Sw, F}),
-    NpcTileId.CORPSER:      (True,  True,  {Sw}),
-    NpcTileId.REAPER:       (True,  True,  {F, Sw}),
     NpcTileId.WISP:         (True,  True,  {F}),
     NpcTileId.SAND_TRAP:    (True,  True,  {D}),
 
     # Underworld-only
+    NpcTileId.MONGBAT:      (False, True,  {M, F}),
+    NpcTileId.CORPSER:      (False, True,  {Sw}),
     NpcTileId.DAEMON:       (False, True,  {M, Sw}),
     NpcTileId.SLIME:        (False, True,  {G, S, Sw}),
     NpcTileId.GIANT_RAT:    (False, True,  {G, S, Sw}),
     NpcTileId.BAT:          (False, True,  {F, M}),
     NpcTileId.GHOST:        (False, True,  {G, F, Sw}),
-    NpcTileId.GREMLIN:      (False, True,  {G, S, M}),
-    NpcTileId.MIMIC:        (False, True,  {M, F}),
     NpcTileId.GAZER:        (False, True,  {G, S}),
+
+    # Dungeons-only (and campsite ambushes for GREMLIN — TODO campsites).
+    # Absent from wilderness spawner; placed from dungeon data instead.
+    # NpcTileId.GARGOYLE
+    # NpcTileId.REAPER
+    # NpcTileId.MIMIC
+    # NpcTileId.GREMLIN
 
     # Sea creatures (overworld water only)
     NpcTileId.SHARK:        (True,  False, {W}),
