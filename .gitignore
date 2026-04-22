@@ -7,3 +7,9 @@ dependencies.svg
 dependencies.txt
 dependencies.dot
 dependencies-*.svg
+
+# Virtual environments
+# .venv-mcp/ is created by the claude-pygame mcp-build container (headless
+# tests); .venv/ is the host interactive-play venv from run.sh.
+.venv/
+.venv-mcp/
