@@ -7,7 +7,7 @@ It uses the original game data files but runs them through a modern, Python‑ba
 
 ## Requirements
 
-- This has been tested on Windows 10, Windows 11 and MacOS.
+- This has been tested on Windows 10, Windows 11, MacOS
 
 - **A legal copy of the PC version of Ultima V**  
   You can purchase a DRM‑free copy from [GOG.com](https://www.gog.com/en/game/ultima_4_5_6). This will be the PC version, but with this engine, you can run it on MacOS.  NOTE: It comes packaged in DOSBox - there's probably a way to run OG Ultima from GOG on MacOS.
@@ -63,6 +63,41 @@ Double-click on **UltimatePyve.cmd**
 ## Updating
 
 Double-click on **update.cmd** (Windows 10 onwards - for earlier versions, [install curl](https://curl.se/download.html) and add it to the system PATH)
+
+## Running on Linux
+
+### UltimatePyve
+
+I got this running on Linux !  the ```run.sh``` script will guide you through the setup process and will automatically take care of running the game.
+
+You might need to copy the Ultima 5 files into a folder called ```u5``` under the UltimatePyve install directory.
+
+### Original Ultimate V (GOG edition)
+
+Despite GOG not offering a Linux download for Ultima V, it's actually trivial to set up the "Windows" version to run on Linux, because "Ultimately" it's just a DOSBox application...
+
+You'll need DOSBox for linux.  On debian derived systems, installation is just:
+
+```sudo apt install dosbox```
+
+Then make a script inside the original Ultima 5 install directory (call it u5.sh):
+
+```
+#!/bin/bash
+cd "$(dirname "$0")/DOSBOX"
+dosbox -conf ../dosboxULTIMA5.conf -conf ../dosboxULTIMA5_single.conf -noconsole -c "exit"
+```
+
+Once created, give it execute permission:
+
+```chmod u+x u5.sh```
+
+Then run it !
+
+```./u5.sh```
+
+You'll see that it "fails" to load sound devices - that's fine, it'll fall back to the basic PC speaker sound effects.  Have fun !
+
 
 ## Legal
     
