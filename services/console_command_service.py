@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing  import Callable
+from typing import Callable
 
 from dark_libraries.logging import LoggerMixin
 
@@ -18,17 +17,6 @@ class ConsoleCommandService(LoggerMixin):
         super().__init__()
         self._commands: dict[str, CommandFn] = {}
         self.register("help", self._help)
-
-    def run_file(self, path: Path):
-        if not path.exists():
-            self.log(f"WARN: console script not found at {path}")
-            return
-        for raw in path.read_text().splitlines():
-            line = raw.split("#", 1)[0].strip()
-            if not line:
-                continue
-            self.log(f"DEBUG: script > {line}")
-            self.execute(line)
 
     def register(self, name: str, fn: CommandFn):
         key = name.lower()

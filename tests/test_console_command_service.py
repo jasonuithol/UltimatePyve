@@ -85,24 +85,3 @@ def test_command_exception_is_caught():
     assert any("kaboom" in line for line in console.lines)
 
 
-def test_run_file_executes_lines_and_skips_blanks_and_comments(tmp_path):
-    svc, _ = _make()
-    received: list[list[str]] = []
-    svc.register("foo", lambda args: received.append(args))
-
-    script = tmp_path / "boot.txt"
-    script.write_text(
-        "# this is a comment\n"
-        "\n"
-        "foo a b\n"
-        "   foo c   # trailing comment\n"
-    )
-
-    svc.run_file(script)
-
-    assert received == [["a", "b"], ["c"]]
-
-
-def test_run_file_missing_path_is_noop(tmp_path):
-    svc, _ = _make()
-    svc.run_file(tmp_path / "does_not_exist.txt")  # should not raise

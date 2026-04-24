@@ -1,3 +1,0 @@
-# Lord British's Castle — exercises the CASTLE.NPC path (guards + LB himself).
-teleport lord british's castle
-loc

@@ -1,3 +1,0 @@
-# Moonglow — first entry in TOWNE.NPC, good for schedule smoke-testing.
-teleport moonglow
-loc

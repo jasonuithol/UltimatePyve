@@ -1,6 +1,4 @@
-import os
 from datetime import timedelta
-from pathlib  import Path
 
 import pygame
 
@@ -76,8 +74,6 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
         self._set_window_title()
         self.view_port_service.set_party_mode()
-
-        self._run_boot_script()
 
         while not self._has_quit:
 
@@ -221,12 +217,6 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
         self.dark_event_service.party_relocated(inner_location)
         self._set_window_title()
         self.console_service.print_ascii(f"Teleported: {target_map.name.capitalize()}")
-
-    def _run_boot_script(self):
-        script_path = os.environ.get("UPV_CONSOLE_SCRIPT")
-        if not script_path:
-            return
-        self.console_command_service.run_file(Path(script_path))
 
     def _loc_command(self, args: list[str]):
         current = self.party_agent.get_current_location()
