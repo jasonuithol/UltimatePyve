@@ -27,43 +27,54 @@ class ConversationController(LoggerMixin):
     npc_service:     NpcService
 
     def talk(self, direction: Vector2[int]):
+        try:
+            self._talk(direction)
+        finally:
+            # Restore the normal '>' command prompt for the next gameplay line.
+            self.console_service.print_ascii("")
+
+    def _talk(self, direction: Vector2[int]):
         party_location = self.party_agent.get_current_location()
         target_coord   = party_location.coord + direction
         target_npc     = self.npc_service.get_npc_at(target_coord)
 
         if not isinstance(target_npc, TownNpcAgent):
-            self.console_service.print_ascii("No response")
+            self.console_service.print_ascii("No response", no_prompt=True)
             return
 
         dialogs = self.global_registry.npc_dialogs.get(party_location.location_index)
         if dialogs is None:
-            self.console_service.print_ascii("No response")
+            self.console_service.print_ascii("No response", no_prompt=True)
             return
         dialog = dialogs.get(target_npc.dialog_number)
         if dialog is None:
-            self.console_service.print_ascii("No response")
+            self.console_service.print_ascii("No response", no_prompt=True)
             return
 
         avatar_name = self._avatar_name()
 
-        self.console_service.print_ascii(f"You meet {self._render(dialog.name, avatar_name)}")
-        self.console_service.print_ascii(self._render(dialog.description, avatar_name))
-        self.console_service.print_ascii(self._render(dialog.greeting, avatar_name))
+        self._say(f"You meet {self._render(dialog.name, avatar_name)}")
+        self._say(self._render(dialog.description, avatar_name))
+        self._say(self._render(dialog.greeting, avatar_name))
 
         while True:
             keyword = self._read_keyword()
             if keyword is None or keyword == "":
-                self.console_service.print_ascii(self._render(dialog.bye, avatar_name))
+                self._say(self._render(dialog.bye, avatar_name))
                 return
             if keyword == "bye":
-                self.console_service.print_ascii(self._render(dialog.bye, avatar_name))
+                self._say(self._render(dialog.bye, avatar_name))
                 return
 
             response = self._lookup(dialog, keyword)
             if response is None:
-                self.console_service.print_ascii("That I cannot help thee with.")
+                self._say("That I cannot help thee with.")
                 continue
-            self.console_service.print_ascii(self._render(response, avatar_name))
+            self._say(self._render(response, avatar_name))
+
+    def _say(self, msg: str):
+        # Conversation mode: suppress the '>' command prompt between lines.
+        self.console_service.print_ascii(msg, no_prompt=True)
 
     def _read_keyword(self) -> str | None:
         """
@@ -78,10 +89,10 @@ class ConversationController(LoggerMixin):
             if getattr(event, "type", 0) == pygame.QUIT or getattr(event, "key", 0) == -1:
                 return None
             if event.key == pygame.K_RETURN:
-                self.console_service.print_ascii("")
+                self.console_service.print_ascii("", no_prompt=True)
                 return buffer.lower()
             if event.key == pygame.K_ESCAPE:
-                self.console_service.print_ascii("")
+                self.console_service.print_ascii("", no_prompt=True)
                 return None
             if event.key == pygame.K_BACKSPACE:
                 if buffer:
