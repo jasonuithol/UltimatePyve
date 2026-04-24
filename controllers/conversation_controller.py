@@ -60,26 +60,34 @@ class ConversationController(LoggerMixin):
         self._say(f"You see {description}" if description else "You see someone.")
         greeting = self._render(dialog.greeting, target_npc, avatar_name)
         if greeting:
-            self._say(greeting)
+            self._npc_speak(greeting)
 
         while True:
             keyword = self._read_keyword()
             if keyword is None or keyword == "":
-                self._say(self._render(dialog.bye, target_npc, avatar_name))
+                self._npc_speak(self._render(dialog.bye, target_npc, avatar_name))
                 return
             if keyword == "bye":
-                self._say(self._render(dialog.bye, target_npc, avatar_name))
+                self._npc_speak(self._render(dialog.bye, target_npc, avatar_name))
                 return
 
             response_text = self._lookup(dialog, keyword, target_npc, avatar_name)
             if response_text is None:
-                self._say("That I cannot help thee with.")
+                self._npc_speak("That I cannot help thee with.")
                 continue
-            self._say(response_text)
+            self._npc_speak(response_text)
 
     def _say(self, msg: str):
-        # Conversation mode: suppress the '>' command prompt between lines.
+        # Conversation mode: suppress the '>' command prompt between lines,
+        # and trail a blank line so separate messages are visually distinct
+        # from a single message that wrapped across rows.
         self.console_service.print_ascii(msg, no_prompt=True)
+        self.console_service.print_ascii("", no_prompt=True)
+
+    def _npc_speak(self, msg: str):
+        # NPC utterances are wrapped in "double quotes" to distinguish them
+        # from narrator lines like "You see ...".
+        self._say(f'"{msg}"')
 
     def _read_keyword(self) -> str | None:
         """
@@ -87,16 +95,21 @@ class ConversationController(LoggerMixin):
         Enter. Escape or a synthetic-quit event returns None to abort the
         conversation.
         """
-        self.console_service.print_ascii("Your interest: ", include_carriage_return=False)
+        self.console_service.print_ascii("Your interest?", no_prompt=True)
+        self.console_service.print_ascii(":", include_carriage_return=False, no_prompt=True)
         buffer = ""
         while True:
             event = self.input_service.get_next_event()
             if getattr(event, "type", 0) == pygame.QUIT or getattr(event, "key", 0) == -1:
                 return None
             if event.key == pygame.K_RETURN:
+                # End the input line, then a blank row so the NPC's response
+                # is visually separated from what the Avatar typed.
+                self.console_service.print_ascii("", no_prompt=True)
                 self.console_service.print_ascii("", no_prompt=True)
                 return buffer.lower()
             if event.key == pygame.K_ESCAPE:
+                self.console_service.print_ascii("", no_prompt=True)
                 self.console_service.print_ascii("", no_prompt=True)
                 return None
             if event.key == pygame.K_BACKSPACE:
