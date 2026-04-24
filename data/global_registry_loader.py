@@ -9,6 +9,7 @@ from data.loaders.combat_map_loader     import CombatMapLoader
 from data.loaders.cursor_loader import CursorLoader
 from data.loaders.data_ovl_loader import DataOVLLoader
 from data.loaders.entry_trigger_loader  import EntryTriggerLoader
+from data.loaders.npc_file_loader       import NpcFileLoader
 from data.loaders.npc_metadata_loader   import NpcMetadataLoader
 from data.loaders.projectile_sprite_loader import ProjectileSpriteLoader
 from data.loaders.save_game_loader      import SavedGameLoader
@@ -64,6 +65,7 @@ class GlobalRegistryLoader(LoggerMixin):
     npc_sprite_builder:          NpcSpriteBuilder
 
     combat_map_loader:           CombatMapLoader
+    npc_file_loader:             NpcFileLoader
     npc_metadata_loader:         NpcMetadataLoader
     saved_game_loader:           SavedGameLoader
 
@@ -124,6 +126,7 @@ class GlobalRegistryLoader(LoggerMixin):
         # npc
         self.npc_sprite_builder.register_npc_sprites()
         self.npc_metadata_loader.load()
+        self.npc_file_loader.load(u5_path, self.u5map_loader.metadata)
 
         # magic
         self.spell_rune_loader.load()

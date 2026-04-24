@@ -14,6 +14,7 @@ from models.tile       import Tile
 from models.sprite     import Sprite
 from models.terrain    import Terrain
 
+from models.npc_file   import NpcMapSection
 from models.u5_map     import U5Map
 from models.item_type  import ItemType
 from models.world_item import WorldItem
@@ -59,6 +60,7 @@ class GlobalRegistry:
         self.combat_maps   = Registry[int, CombatMap]()     # combat_map_index
         self.dungeon_rooms = Registry[int, DungeonRoom]()   # dungeon_room_index
         self.npc_metadata  = Registry[int, NpcMetadata]()   # tile_id
+        self.npc_sections  = Registry[int, NpcMapSection]() # location_index
 
         # magic
         self.runes = Registry[str, str]()               # e.g. "a"  -> "AN",   "b"  -> "BET",   ...
