@@ -31,7 +31,6 @@ SPAWN_RULES: dict[NpcTileId, tuple[bool, bool, set[TerrainCategory]]] = {
     NpcTileId.TROLL:        (True,  True,  {M, F, Sw}),
     NpcTileId.DRAGON:       (True,  True,  {M}),
     NpcTileId.SNAKE:        (True,  True,  {G, S, Sw, D}),
-    NpcTileId.ROTWORM:      (True,  True,  {G, S, Sw}),
     NpcTileId.GIANT_SPIDER: (True,  True,  {F, Sw}),
     NpcTileId.INSECT_SWARM: (True,  True,  {Sw, F}),
     NpcTileId.WISP:         (True,  True,  {F}),
@@ -46,6 +45,7 @@ SPAWN_RULES: dict[NpcTileId, tuple[bool, bool, set[TerrainCategory]]] = {
     NpcTileId.BAT:          (False, True,  {F, M}),
     NpcTileId.GHOST:        (False, True,  {G, F, Sw}),
     NpcTileId.GAZER:        (False, True,  {G, S}),
+    NpcTileId.ROTWORM:      (False, True,  {G, S, Sw}),
 
     # Dungeons-only (and campsite ambushes for GREMLIN — TODO campsites).
     # Absent from wilderness spawner; placed from dungeon data instead.

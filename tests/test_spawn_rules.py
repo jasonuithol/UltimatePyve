@@ -32,6 +32,7 @@ def _abilities(registry, npc_tile_id: NpcTileId):
         NpcTileId.BAT,
         NpcTileId.GHOST,
         NpcTileId.GAZER,
+        NpcTileId.ROTWORM,
     ],
 )
 def test_underworld_only_monsters(metadata_registry, npc_tile_id):
