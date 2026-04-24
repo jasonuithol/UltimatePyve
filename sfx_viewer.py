@@ -76,6 +76,8 @@ class DummyConsoleService:
         pass
     def print_glyphs(self, glyphs: Iterable[U5Glyph], include_carriage_return: bool = True, no_prompt = False):
         pass
+    def backspace(self):
+        pass
 
 class ProgrammableViewPortDataProvider:
 

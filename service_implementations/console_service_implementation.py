@@ -19,3 +19,6 @@ class ConsoleServiceImplementation:
 
     def print_glyphs(self, glyphs: Iterable[U5Glyph], include_carriage_return: bool = True, no_prompt = False):
         self.interactive_console.print_glyphs(glyphs, include_carriage_return, no_prompt)
+
+    def backspace(self):
+        self.interactive_console.backspace()

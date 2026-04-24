@@ -56,6 +56,21 @@ class InteractiveConsole(ScalableComponent):
                 self._scroll()
                 self._prompt()
 
+    def backspace(self):
+        """
+        Erase the most recently printed character on the current row and move
+        the cursor back one column. Does nothing at column 0 — callers are
+        expected to guard against over-erasing the prompt.
+        """
+        if self._cursor_x <= 0:
+            return
+        # The animated cursor from the last draw() still occupies the cell
+        # we're leaving; blank it out so it doesn't linger as a ghost.
+        self._erase_cursor()
+        self._cursor_x -= 1
+        coord = Coord[int](self._cursor_x, self._cursor_y)
+        self._blank_glyph.blit_at_char_coord(coord, self.get_input_surface())
+
     def _scroll(self, lines: int = 1):
         self._erase_cursor()
         self.scroll_dy(self.display_config.FONT_SIZE.h * lines * -1)

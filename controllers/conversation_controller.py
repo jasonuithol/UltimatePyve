@@ -112,15 +112,16 @@ class ConversationController(LoggerMixin):
                 self.console_service.print_ascii("", no_prompt=True)
                 self.console_service.print_ascii("", no_prompt=True)
                 return None
-            if event.key == pygame.K_BACKSPACE:
+            if event.key in (pygame.K_BACKSPACE, pygame.K_DELETE):
                 if buffer:
                     buffer = buffer[:-1]
-                continue
-            if len(buffer) >= KEYWORD_MAX_CHARS:
+                    self.console_service.backspace()
                 continue
             char = keycode_to_char(event.key)
             if char is None or char in ("\n", "\t"):
                 continue
+            # Let the Avatar type the whole word for immersion — the 4-char
+            # match limit is applied silently at lookup time.
             buffer += char
             self.console_service.print_ascii(char, include_carriage_return=False, no_prompt=True)
 
