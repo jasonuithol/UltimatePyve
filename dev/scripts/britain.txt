@@ -1,0 +1,3 @@
+# Teleport straight into Britain — skips pathing across the overworld.
+teleport britain
+loc

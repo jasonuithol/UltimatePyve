@@ -1,0 +1,3 @@
+# Ararat — first entry in KEEP.NPC.
+teleport ararat
+loc

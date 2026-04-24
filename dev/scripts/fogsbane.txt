@@ -1,0 +1,3 @@
+# Fogsbane — first entry in DWELLING.NPC, exercises that parser path.
+teleport fogsbane
+loc

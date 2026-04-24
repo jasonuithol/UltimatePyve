@@ -8,6 +8,7 @@ from service_implementations.sound_service_implementation import SoundServiceImp
 from service_implementations.surface_factory_implementation import SurfaceFactoryImplementation
 from service_implementations.view_port_data_provider_implementation import ViewPortDataProviderImplementation
 
+from .console_command_service import ConsoleCommandService
 from .console_service   import ConsoleService
 from .display_service import DisplayService
 from .font_mapper       import FontMapper
@@ -56,6 +57,7 @@ def compose(provider: ServiceProvider):
     provider.register_mapping(SurfaceFactory, SurfaceFactoryImplementation)
 
     provider.register(AvatarSpriteFactory)
+    provider.register(ConsoleCommandService)
 
     provider.register(DoorStateService)
 

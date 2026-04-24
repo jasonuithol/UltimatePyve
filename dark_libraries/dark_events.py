@@ -35,6 +35,21 @@ class DarkEventService(LoggerMixin):
 
         self._party_location = party_location
 
+    def party_relocated(self, party_location: GlobalLocation):
+        # For dev/test teleports: detect location/level change and propagate the
+        # same events a normal pass_time transition would, without advancing time.
+        prev = self._party_location
+        level_changed = (
+            prev is None
+            or prev.location_index != party_location.location_index
+            or prev.level_index    != party_location.level_index
+        )
+        if level_changed:
+            self._level_changed(party_location)
+        if prev != party_location:
+            self._party_moved(party_location)
+        self._party_location = party_location
+
     def _level_changed(self, party_location: GlobalLocation):
         self.log(f"DEBUG: Propogating event 'level_changed' to {len(self._dark_event_listeners)} listeners: {self._party_location} -> {party_location}")
         for listener in self._dark_event_listeners:

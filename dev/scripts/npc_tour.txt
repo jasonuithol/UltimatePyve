@@ -1,0 +1,10 @@
+# Visit one location from each of the four .NPC files.
+# After boot this leaves the party sitting in Ararat; `world` exits.
+teleport britain
+loc
+teleport fogsbane
+loc
+teleport lord british's castle
+loc
+teleport ararat
+loc

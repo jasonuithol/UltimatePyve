@@ -1,10 +1,13 @@
+import os
 from datetime import timedelta
+from pathlib  import Path
 
 import pygame
 
 from controllers.active_member_controller import ActiveMemberController
 from controllers.cast_controller import CastController
 from controllers.combat_controller import CombatController
+from controllers.console_command_controller import ConsoleCommandController
 from controllers.move_controller import MoveController, MoveOutcome
 from controllers.ready_controller import ReadyController
 from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
@@ -14,6 +17,7 @@ from dark_libraries.logging     import LoggerMixin
 from data.global_registry     import GlobalRegistry
 
 from models.enums.direction_map import DIRECTION_MAP, DIRECTION_NAMES
+from models.enums.npc_tile_id import NpcTileId
 from models.enums.transport_mode import TransportMode
 from models.global_location     import GlobalLocation
 from models.party_inventory import PartyInventory
@@ -21,11 +25,13 @@ from models.u5_map              import U5Map
 from models.enums.inventory_offset import InventoryOffset
 
 # singletons
+from models.agents.monster_agent import MonsterAgent
 from models.agents.party_agent import PartyAgent
 
 from services.display_service import DisplayService
 from services.door_state_service import DoorStateService
 from services.input_service import InputService
+from services.console_command_service import ConsoleCommandService
 from services.console_service import ConsoleService
 from services.npc_service import NpcService
 from services.view_port_service import ViewPortService
@@ -44,6 +50,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     dark_event_service: DarkEventService
     input_service:  InputService
     console_service:    ConsoleService
+    console_command_service: ConsoleCommandService
     npc_service:        NpcService
     world_clock:        WorldClock
     display_service:    DisplayService
@@ -53,6 +60,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     active_member_controller: ActiveMemberController
     ready_controller: ReadyController
     cast_controller: CastController
+    console_command_controller: ConsoleCommandController
     door_state_service: DoorStateService
 
     view_port_service: ViewPortService
@@ -61,11 +69,15 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
 
         self.npc_service.add_npc(self.party_agent)
 
+        self._register_console_commands()
+
         # Propogate the 'loaded' event to listeners.
         self.dark_event_service.loaded(self.party_agent.get_current_location())
 
         self._set_window_title()
         self.view_port_service.set_party_mode()
+
+        self._run_boot_script()
 
         while not self._has_quit:
 
@@ -90,8 +102,11 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
                     self.combat_controller.enter_combat(enemy_npc)
 
     def dispatch_input(self) -> bool:
-        
+
         event = self.input_service.get_next_event()
+
+        if self.console_command_controller.handle_event(event):
+            return DONT_PASS_TIME
 
         self.active_member_controller.handle_event(event)
         self.ready_controller.handle_event(event)
@@ -128,16 +143,96 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
                 self.attack(action_direction)
                 return PASS_TIME
 
-        #
-        # NOTE: For development and testing only
-        #
-        elif event.key == pygame.K_TAB:
-            self.switch_outer_map()
-
-        elif event.key == pygame.K_BACKQUOTE:
-            self.rotate_transport()
-
         return DONT_PASS_TIME
+
+    def _register_console_commands(self):
+        self.console_command_service.register("world",     lambda args: self.switch_outer_map())
+        self.console_command_service.register("transport", lambda args: self.rotate_transport())
+        self.console_command_service.register("teleport",  self._teleport_command)
+        self.console_command_service.register("spawn",     self._spawn_command)
+        self.console_command_service.register("loc",       self._loc_command)
+        self.console_command_service.register("quit",      lambda args: self.dark_event_service.quit())
+
+    def _spawn_command(self, args: list[str]):
+        if not args:
+            self.console_service.print_ascii("Usage: spawn <monster> [dx dy]")
+            return
+        raw_name = "_".join(args[:-2] if len(args) >= 3 else args).upper()
+        try:
+            dx, dy = (int(args[-2]), int(args[-1])) if len(args) >= 3 else (1, 0)
+        except ValueError:
+            self.console_service.print_ascii("Usage: spawn <monster> [dx dy]")
+            return
+        try:
+            npc_enum = NpcTileId[raw_name]
+        except KeyError:
+            self.console_service.print_ascii(f"Unknown monster: {raw_name.lower()}")
+            return
+        tile_id = npc_enum.value
+        sprite = self.global_registry.sprites.get(tile_id)
+        meta   = self.global_registry.npc_metadata.get(tile_id)
+        if sprite is None or meta is None:
+            self.console_service.print_ascii(f"No sprite/meta for {npc_enum.name}")
+            return
+        party_coord = self.party_agent.get_current_location().coord
+        target = party_coord + (dx, dy)
+        monster = MonsterAgent(target, sprite, meta)
+        if monster.maximum_hitpoints == 0:
+            self.console_service.print_ascii(f"{npc_enum.name} has 0 HP — aborting")
+            return
+        monster._spent_action_points = self.party_agent._spent_action_points
+        self.npc_service.add_npc(monster)
+        self.console_service.print_ascii(f"Spawned {npc_enum.name.lower()} at {target}")
+
+    def _teleport_command(self, args: list[str]):
+        if not args:
+            self.console_service.print_ascii("Usage: teleport <name>")
+            return
+        query = " ".join(args).strip().upper()
+
+        # Overworld shortcut: return to whatever outer location is on the stack.
+        if query in ("WORLD", "OVERWORLD", "BRITANNIA"):
+            while self.party_agent.get_location_depth() > 1:
+                self.party_agent.pop_location()
+            self.dark_event_service.party_relocated(self.party_agent.get_current_location())
+            self._set_window_title()
+            self.console_service.print_ascii("Teleported: overworld")
+            return
+
+        target_map = None
+        for u5map in self.global_registry.maps.values():
+            if u5map.name.upper() == query:
+                target_map = u5map
+                break
+        if target_map is None:
+            self.console_service.print_ascii(f"No location: {query.lower()}")
+            return
+
+        inner_location = None
+        for _, exit_location in self.global_registry.entry_triggers.items():
+            if exit_location.location_index == target_map.location_index:
+                inner_location = exit_location
+                break
+        if inner_location is None:
+            self.console_service.print_ascii(f"No entry for: {target_map.name}")
+            return
+
+        self.load_location(inner_location)
+        self.dark_event_service.party_relocated(inner_location)
+        self._set_window_title()
+        self.console_service.print_ascii(f"Teleported: {target_map.name.capitalize()}")
+
+    def _run_boot_script(self):
+        script_path = os.environ.get("UPV_CONSOLE_SCRIPT")
+        if not script_path:
+            return
+        self.console_command_service.run_file(Path(script_path))
+
+    def _loc_command(self, args: list[str]):
+        current = self.party_agent.get_current_location()
+        active_map = self.global_registry.maps.get(current.location_index)
+        name = active_map.name if active_map is not None else f"#{current.location_index}"
+        self.console_service.print_ascii(f"{name} lvl={current.level_index} {current.coord}")
 
     def _say_blocked(self):
         self.console_service.print_ascii("Blocked !")

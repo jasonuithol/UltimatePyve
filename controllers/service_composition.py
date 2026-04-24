@@ -5,6 +5,7 @@ from controllers.move_controller import MoveController
 from controllers.ready_controller import ReadyController
 from dark_libraries.service_provider import ServiceProvider
 
+from .console_command_controller import ConsoleCommandController
 from .initialisation_controller import InitialisationController
 from .party_controller          import PartyController
 from .combat_controller         import CombatController
@@ -19,6 +20,7 @@ def compose(provider: ServiceProvider):
     provider.register(ActiveMemberController)
     provider.register(ReadyController)
     provider.register(CastController)
+    provider.register(ConsoleCommandController)
 
     compose_spell_controllers(provider)
 
