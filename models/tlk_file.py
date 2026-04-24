@@ -10,8 +10,9 @@ Each script block is a stream of bytes split into "script lines" by NUL (0x00).
 The first five lines are fixed: Name, Description, Greeting, Job, Bye.
 Subsequent line pairs are (keyword, response), optionally chained via the Or
 command for multi-keyword alternatives. A StartLabelDefinition (0x90) marks
-the boundary between the keyword Q&A section and the label/goto section,
-which we currently skip.
+the boundary between the keyword Q&A section and the label/goto section;
+the label section holds jump targets addressable by raw label bytes
+(0x91..0x9B) appearing elsewhere in the script.
 
 Byte decoding (per Bradhannah's Ultima5Redux CompressedWordReference and
 TalkScripts, simplified):
@@ -63,6 +64,14 @@ class TalkCommand(IntEnum):
 _MIN_LABEL = 0x91
 _MAX_LABEL = 0x9B
 _TOTAL_LABELS = _MAX_LABEL - _MIN_LABEL + 1  # 11 (C# says 10; not load-bearing)
+
+
+def is_label_byte(b: int) -> bool:
+    return _MIN_LABEL <= b <= _MAX_LABEL
+
+
+def label_byte_to_num(b: int) -> int:
+    return b - _MIN_LABEL
 
 
 def _is_char_byte(b: int) -> bool:
@@ -176,6 +185,30 @@ class ScriptLine:
 
 
 @dataclass
+class TlkLabel:
+    """
+    A parsed label region from a TLK script. Mirrors Ultima5Redux's
+    ScriptTalkLabel.
+
+    `initial_line` is the label-definition line itself — it begins with the
+    [START_LABEL_DEFINITION, label_byte] marker, but typically has the
+    label's entry text (often a yes/no question) immediately after those
+    two marker items. Rendering drops the two markers as a no-op and emits
+    the remaining items.
+
+    `default_answers` is a list of fallback lines shown when the user's
+    follow-up keyword doesn't match anything in `keyword_responses`.
+    Ultima V uses this pattern extensively: the NPC asks a question via
+    initial_line; a keyword match branches to a specific response;
+    otherwise the default_answers are spoken.
+    """
+    label_num:         int
+    initial_line:      ScriptLine             = field(default_factory=ScriptLine)
+    default_answers:   list[ScriptLine]       = field(default_factory=list)
+    keyword_responses: dict[str, ScriptLine]  = field(default_factory=dict)
+
+
+@dataclass
 class NpcDialog:
     """
     A parsed TLK script for one NPC.
@@ -191,6 +224,7 @@ class NpcDialog:
     job:         ScriptLine
     bye:         ScriptLine
     keyword_responses: dict[str, ScriptLine] = field(default_factory=dict)
+    labels:            dict[int, TlkLabel]   = field(default_factory=dict)
     script_lines:      list[ScriptLine]      = field(default_factory=list)
 
 
@@ -254,31 +288,52 @@ def _decode_script_block(raw: bytes, words: CompressedWords) -> list[ScriptLine]
     return lines
 
 
-def _extract_keyword_responses(lines: list[ScriptLine]) -> dict[str, ScriptLine]:
+def _is_end_of_label_section(line: ScriptLine) -> bool:
+    # Redux: [StartLabelDefinition, EndScript] == terminator of the label region.
+    if len(line.items) < 2:
+        return False
+    return (
+        line.items[0].command == TalkCommand.START_LABEL_DEFINITION
+        and line.items[1].command == TalkCommand.END_SCRIPT
+    )
+
+
+def _is_label_definition(line: ScriptLine) -> bool:
+    # Redux: [StartLabelDefinition, <label byte>] — the opener for a new label.
+    if len(line.items) < 2:
+        return False
+    if line.items[0].command != TalkCommand.START_LABEL_DEFINITION:
+        return False
+    return is_label_byte(line.items[1].command)
+
+
+def _extract_qa_section(
+    lines: list[ScriptLine],
+    start: int,
+    stop_at_label_definition: bool,
+) -> tuple[dict[str, ScriptLine], int]:
     """
-    Walk the script lines after the fixed five, collecting
-    (keyword) -> (response) pairs. Stops at the label section marker
-    (START_LABEL_DEFINITION). Handles the OR command for multi-keyword
-    alternatives.
+    Walk (keyword)->(response) pairs starting at `start`. Returns the
+    collected responses and the index of the first line NOT consumed
+    (either a START_LABEL_DEFINITION line, or past the end of `lines`).
+    Handles OR-chained keyword alternatives.
     """
     responses: dict[str, ScriptLine] = {}
-    i = 5
+    i = start
     while i + 1 < len(lines):
         line = lines[i]
         first = line.first_item()
         if first is None:
             i += 1
             continue
-        if first.command == TalkCommand.START_LABEL_DEFINITION:
+        if stop_at_label_definition and first.command == TalkCommand.START_LABEL_DEFINITION:
             break
 
-        # Gather keyword(s) for this Q&A pair.
         keywords: list[str] = []
         keyword_text = line.as_text().lower()
         if keyword_text:
             keywords.append(keyword_text)
 
-        # If the next line begins with OR, it chains another keyword.
         while i + 2 < len(lines):
             next_line = lines[i + 1]
             next_first = next_line.first_item()
@@ -294,7 +349,71 @@ def _extract_keyword_responses(lines: list[ScriptLine]) -> dict[str, ScriptLine]
             responses.setdefault(kw, response)
         i += 2
 
-    return responses
+    return responses, i
+
+
+def _extract_labels(lines: list[ScriptLine], start: int) -> dict[int, TlkLabel]:
+    """
+    Parse the label section that begins at `start` (which must point at a
+    START_LABEL_DEFINITION line, or the end of `lines`). Mirrors
+    Ultima5Redux's ScriptTalkLabel parsing in TalkScript.InitScript.
+    """
+    labels: dict[int, TlkLabel] = {}
+    i = start
+    while i < len(lines):
+        line = lines[i]
+        if _is_end_of_label_section(line):
+            break
+        if not _is_label_definition(line):
+            # Malformed / defensive: give up so we don't crash on bad data.
+            break
+
+        label_num = label_byte_to_num(line.items[1].command)
+        label = TlkLabel(label_num=label_num, initial_line=line)
+        labels[label_num] = label
+        i += 1
+
+        # First default answer (entry text) — present unless the next line is
+        # already another label definition (empty label).
+        if i < len(lines) and not _is_label_definition(lines[i]) and not _is_end_of_label_section(lines[i]):
+            label.default_answers.append(lines[i])
+            i += 1
+        else:
+            continue
+
+        # Label-scoped Q&A and additional default answers. A line that reads
+        # as a question keyword (short, no spaces) is treated as a Q keyword;
+        # otherwise it's appended as another default answer.
+        while i < len(lines):
+            if _is_label_definition(lines[i]) or _is_end_of_label_section(lines[i]):
+                break
+
+            current = lines[i]
+            text = current.as_text().lower()
+            looks_like_keyword = bool(text) and " " not in text and 1 <= len(text) <= 6
+
+            if looks_like_keyword and i + 1 < len(lines):
+                # Gather OR-chained keywords just like the pre-label loop.
+                keywords = [text]
+                while i + 2 < len(lines):
+                    nxt = lines[i + 1]
+                    nxt_first = nxt.first_item()
+                    if nxt_first is None or nxt_first.command != TalkCommand.OR:
+                        break
+                    i += 2
+                    alt_text = lines[i].as_text().lower()
+                    if alt_text:
+                        keywords.append(alt_text)
+                answer = lines[i + 1]
+                for kw in keywords:
+                    label.keyword_responses.setdefault(kw, answer)
+                i += 2
+            else:
+                # Non-keyword line inside the label body: another default answer.
+                label.default_answers.append(current)
+                i += 1
+
+    return labels
 
 
 class TlkFile:
@@ -329,6 +448,10 @@ class TlkFile:
             while len(lines) < 5:
                 lines.append(ScriptLine())
 
+            responses, label_section_start = _extract_qa_section(
+                lines, start=5, stop_at_label_definition=True
+            )
+            labels = _extract_labels(lines, start=label_section_start)
             dialog = NpcDialog(
                 npc_dialog_number = npc_index,
                 name              = lines[0],
@@ -336,7 +459,8 @@ class TlkFile:
                 greeting          = lines[2],
                 job               = lines[3],
                 bye               = lines[4],
-                keyword_responses = _extract_keyword_responses(lines),
+                keyword_responses = responses,
+                labels            = labels,
                 script_lines      = lines,
             )
             self.dialogs[npc_index] = dialog

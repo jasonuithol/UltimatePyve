@@ -7,7 +7,15 @@ from data.global_registry import GlobalRegistry
 
 from models.agents.party_agent     import PartyAgent
 from models.agents.town_npc_agent  import TownNpcAgent
-from models.tlk_file               import NpcDialog, ScriptItem, ScriptLine, TalkCommand
+from models.tlk_file               import (
+    NpcDialog,
+    ScriptItem,
+    ScriptLine,
+    TalkCommand,
+    TlkLabel,
+    is_label_byte,
+    label_byte_to_num,
+)
 
 from services.console_service import ConsoleService
 from services.input_service   import InputService, keycode_to_char
@@ -56,26 +64,37 @@ class ConversationController(LoggerMixin):
         # Ultima V opens a conversation with Description, then Greeting. The
         # NPC's Name line is only revealed if the Avatar asks for it (and even
         # then, NPCs with IF_ELSE_KNOWS_NAME hide themselves until introduced).
-        description = self._render(dialog.description, target_npc, avatar_name)
+        description = self._render_text_only(dialog, dialog.description, target_npc, avatar_name)
         self._say(f"You see {description}" if description else "You see someone.")
-        greeting = self._render(dialog.greeting, target_npc, avatar_name)
-        if greeting:
-            self._npc_speak(greeting)
+
+        # Greeting may be just a label byte (Eb the busboy) — _render_and_speak
+        # follows the goto into the label's initial_line.
+        active_label = self._render_and_speak(dialog, dialog.greeting, target_npc, avatar_name)
 
         while True:
             keyword = self._read_keyword()
-            if keyword is None or keyword == "":
-                self._npc_speak(self._render(dialog.bye, target_npc, avatar_name))
-                return
-            if keyword == "bye":
-                self._npc_speak(self._render(dialog.bye, target_npc, avatar_name))
+            if keyword is None or keyword == "" or keyword == "bye":
+                self._render_and_speak(dialog, dialog.bye, target_npc, avatar_name)
                 return
 
-            response_text = self._lookup(dialog, keyword, target_npc, avatar_name)
-            if response_text is None:
-                self._npc_speak("That I cannot help thee with.")
+            response_line = self._lookup(dialog, keyword, target_npc, active_label, avatar_name)
+            if response_line is None:
+                # The user typed a keyword that matched nothing in the NPC-
+                # level or label-level Q&A. If we're inside a label, fall
+                # back to its default answers (Redux ScriptTalkLabel pattern);
+                # otherwise give the generic deflection.
+                if active_label and active_label.default_answers:
+                    new_active = None
+                    for default in active_label.default_answers:
+                        result = self._render_and_speak(dialog, default, target_npc, avatar_name)
+                        if result is not None:
+                            new_active = result
+                    active_label = new_active
+                else:
+                    self._npc_speak("That I cannot help thee with.")
                 continue
-            self._npc_speak(response_text)
+
+            active_label = self._render_and_speak(dialog, response_line, target_npc, avatar_name)
 
     def _say(self, msg: str):
         # Conversation mode: suppress the '>' command prompt between lines,
@@ -89,13 +108,14 @@ class ConversationController(LoggerMixin):
         # from narrator lines like "You see ...".
         self._say(f'"{msg}"')
 
-    def _read_keyword(self) -> str | None:
+    def _read_keyword(self, prompt: str = "Your interest?") -> str | None:
         """
-        Read a keyword of up to KEYWORD_MAX_CHARS characters, terminated by
-        Enter. Escape or a synthetic-quit event returns None to abort the
-        conversation.
+        Read a word terminated by Enter. Escape or a synthetic-quit event
+        returns None to abort the conversation. The match limit (first
+        KEYWORD_MAX_CHARS characters) is applied later at lookup time; the
+        user is free to type the whole word for immersion.
         """
-        self.console_service.print_ascii("Your interest?", no_prompt=True)
+        self.console_service.print_ascii(prompt, no_prompt=True)
         self.console_service.print_ascii(":", include_carriage_return=False, no_prompt=True)
         buffer = ""
         while True:
@@ -103,8 +123,6 @@ class ConversationController(LoggerMixin):
             if getattr(event, "type", 0) == pygame.QUIT or getattr(event, "key", 0) == -1:
                 return None
             if event.key == pygame.K_RETURN:
-                # End the input line, then a blank row so the NPC's response
-                # is visually separated from what the Avatar typed.
                 self.console_service.print_ascii("", no_prompt=True)
                 self.console_service.print_ascii("", no_prompt=True)
                 return buffer.lower()
@@ -120,8 +138,6 @@ class ConversationController(LoggerMixin):
             char = keycode_to_char(event.key)
             if char is None or char in ("\n", "\t"):
                 continue
-            # Let the Avatar type the whole word for immersion — the 4-char
-            # match limit is applied silently at lookup time.
             buffer += char
             self.console_service.print_ascii(char, include_carriage_return=False, no_prompt=True)
 
@@ -130,22 +146,37 @@ class ConversationController(LoggerMixin):
         dialog: NpcDialog,
         keyword: str,
         npc: TownNpcAgent,
+        active_label: TlkLabel | None,
         avatar_name: str,
-    ) -> str | None:
-        # Baked-in keywords that every NPC answers.
+    ) -> ScriptLine | None:
+        # Baked-in keywords that every NPC answers. Note: "name" synthesises a
+        # "My name is ..." prefix and then renders the real name line, which
+        # may carry ASK_NAME at the end — we build a combined line so the
+        # rendering pipeline handles both cases uniformly.
         if keyword == "name":
-            name_text = self._render(dialog.name, npc, avatar_name)
-            return f"My name is {name_text}" if name_text else None
+            name_text = self._render_text_only(dialog, dialog.name, npc, avatar_name)
+            if not name_text and not dialog.name.contains_command(TalkCommand.ASK_NAME):
+                return None
+            prefix = ScriptItem(TalkCommand.PLAIN_STRING, "My name is ")
+            return ScriptLine(items=[prefix] + list(dialog.name.items))
         if keyword in ("job", "work"):
-            return self._render(dialog.job, npc, avatar_name)
+            return dialog.job
         if keyword == "look":
-            return self._render(dialog.description, npc, avatar_name)
+            return dialog.description
 
-        # Custom keywords: U5 matches on the first 4 characters.
         prefix = keyword[:KEYWORD_MAX_CHARS]
+
+        # Label-scoped keywords take precedence when we're in a label —
+        # Redux checks ScriptTalkLabel.QuestionAnswers first before falling
+        # through to the NPC-level bank.
+        if active_label:
+            for kw, response_line in active_label.keyword_responses.items():
+                if kw[:KEYWORD_MAX_CHARS] == prefix:
+                    return response_line
+
         for kw, response_line in dialog.keyword_responses.items():
             if kw[:KEYWORD_MAX_CHARS] == prefix:
-                return self._render(response_line, npc, avatar_name)
+                return response_line
         return None
 
     def _avatar_name(self) -> str:
@@ -155,16 +186,111 @@ class ConversationController(LoggerMixin):
         name = saved.create_character_record(0).name
         return name if name else "Avatar"
 
-    def _render(self, line: ScriptLine, npc: TownNpcAgent, avatar_name: str) -> str:
+    # -----------------------------------------------------------------
+    # Rendering / speaking pipeline
+    # -----------------------------------------------------------------
+
+    def _render_and_speak(
+        self,
+        dialog: NpcDialog,
+        line: ScriptLine,
+        npc: TownNpcAgent,
+        avatar_name: str,
+    ) -> TlkLabel | None:
         """
-        Render a ScriptLine to plain text, honouring IF_ELSE_KNOWS_NAME
-        sections and skipping AVATARS_NAME sections when the NPC has not yet
-        been introduced to the Avatar. Mirrors Ultima5Redux's
-        Conversation.ProcessMultipleLines skip-instruction state machine.
+        Render a ScriptLine as an NPC utterance. Follows label gotos by
+        switching to the label's initial_line and continuing. Handles
+        ASK_NAME inline — when encountered, the text accumulated so far is
+        spoken, the Avatar is prompted for a name, and the result
+        (match/mismatch) is spoken as a follow-up.
+
+        Returns the last label that a goto landed on, so the caller can
+        scope subsequent keyword lookups to that label.
+        """
+        pending_lines: list[ScriptLine] = [line]
+        buffer: list[str] = []
+        active_label: TlkLabel | None = None
+        visited_labels: set[int] = set()
+
+        def flush_buffered():
+            text = "".join(buffer).strip()
+            buffer.clear()
+            if text:
+                self._npc_speak(text)
+
+        while pending_lines:
+            current = pending_lines.pop(0)
+            goto_label = self._render_line_to_buffer(
+                dialog, current, npc, avatar_name, buffer, flush_buffered
+            )
+            if goto_label is not None:
+                # Cyclic label graph (A→B→A) — stop following gotos and
+                # emit whatever we've accumulated so far.
+                if goto_label.label_num in visited_labels:
+                    self.log(
+                        f"DEBUG: cyclic label goto detected at label "
+                        f"{goto_label.label_num}; aborting render"
+                    )
+                    break
+                visited_labels.add(goto_label.label_num)
+                active_label = goto_label
+                pending_lines = [goto_label.initial_line]
+
+        flush_buffered()
+        return active_label
+
+    def _render_text_only(
+        self,
+        dialog: NpcDialog,
+        line: ScriptLine,
+        npc: TownNpcAgent,
+        avatar_name: str,
+    ) -> str:
+        """
+        Render a ScriptLine to plain text without emitting anything to the
+        console. Follows label gotos. ASK_NAME is skipped (descriptions and
+        preview text don't trigger interactive prompts).
+        """
+        pending_lines: list[ScriptLine] = [line]
+        buffer: list[str] = []
+        visited_labels: set[int] = set()
+
+        def do_nothing():
+            return
+
+        while pending_lines:
+            current = pending_lines.pop(0)
+            goto_label = self._render_line_to_buffer(
+                dialog, current, npc, avatar_name, buffer, do_nothing,
+                skip_ask_name=True,
+            )
+            if goto_label is not None:
+                if goto_label.label_num in visited_labels:
+                    break
+                visited_labels.add(goto_label.label_num)
+                pending_lines = [goto_label.initial_line]
+
+        return "".join(buffer).strip()
+
+    def _render_line_to_buffer(
+        self,
+        dialog: NpcDialog,
+        line: ScriptLine,
+        npc: TownNpcAgent,
+        avatar_name: str,
+        buffer: list[str],
+        flush_callback,
+        skip_ask_name: bool = False,
+    ) -> TlkLabel | None:
+        """
+        Walk the sections of a ScriptLine, appending rendered text to buffer.
+        Honours IF_ELSE_KNOWS_NAME skip-instructions (mirrors Ultima5Redux's
+        ProcessMultipleLines). Returns a TlkLabel if the line contains a
+        label-byte goto, so the caller can continue rendering from that
+        label's initial_line.
         """
         has_met  = npc.has_met_avatar
         sections = line.split_into_sections()
-        parts: list[str] = []
         skip_counter = -1
         i = 0
         while i < len(sections):
@@ -178,8 +304,8 @@ class ConversationController(LoggerMixin):
                 i += 1
                 continue
 
-            # If this section needs to address the Avatar by name but we
-            # haven't been introduced yet, drop the whole section.
+            # A section that references the Avatar's name but the NPC hasn't
+            # been introduced yet is dropped entirely.
             if not has_met and any(it.command == TalkCommand.AVATARS_NAME for it in section):
                 i += 1
                 continue
@@ -193,7 +319,11 @@ class ConversationController(LoggerMixin):
                 # "unknown" branch. Pick one based on has_met_avatar.
                 skip_instruction = "skip_after_next" if has_met else "skip_next"
             else:
-                self._render_section(section, avatar_name, parts)
+                goto_label = self._render_section_items(
+                    section, dialog, npc, avatar_name, buffer, flush_callback, skip_ask_name
+                )
+                if goto_label is not None:
+                    return goto_label
 
             if skip_counter != -1:
                 skip_counter -= 1
@@ -204,21 +334,55 @@ class ConversationController(LoggerMixin):
                 i += 1
 
             i += 1
+        return None
 
-        return "".join(parts).strip()
-
-    @staticmethod
-    def _render_section(
+    def _render_section_items(
+        self,
         section: list[ScriptItem],
+        dialog: NpcDialog,
+        npc: TownNpcAgent,
         avatar_name: str,
-        parts: list[str],
-    ) -> None:
+        buffer: list[str],
+        flush_callback,
+        skip_ask_name: bool,
+    ) -> TlkLabel | None:
+        skip_next = False
         for item in section:
-            if item.command == TalkCommand.PLAIN_STRING:
-                parts.append(item.text)
-            elif item.command == TalkCommand.AVATARS_NAME:
-                parts.append(avatar_name)
-            elif item.command == TalkCommand.NEW_LINE:
-                parts.append("\n")
-            # Other command bytes (KEY_WAIT, PAUSE, KARMA_*, ASK_NAME, labels,
-            # etc.) are silently dropped in this pass.
+            if skip_next:
+                # The label byte immediately after START_LABEL_DEFINITION is
+                # the label's OWN identifier, not a goto. Mirrors Redux's
+                # ProcessLine nItem++ — without this, rendering a label's
+                # initial_line would infinite-loop back into itself.
+                skip_next = False
+                continue
+            cmd = item.command
+            if cmd == TalkCommand.PLAIN_STRING:
+                buffer.append(item.text)
+            elif cmd == TalkCommand.AVATARS_NAME:
+                buffer.append(avatar_name)
+            elif cmd == TalkCommand.NEW_LINE:
+                buffer.append("\n")
+            elif cmd == TalkCommand.ASK_NAME:
+                if skip_ask_name or npc.has_met_avatar:
+                    continue
+                flush_callback()
+                self._handle_ask_name(npc, avatar_name)
+            elif cmd == TalkCommand.START_LABEL_DEFINITION:
+                skip_next = True
+            elif is_label_byte(cmd):
+                label = dialog.labels.get(label_byte_to_num(cmd))
+                if label is not None:
+                    return label
+            # KEY_WAIT, PAUSE, KARMA_*, END_CONVERSATION, DO_NOTHING_SECTION,
+            # and other command bytes are silently dropped.
+        return None
+
+    def _handle_ask_name(self, npc: TownNpcAgent, avatar_name: str):
+        response = self._read_keyword(prompt="What is thy name?")
+        if response is None:
+            return
+        if response.strip().lower() == avatar_name.strip().lower():
+            npc.has_met_avatar = True
+            self._npc_speak("A pleasure")
+        else:
+            self._npc_speak("If you say so")

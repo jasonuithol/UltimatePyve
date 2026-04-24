@@ -249,3 +249,168 @@ def test_unknown_keyword_gets_polite_deflection(harness):
 
     lines = harness.console_lines
     assert any("cannot help" in line.lower() for line in lines), lines
+
+
+def _find_dialog_with_label_greeting(registry):
+    """
+    Find any (location_name, dialog_number, label) where the NPC's greeting
+    is (or begins with) a label byte — a goto into that NPC's label section.
+    Returns None if no such NPC exists in the current game data.
+    """
+    from models.tlk_file import is_label_byte, label_byte_to_num
+    for loc_index, dialogs in registry.npc_dialogs.items():
+        map_entry = registry.maps.get(loc_index)
+        if map_entry is None:
+            continue
+        for dialog_number, dialog in dialogs.items():
+            for item in dialog.greeting.items:
+                if is_label_byte(item.command):
+                    label = dialog.labels.get(label_byte_to_num(item.command))
+                    if label is None:
+                        continue
+                    return map_entry.name, dialog_number, label
+    return None
+
+
+def _find_dialog_with_ask_name(registry, location_name: str):
+    """
+    Find a dialog in the given location whose Name line contains ASK_NAME.
+    Returns (dialog_number, dialog) or None.
+    """
+    from models.tlk_file import TalkCommand
+    loc_index = None
+    for m in registry.maps.values():
+        if m.name.upper() == location_name.upper():
+            loc_index = m.location_index
+            break
+    if loc_index is None:
+        return None
+    dialogs = registry.npc_dialogs.get(loc_index, {})
+    for dialog_number, dialog in dialogs.items():
+        if dialog.name.contains_command(TalkCommand.ASK_NAME):
+            return dialog_number, dialog
+    return None
+
+
+def _find_any_dialog_with_ask_name(registry):
+    """Locate (location_name, dialog_number, dialog) for any NPC whose Name
+    line contains ASK_NAME. Needed because not every town has such an NPC."""
+    from models.tlk_file import TalkCommand
+    for loc_index, dialogs in registry.npc_dialogs.items():
+        map_entry = registry.maps.get(loc_index)
+        if map_entry is None:
+            continue
+        for dialog_number, dialog in dialogs.items():
+            if dialog.name.contains_command(TalkCommand.ASK_NAME):
+                return map_entry.name, dialog_number, dialog
+    return None
+
+
+def _avatar_name_from_registry(registry) -> str:
+    saved = registry.saved_game
+    assert saved is not None, "Saved game must be loaded for avatar name"
+    return saved.create_character_record(0).name
+
+
+def test_greeting_that_is_a_label_byte_renders_the_label_text(harness):
+    # Some NPCs (Eb the busboy is the canonical example) have a greeting
+    # that is literally a label-byte goto. The controller should follow the
+    # goto and render the label's initial_line, not an empty string.
+    registry = harness.party_controller.global_registry
+    found = _find_dialog_with_label_greeting(registry)
+    if found is None:
+        pytest.skip("No NPC with label-byte greeting in the current TLK data")
+    location_name, dialog_number, label = found
+
+    # Collect the label's entry text so we can assert it appears on screen.
+    # The label's initial_line has [START_LABEL_DEFINITION, label_byte, ...text];
+    # anything in the .text of its PlainString items counts as visible content.
+    from models.tlk_file import TalkCommand
+    visible = "".join(
+        it.text for it in label.initial_line.items
+        if it.command == TalkCommand.PLAIN_STRING
+    ).strip()
+    assert visible, (
+        f"Test precondition: label {label.label_num} has no visible entry text — "
+        "wouldn't prove rendering works"
+    )
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number)
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    lines = harness.console_lines
+    # Compare case-insensitively since the label text may include quotes,
+    # punctuation, and surrounding whitespace handled by the console wrapper.
+    needle = visible.lower()
+    assert any(needle in line.lower() for line in lines), (
+        f"Expected label entry text {visible!r} to appear in console, got {lines}"
+    )
+
+
+def test_ask_name_with_correct_answer_sets_has_met(harness):
+    # When the NPC's name line ends in ASK_NAME and the Avatar answers with
+    # the correct name, the NPC should respond with the "pleasure" phrase and
+    # the npc.has_met_avatar flag should be True afterwards.
+    registry = harness.party_controller.global_registry
+    found = _find_any_dialog_with_ask_name(registry)
+    if found is None:
+        pytest.skip("No NPC with ASK_NAME in the current TLK data")
+    location_name, dialog_number, _dialog = found
+    avatar_name = _avatar_name_from_registry(registry)
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number)
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("name")
+    harness.scripted.queue_string(avatar_name.lower())
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    lines = harness.console_lines
+    assert any("pleasure" in line.lower() for line in lines), lines
+    assert injector.injected_npc.has_met_avatar, (
+        "has_met_avatar should be True after the Avatar introduces themselves"
+    )
+
+
+def test_ask_name_with_wrong_answer_leaves_has_met_false(harness):
+    registry = harness.party_controller.global_registry
+    found = _find_any_dialog_with_ask_name(registry)
+    if found is None:
+        pytest.skip("No NPC with ASK_NAME in the current TLK data")
+    location_name, dialog_number, _dialog = found
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number)
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("name")
+    harness.scripted.queue_string("nobody")  # deliberately wrong
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    lines = harness.console_lines
+    assert any("if you say so" in line.lower() for line in lines), lines
+    assert not injector.injected_npc.has_met_avatar, (
+        "has_met_avatar should stay False when the Avatar gives the wrong name"
+    )
