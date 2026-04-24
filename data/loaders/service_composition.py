@@ -29,6 +29,7 @@ from data.loaders.u5_glyph_loader       import U5GlyphLoader
 
 from data.loaders.location_metadata_builder import LocationMetadataBuilder
 from data.loaders.npc_file_loader   import NpcFileLoader
+from data.loaders.tlk_file_loader   import TlkFileLoader
 from data.loaders.u5_map_loader     import U5MapLoader
 
 def compose(provider: ServiceProvider):
@@ -60,6 +61,7 @@ def compose(provider: ServiceProvider):
     provider.register(LocationMetadataBuilder)
     provider.register(U5MapLoader)
     provider.register(NpcFileLoader)
+    provider.register(TlkFileLoader)
     provider.register(NpcMetadataLoader)
     provider.register(SavedGameLoader)
     provider.register(SpellRuneLoader)

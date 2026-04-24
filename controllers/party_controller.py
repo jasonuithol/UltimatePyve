@@ -6,6 +6,7 @@ from controllers.active_member_controller import ActiveMemberController
 from controllers.cast_controller import CastController
 from controllers.combat_controller import CombatController
 from controllers.console_command_controller import ConsoleCommandController
+from controllers.conversation_controller import ConversationController
 from controllers.move_controller import MoveController, MoveOutcome
 from controllers.ready_controller import ReadyController
 from dark_libraries.dark_events import DarkEventListenerMixin, DarkEventService
@@ -59,6 +60,7 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
     ready_controller: ReadyController
     cast_controller: CastController
     console_command_controller: ConsoleCommandController
+    conversation_controller: ConversationController
     door_state_service: DoorStateService
 
     view_port_service: ViewPortService
@@ -137,6 +139,13 @@ class PartyController(DarkEventListenerMixin, LoggerMixin):
             action_direction = self.input_service.obtain_action_direction()
             if not action_direction is None:
                 self.attack(action_direction)
+                return PASS_TIME
+
+        elif event.key == pygame.K_t:
+            self.console_service.print_ascii("Talk - ", include_carriage_return=False)
+            action_direction = self.input_service.obtain_action_direction()
+            if not action_direction is None:
+                self.conversation_controller.talk(action_direction)
                 return PASS_TIME
 
         return DONT_PASS_TIME
