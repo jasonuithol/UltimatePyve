@@ -190,8 +190,9 @@ def test_talk_prints_npc_greeting(harness):
 
     assert injector.injected_npc is not None, "Injector never fired"
     lines = harness.console_lines
-    # "You meet ..." is how the controller opens the conversation.
-    assert any(line.startswith("You meet") for line in lines), lines
+    # The controller opens the conversation with the Description line,
+    # prefixed by "You see " — matching U5's original intro.
+    assert any(line.startswith("You see") for line in lines), lines
 
 
 def test_talk_name_keyword_prints_npc_name(harness):
@@ -219,11 +220,12 @@ def test_talk_name_keyword_prints_npc_name(harness):
     harness.party_controller.run()
 
     lines = harness.console_lines
-    # The name should appear at least twice — once on greeting ("You meet X")
-    # and once as the response to the 'name' keyword.
+    # The Name line is only revealed when the Avatar asks. Response format:
+    # "My name is {name}".
     name_hits = [line for line in lines if npc_name.lower() in line.lower()]
-    assert len(name_hits) >= 2, (
-        f"Expected NPC name {npc_name!r} to appear at least twice in console, got {name_hits}"
+    assert any("my name is" in line.lower() for line in lines), lines
+    assert len(name_hits) >= 1, (
+        f"Expected NPC name {npc_name!r} to appear in the console, got {lines}"
     )
 
 

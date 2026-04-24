@@ -135,6 +135,45 @@ class ScriptLine:
     def first_item(self) -> ScriptItem | None:
         return self.items[0] if self.items else None
 
+    def contains_command(self, command: int) -> bool:
+        return any(it.command == command for it in self.items)
+
+    def split_into_sections(self) -> list[list[ScriptItem]]:
+        """
+        Split the item stream into sections, mirroring Ultima5Redux's
+        TalkScript.ScriptLine.SplitIntoSections(). Sections are the unit
+        over which the IF_ELSE_KNOWS_NAME skip-instructions operate.
+
+        A START_NEW_SECTION (0xA2) opens a fresh section. IF_ELSE_KNOWS_NAME
+        and DO_NOTHING_SECTION each occupy their own "stump" section, then
+        the item after them forces another split.
+        """
+        sections: list[list[ScriptItem]] = [[]]
+        n = 0
+        first = True
+        force_split_next = False
+        for item in self.items:
+            cmd = item.command
+            if cmd == TalkCommand.START_NEW_SECTION:
+                n += 1
+                sections.append([])
+                continue
+            if cmd in (TalkCommand.IF_ELSE_KNOWS_NAME, TalkCommand.DO_NOTHING_SECTION):
+                n += 1
+                sections.append([])
+                sections[n].append(item)
+                force_split_next = True
+                continue
+            if first:
+                n = 0
+            if force_split_next:
+                force_split_next = False
+                n += 1
+                sections.append([])
+            sections[n].append(item)
+            first = False
+        return sections
+
 
 @dataclass
 class NpcDialog:

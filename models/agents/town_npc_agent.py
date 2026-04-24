@@ -22,6 +22,9 @@ class TownNpcAgent(NpcAgent):
         self._tile_id = tile_id
         self._name = name
         self._dialog_number = dialog_number
+        # Has the Avatar been introduced to this NPC yet? Honoured by the
+        # conversation renderer when it hits an IF_ELSE_KNOWS_NAME branch.
+        self.has_met_avatar: bool = False
 
     @property
     def tile_id(self) -> int:

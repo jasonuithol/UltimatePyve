@@ -7,7 +7,7 @@ from data.global_registry import GlobalRegistry
 
 from models.agents.party_agent     import PartyAgent
 from models.agents.town_npc_agent  import TownNpcAgent
-from models.tlk_file               import NpcDialog, ScriptLine, TalkCommand
+from models.tlk_file               import NpcDialog, ScriptItem, ScriptLine, TalkCommand
 
 from services.console_service import ConsoleService
 from services.input_service   import InputService, keycode_to_char
@@ -53,24 +53,29 @@ class ConversationController(LoggerMixin):
 
         avatar_name = self._avatar_name()
 
-        self._say(f"You meet {self._render(dialog.name, avatar_name)}")
-        self._say(self._render(dialog.description, avatar_name))
-        self._say(self._render(dialog.greeting, avatar_name))
+        # Ultima V opens a conversation with Description, then Greeting. The
+        # NPC's Name line is only revealed if the Avatar asks for it (and even
+        # then, NPCs with IF_ELSE_KNOWS_NAME hide themselves until introduced).
+        description = self._render(dialog.description, target_npc, avatar_name)
+        self._say(f"You see {description}" if description else "You see someone.")
+        greeting = self._render(dialog.greeting, target_npc, avatar_name)
+        if greeting:
+            self._say(greeting)
 
         while True:
             keyword = self._read_keyword()
             if keyword is None or keyword == "":
-                self._say(self._render(dialog.bye, avatar_name))
+                self._say(self._render(dialog.bye, target_npc, avatar_name))
                 return
             if keyword == "bye":
-                self._say(self._render(dialog.bye, avatar_name))
+                self._say(self._render(dialog.bye, target_npc, avatar_name))
                 return
 
-            response = self._lookup(dialog, keyword)
-            if response is None:
+            response_text = self._lookup(dialog, keyword, target_npc, avatar_name)
+            if response_text is None:
                 self._say("That I cannot help thee with.")
                 continue
-            self._say(self._render(response, avatar_name))
+            self._say(response_text)
 
     def _say(self, msg: str):
         # Conversation mode: suppress the '>' command prompt between lines.
@@ -106,20 +111,27 @@ class ConversationController(LoggerMixin):
             buffer += char
             self.console_service.print_ascii(char, include_carriage_return=False, no_prompt=True)
 
-    def _lookup(self, dialog: NpcDialog, keyword: str) -> ScriptLine | None:
+    def _lookup(
+        self,
+        dialog: NpcDialog,
+        keyword: str,
+        npc: TownNpcAgent,
+        avatar_name: str,
+    ) -> str | None:
         # Baked-in keywords that every NPC answers.
         if keyword == "name":
-            return dialog.name
+            name_text = self._render(dialog.name, npc, avatar_name)
+            return f"My name is {name_text}" if name_text else None
         if keyword in ("job", "work"):
-            return dialog.job
+            return self._render(dialog.job, npc, avatar_name)
         if keyword == "look":
-            return dialog.description
+            return self._render(dialog.description, npc, avatar_name)
 
         # Custom keywords: U5 matches on the first 4 characters.
         prefix = keyword[:KEYWORD_MAX_CHARS]
-        for kw, response in dialog.keyword_responses.items():
+        for kw, response_line in dialog.keyword_responses.items():
             if kw[:KEYWORD_MAX_CHARS] == prefix:
-                return response
+                return self._render(response_line, npc, avatar_name)
         return None
 
     def _avatar_name(self) -> str:
@@ -129,15 +141,70 @@ class ConversationController(LoggerMixin):
         name = saved.create_character_record(0).name
         return name if name else "Avatar"
 
-    def _render(self, line: ScriptLine, avatar_name: str) -> str:
+    def _render(self, line: ScriptLine, npc: TownNpcAgent, avatar_name: str) -> str:
+        """
+        Render a ScriptLine to plain text, honouring IF_ELSE_KNOWS_NAME
+        sections and skipping AVATARS_NAME sections when the NPC has not yet
+        been introduced to the Avatar. Mirrors Ultima5Redux's
+        Conversation.ProcessMultipleLines skip-instruction state machine.
+        """
+        has_met  = npc.has_met_avatar
+        sections = line.split_into_sections()
         parts: list[str] = []
-        for item in line.items:
+        skip_counter = -1
+        i = 0
+        while i < len(sections):
+            if skip_counter == 0:
+                skip_counter = -1
+                i += 1
+                continue
+            section = sections[i]
+
+            if not section:
+                i += 1
+                continue
+
+            # If this section needs to address the Avatar by name but we
+            # haven't been introduced yet, drop the whole section.
+            if not has_met and any(it.command == TalkCommand.AVATARS_NAME for it in section):
+                i += 1
+                continue
+
+            skip_instruction = "dont_skip"
+            if (
+                len(section) == 1
+                and section[0].command == TalkCommand.IF_ELSE_KNOWS_NAME
+            ):
+                # Two sections follow: the "known" branch first, then the
+                # "unknown" branch. Pick one based on has_met_avatar.
+                skip_instruction = "skip_after_next" if has_met else "skip_next"
+            else:
+                self._render_section(section, avatar_name, parts)
+
+            if skip_counter != -1:
+                skip_counter -= 1
+
+            if skip_instruction == "skip_after_next":
+                skip_counter = 1
+            elif skip_instruction == "skip_next":
+                i += 1
+
+            i += 1
+
+        return "".join(parts).strip()
+
+    @staticmethod
+    def _render_section(
+        section: list[ScriptItem],
+        avatar_name: str,
+        parts: list[str],
+    ) -> None:
+        for item in section:
             if item.command == TalkCommand.PLAIN_STRING:
                 parts.append(item.text)
             elif item.command == TalkCommand.AVATARS_NAME:
                 parts.append(avatar_name)
             elif item.command == TalkCommand.NEW_LINE:
                 parts.append("\n")
-            # Other command bytes (KEY_WAIT, PAUSE, KARMA_*, etc.) are
-            # silently dropped in this first pass.
-        return "".join(parts).strip()
+            # Other command bytes (KEY_WAIT, PAUSE, KARMA_*, ASK_NAME, labels,
+            # etc.) are silently dropped in this pass.
