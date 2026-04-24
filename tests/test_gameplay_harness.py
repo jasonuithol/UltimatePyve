@@ -1,9 +1,85 @@
 """
 End-to-end gameplay tests driven by ScriptedInputService.
 
-One boot per test module (session too fragile given class-level state on
-PartyAgent). Each test queues console commands + keystrokes, runs the
-main loop until the queue drains, then asserts on service state.
+Each test boots the full game (DI graph, NPC loads, party init), queues
+a sequence of keystrokes + console commands, runs party_controller.run()
+until the queue drains, then asserts on service state. When the scripted
+queue empties, ScriptedInputService fires dark_event_service.quit() so
+the main loop exits naturally — tests don't need to queue an explicit
+`quit` unless they want the console `quit` command specifically exercised.
+
+Harness fixture
+---------------
+`harness` yields:
+    provider         — ServiceProvider (for .resolve(...))
+    party_controller — for .run() and .global_registry
+    party_agent      — current location, party state
+    npc_service      — spawned monsters, party members, frozen NPCs
+    scripted         — the ScriptedInputService instance (queue_key etc.)
+
+The fixture swaps the real InputServiceImplementation for ScriptedInput
+after compose() but before inject_all(), so every service that wires
+`input_service` gets the scripted one.
+
+Queuing input
+-------------
+    harness.scripted.queue_key(pygame.K_UP)       # one KEYDOWN event
+    harness.scripted.queue_keys(K_UP, K_UP, K_a)  # several in order
+    harness.scripted.queue_string("teleport britain")
+        # types each char as a KEYDOWN + trailing K_RETURN.
+        # The console command controller auto-closes the console on
+        # Enter, so don't queue another BACKQUOTE to close it.
+
+A full console interaction is:
+    queue_key(K_BACKQUOTE)            # open console
+    queue_string("teleport britain")  # types + Enter (auto-closes)
+
+Keystrokes fired outside the console (movement, attack) go straight to
+the party controller's dispatch — no BACKQUOTE needed.
+
+Mid-run event injection
+-----------------------
+Some tests can't pre-queue everything because the needed input depends
+on runtime state (e.g. combat cursor coords aren't known until the
+combat map is registered). Subscribe a listener to DarkEventService and
+queue more events from inside a callback:
+
+    from dark_libraries.dark_events import DarkEventService
+    des = harness.provider.resolve(DarkEventService)
+
+    class Injector:
+        _done = False
+        def loaded(self, loc): pass
+        def level_changed(self, loc): pass
+        def party_moved(self, loc): pass
+        def quit(self): pass
+        def pass_time(self, loc):
+            if self._done or loc.location_index != COMBAT_MAP_LOCATION_INDEX:
+                return
+            self._done = True
+            # inspect combat_map, compute deltas, queue more keys
+
+    des.subscribe(Injector())
+
+See test_combat_attack_lands_damage_on_monster for a working example.
+
+RNG determinism
+---------------
+Combat hit rolls, NPC turn-order tiebreakers, and monster movement all
+use the `random` module. For RNG-sensitive assertions, seed at the top
+of the test: `random.seed(1)` (or any other constant).
+
+Gotchas
+-------
+- One boot per test: the fixture resets ServiceProvider._instance and
+  PartyAgent.location_stack / PartyAgent.party_members (both are
+  class-level attributes — a pre-existing codebase wart) so tests don't
+  leak state.
+- `queue_string` is *console-mode* typing. Keys outside a-z / 0-9 / a
+  small punctuation set are silently dropped — see _char_to_keycode in
+  ScriptedInputService.
+- If a queued command needs direction input (e.g. K_a for attack calls
+  obtain_action_direction), queue the direction key immediately after.
 """
 from pathlib import Path
 
