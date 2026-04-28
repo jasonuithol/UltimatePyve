@@ -24,6 +24,7 @@ from models.tlk_file               import (
 )
 
 from services.console_service import ConsoleService
+from services.info_panel_service import InfoPanelService
 from services.input_service   import InputService, keycode_to_char
 from services.npc_service     import NpcService
 from services.town_npc_spawner import TownNpcSpawner
@@ -42,6 +43,7 @@ class ConversationController(LoggerMixin):
     party_inventory:    PartyInventory
     global_registry:    GlobalRegistry
     console_service:    ConsoleService
+    info_panel_service: InfoPanelService
     input_service:      InputService
     npc_service:        NpcService
     town_npc_spawner:   TownNpcSpawner
@@ -512,6 +514,7 @@ class ConversationController(LoggerMixin):
         location_index = self.party_agent.get_current_location().location_index
         self.town_npc_spawner.mark_recruited(location_index, npc.dialog_number)
         self.npc_service.remove_npc(npc)
+        self.info_panel_service.update_party_summary()
 
         buffer.append(f"{recruit_name} doth join thy party!")
         self._end_conversation = True

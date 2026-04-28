@@ -20,6 +20,14 @@ class InteractiveConsole(ScalableComponent):
         self._cursor_x: int = 0
         self._border_drawer: BorderDrawer = None
 
+    @property
+    def cursor_x(self) -> int:
+        return self._cursor_x
+
+    @property
+    def console_width(self) -> int:
+        return self.display_config.CONSOLE_SIZE.w
+
     def _after_inject(self):
         super().__init__(self.display_config.CONSOLE_SIZE * self.display_config.FONT_SIZE, self.display_config.SCALE_FACTOR)
         super()._after_inject()
