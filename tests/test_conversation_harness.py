@@ -388,6 +388,98 @@ def test_ask_name_with_correct_answer_sets_has_met(harness):
     )
 
 
+def _find_npc_by_name(registry, target_name: str, location_index: int | None = None):
+    """Locate (location_name, dialog_number) for the first dialog whose Name
+    line decodes to `target_name` (case-sensitive). If `location_index` is
+    given, restrict the search to that location."""
+    for loc_index, dialogs in registry.npc_dialogs.items():
+        if location_index is not None and loc_index != location_index:
+            continue
+        map_entry = registry.maps.get(loc_index)
+        if map_entry is None:
+            continue
+        for dialog_number, dialog in dialogs.items():
+            if dialog.name.as_text() == target_name:
+                return map_entry.name, dialog_number
+    return None
+
+
+def test_justin_keyword_mutton_y_increments_party_food(harness):
+    # Playtest: Justin (Britain npc#7) sells mutton chops. The Avatar says
+    # "mutt" to enter label0 ("Wouldst thou like to try a bite?"), then "y"
+    # to accept — the label-scoped 'y' response fires CHANGE op=0x41 (FOOD).
+    # Verifies the renderer's CHANGE handler increments PartyInventory.FOOD.
+    registry = harness.party_controller.global_registry
+    britain_loc = _britain_location_index(registry)
+    found = _find_npc_by_name(registry, "Justin", location_index=britain_loc)
+    if found is None:
+        pytest.skip("Justin not present in Britain's TLK data")
+    location_name, dialog_number = found
+
+    from models.enums.inventory_offset import InventoryOffset
+    from models.party_inventory import PartyInventory
+    party_inventory = harness.provider.resolve(PartyInventory)
+
+    party_inventory.write(InventoryOffset.FOOD, 0)
+    food_before = party_inventory.read(InventoryOffset.FOOD)
+    assert food_before == 0
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number, name="Justin")
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("mutt")  # routes into label0
+    harness.scripted.queue_string("y")     # accepts → CHANGE FOOD +1
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    assert party_inventory.read(InventoryOffset.FOOD) == 1, (
+        f"Expected FOOD to rise by 1 after Justin's mutton handover, got "
+        f"{party_inventory.read(InventoryOffset.FOOD)}"
+    )
+
+
+def test_description_render_does_not_apply_change(harness):
+    # Description previews ('You see ...') run through _render_text_only,
+    # which must NOT mutate party state even though Justin's keyword
+    # responses contain CHANGE bytes. We verify by talking past the greeting
+    # (which renders the description) and asking only non-CHANGE keywords.
+    registry = harness.party_controller.global_registry
+    britain_loc = _britain_location_index(registry)
+    found = _find_npc_by_name(registry, "Justin", location_index=britain_loc)
+    if found is None:
+        pytest.skip("Justin not present in Britain's TLK data")
+    location_name, dialog_number = found
+
+    from models.enums.inventory_offset import InventoryOffset
+    from models.party_inventory import PartyInventory
+    party_inventory = harness.provider.resolve(PartyInventory)
+
+    party_inventory.write(InventoryOffset.FOOD, 42)
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number, name="Justin")
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("job")  # non-CHANGE keyword
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    assert party_inventory.read(InventoryOffset.FOOD) == 42, (
+        "FOOD should be untouched when no CHANGE-bearing line is rendered"
+    )
+
+
 def test_ask_name_with_wrong_answer_leaves_has_met_false(harness):
     registry = harness.party_controller.global_registry
     found = _find_any_dialog_with_ask_name(registry)
