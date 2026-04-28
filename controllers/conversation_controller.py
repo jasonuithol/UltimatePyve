@@ -81,8 +81,20 @@ class ConversationController(LoggerMixin):
         # Ultima V opens a conversation with Description, then Greeting. The
         # NPC's Name line is only revealed if the Avatar asks for it (and even
         # then, NPCs with IF_ELSE_KNOWS_NAME hide themselves until introduced).
+        # Some NPCs (Gwenno is the canonical case) pack their spoken intro
+        # into the description ScriptLine itself, separated from the physical
+        # description by START_NEW_SECTION (0xA2) — which split_into_sections
+        # turns into a section break, rendered as \n\n. Treat the first chunk
+        # as the narrator's "You see ..." line and any later chunks as the
+        # NPC's quoted greeting.
         description = self._render_text_only(dialog, dialog.description, target_npc, avatar_name)
-        self._say(f"You see {description}" if description else "You see someone.")
+        chunks = [c.strip() for c in description.split("\n\n") if c.strip()] if description else []
+        if not chunks:
+            self._say("You see someone.")
+        else:
+            self._say(f"You see {chunks[0]}")
+            for spoken in chunks[1:]:
+                self._npc_speak(spoken)
 
         # Greeting may be just a label byte (Eb the busboy) — _render_and_speak
         # follows the goto into the label's initial_line.

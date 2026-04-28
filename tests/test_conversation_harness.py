@@ -615,6 +615,48 @@ def test_geoffrey_join_keyword_recruits_into_party(harness):
     )
 
 
+def test_gwenno_description_emits_spoken_intro_separately(harness):
+    # Gwenno (TOWNE.TLK#11) packs her spoken greeting into the description
+    # ScriptLine itself, separated by START_NEW_SECTION (0xA2). The renderer
+    # should emit "You see a charming woman." on its own line, then quote
+    # "Hello friends, 'tis good to see thee all!" as NPC speech instead of
+    # bleeding both lines together.
+    registry = harness.party_controller.global_registry
+    found = _find_npc_by_name(registry, "Gwenno")
+    if found is None:
+        pytest.skip("Gwenno not present in TLK data")
+    location_name, dialog_number = found
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number, name="Gwenno")
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    lines = harness.console_lines
+    description_line = next(
+        (line for line in lines if "charming woman" in line.lower()), None
+    )
+    assert description_line is not None, lines
+    assert "hello friends" not in description_line.lower(), (
+        "Description and spoken intro should not share a console row: "
+        f"{description_line!r}"
+    )
+    spoken_line = next(
+        (line for line in lines if "hello friends" in line.lower()), None
+    )
+    assert spoken_line is not None, lines
+    assert spoken_line.strip().startswith('"') and spoken_line.strip().endswith('"'), (
+        f"Spoken intro should be wrapped in quotes, got {spoken_line!r}"
+    )
+
+
 def test_description_render_does_not_apply_change(harness):
     # Description previews ('You see ...') run through _render_text_only,
     # which must NOT mutate party state even though Justin's keyword
