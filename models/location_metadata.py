@@ -1,3 +1,12 @@
+def ordinal_to_level_key(ordinal_index: int, has_basement: bool) -> int:
+    # When a location has a basement, ordinal 0 in the .DAT file is the
+    # basement (re-keyed to 255 = -1) and the remaining levels shift down.
+    # u5_map_loader uses this same mapping to populate U5Map._levels.
+    if has_basement:
+        return 255 if ordinal_index == 0 else ordinal_index - 1
+    return ordinal_index
+
+
 class LocationMetadata(tuple):
     __slots__ = ()
 

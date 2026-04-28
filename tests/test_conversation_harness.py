@@ -404,6 +404,47 @@ def _find_npc_by_name(registry, target_name: str, location_index: int | None = N
     return None
 
 
+def test_jeremy_keyword_keys_increments_party_keys_by_five(harness):
+    # Jeremy the locksmith (Yew npc#20) hands over five keys when the Avatar
+    # says "key". Doubles as a regression test for Yew's basement remap:
+    # Yew has has_basement=True, so its U5Map._levels are keyed {0, 255}.
+    # Before the basement-aware default_level fix, default_level was the raw
+    # ordinal (1) and entry-trigger landed on a level that didn't exist.
+    registry = harness.party_controller.global_registry
+    yew_loc = next(
+        m.location_index
+        for m in registry.maps.values() if m.name.upper() == "YEW"
+    )
+    found = _find_npc_by_name(registry, "Jeremy", location_index=yew_loc)
+    if found is None:
+        pytest.skip("Jeremy not present in Yew's TLK data")
+    location_name, dialog_number = found
+
+    from models.enums.inventory_offset import InventoryOffset
+    from models.party_inventory import PartyInventory
+    party_inventory = harness.provider.resolve(PartyInventory)
+
+    party_inventory.write(InventoryOffset.KEYS, 0)
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number, name="Jeremy")
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("key")
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    assert party_inventory.read(InventoryOffset.KEYS) == 5, (
+        f"Expected KEYS to rise from 0 to 5 after Jeremy's handover, got "
+        f"{party_inventory.read(InventoryOffset.KEYS)}"
+    )
+
+
 def test_justin_keyword_mutton_y_increments_party_food(harness):
     # Playtest: Justin (Britain npc#7) sells mutton chops. The Avatar says
     # "mutt" to enter label0 ("Wouldst thou like to try a bite?"), then "y"

@@ -4,6 +4,7 @@ from dark_libraries.logging import LoggerMixin
 
 from data.global_registry import GlobalRegistry
 
+from models.location_metadata import ordinal_to_level_key
 from models.u5_map import U5Map
 from models.u5_map_level import U5MapLevel
 
@@ -60,19 +61,12 @@ class U5MapLoader(LoggerMixin):
                 map_level = __class__.convert_tilearray_to_map_level(tile_ids, map_size)
                 levels.append(map_level)
 
-        def level_index(ordinal_index: int, has_basement: bool) -> int:
-            if has_basement:
-                if ordinal_index == 0:
-                    self.log(f"DEBUG: Performing basement override for {meta.name} location_index=({meta.location_index})")
-                    return 255
-                else:
-                    return ordinal_index - 1
-            else:
-                return ordinal_index
+        if meta.has_basement:
+            self.log(f"DEBUG: Performing basement override for {meta.name} location_index=({meta.location_index})")
 
         return U5Map(
             levels = {
-                level_index(ordinal_index, meta.has_basement) : level
+                ordinal_to_level_key(ordinal_index, meta.has_basement) : level
                 for ordinal_index, level in enumerate(levels)
             },
             location_metadata = meta

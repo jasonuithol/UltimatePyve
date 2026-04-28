@@ -1,6 +1,6 @@
 from dark_libraries.logging import LoggerMixin
 from data.global_registry import GlobalRegistry
-from models.location_metadata import LocationMetadata
+from models.location_metadata import LocationMetadata, ordinal_to_level_key
 
 
 class LocationMetadataBuilder(LoggerMixin):
@@ -135,8 +135,10 @@ class LocationMetadataBuilder(LoggerMixin):
                 map_index_offset = next_map_offset
                 next_map_offset += num_levels
 
-            default_level = default_level_lists[files_index][group_index] - map_index_offset
+            default_level_ordinal = default_level_lists[files_index][group_index] - map_index_offset
             location_index = trigger_index + 1
+            has_basement = location_index in __class__.BASEMENT_LOCATIONS
+            default_level = ordinal_to_level_key(default_level_ordinal, has_basement)
 
             meta = LocationMetadata(
                 location_index = location_index,
@@ -144,11 +146,11 @@ class LocationMetadataBuilder(LoggerMixin):
                 name_index     = name_index,
                 files_index    = files_index,
                 group_index    = group_index,
-                
+
                 map_index_offset= map_index_offset,
                 num_levels      = num_levels,
                 default_level   = default_level,
-                has_basement    = location_index in __class__.BASEMENT_LOCATIONS,
+                has_basement    = has_basement,
                 trigger_index   = trigger_index,
                 sound_track     = None
             )
