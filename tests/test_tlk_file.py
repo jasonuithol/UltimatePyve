@@ -216,6 +216,37 @@ def test_thrud_resistance_gives_crossbow_and_jewelled_shield(keep_tlk: TlkFile):
     assert int(ChangeItemCode.JEWELLED_SHIELD) in operands
 
 
+def test_gold_opcode_consumes_three_digit_price(towne_tlk: TlkFile):
+    # Justin's L2 'y' branch (Britain, npc#7) is "...pay 3 gold coins...". The
+    # parser should pack the 3-digit price into the GOLD ScriptItem's operand
+    # and strip those digits from the trailing PLAIN_STRING text.
+    justin = next(
+        d for d in towne_tlk.dialogs.values() if d.name.as_text() == "Justin"
+    )
+    label2 = justin.labels[2]
+    line = label2.keyword_responses["y"]
+    gold_idx = next(
+        i for i, it in enumerate(line.items) if it.command == TalkCommand.GOLD
+    )
+    assert line.items[gold_idx].operand == 3, line.items[gold_idx]
+    next_text = line.items[gold_idx + 1]
+    assert next_text.command == TalkCommand.PLAIN_STRING
+    assert next_text.text.startswith("I thank thee"), next_text.text
+
+
+def test_jeremy_donation_branch_charges_thirty_gold(towne_tlk: TlkFile):
+    # Jeremy's L0 'y' branch is the "donate to my keep-fund" path — charges 30
+    # gold rather than 003. Sanity check that prices >= 100 also parse
+    # (Kristi's 100-gold skull-key sale is in KEEP.TLK so we use Jeremy here).
+    jeremy = next(
+        d for d in towne_tlk.dialogs.values() if d.name.as_text() == "Jeremy"
+    )
+    label0 = jeremy.labels[0]
+    line = label0.keyword_responses["y"]
+    gold_item = next(it for it in line.items if it.command == TalkCommand.GOLD)
+    assert gold_item.operand == 30, gold_item
+
+
 def test_greeting_label_bytes_resolve_to_known_labels(towne_tlk: TlkFile):
     # For any NPC whose greeting is just a label byte, that byte must match
     # a label the parser collected — otherwise the goto would dangle.

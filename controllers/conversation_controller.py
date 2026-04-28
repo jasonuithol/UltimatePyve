@@ -7,6 +7,7 @@ from data.global_registry import GlobalRegistry
 
 from models.agents.party_agent     import PartyAgent
 from models.agents.town_npc_agent  import TownNpcAgent
+from models.enums.inventory_offset import InventoryOffset
 from models.party_inventory        import PartyInventory
 from models.tlk_file               import (
     NpcDialog,
@@ -224,10 +225,12 @@ class ConversationController(LoggerMixin):
 
         while pending_lines:
             current = pending_lines.pop(0)
-            goto_label = self._render_line_to_buffer(
+            goto_label, aborted = self._render_line_to_buffer(
                 dialog, current, npc, avatar_name, buffer, flush_buffered,
                 apply_changes=True,
             )
+            if aborted:
+                break
             if goto_label is not None:
                 # Cyclic label graph (A→B→A) — stop following gotos and
                 # emit whatever we've accumulated so far.
@@ -265,7 +268,7 @@ class ConversationController(LoggerMixin):
 
         while pending_lines:
             current = pending_lines.pop(0)
-            goto_label = self._render_line_to_buffer(
+            goto_label, _aborted = self._render_line_to_buffer(
                 dialog, current, npc, avatar_name, buffer, do_nothing,
                 skip_ask_name=True,
                 apply_changes=False,
@@ -288,13 +291,13 @@ class ConversationController(LoggerMixin):
         flush_callback,
         skip_ask_name: bool = False,
         apply_changes: bool = False,
-    ) -> TlkLabel | None:
+    ) -> tuple[TlkLabel | None, bool]:
         """
         Walk the sections of a ScriptLine, appending rendered text to buffer.
         Honours IF_ELSE_KNOWS_NAME skip-instructions (mirrors Ultima5Redux's
-        ProcessMultipleLines). Returns a TlkLabel if the line contains a
-        label-byte goto, so the caller can continue rendering from that
-        label's initial_line.
+        ProcessMultipleLines). Returns (goto_label, aborted): goto_label is
+        set when a label byte was encountered; aborted is True when a GOLD
+        transaction failed and the caller should stop rendering this line.
         """
         has_met  = npc.has_met_avatar
         sections = line.split_into_sections()
@@ -326,12 +329,14 @@ class ConversationController(LoggerMixin):
                 # "unknown" branch. Pick one based on has_met_avatar.
                 skip_instruction = "skip_after_next" if has_met else "skip_next"
             else:
-                goto_label = self._render_section_items(
+                goto_label, aborted = self._render_section_items(
                     section, dialog, npc, avatar_name, buffer, flush_callback,
                     skip_ask_name, apply_changes,
                 )
+                if aborted:
+                    return None, True
                 if goto_label is not None:
-                    return goto_label
+                    return goto_label, False
 
             if skip_counter != -1:
                 skip_counter -= 1
@@ -342,7 +347,7 @@ class ConversationController(LoggerMixin):
                 i += 1
 
             i += 1
-        return None
+        return None, False
 
     def _render_section_items(
         self,
@@ -354,7 +359,7 @@ class ConversationController(LoggerMixin):
         flush_callback,
         skip_ask_name: bool,
         apply_changes: bool,
-    ) -> TlkLabel | None:
+    ) -> tuple[TlkLabel | None, bool]:
         skip_next = False
         for item in section:
             if skip_next:
@@ -379,15 +384,25 @@ class ConversationController(LoggerMixin):
             elif cmd == TalkCommand.CHANGE:
                 if apply_changes and item.operand is not None:
                     self._apply_change(item.operand)
+            elif cmd == TalkCommand.GOLD:
+                # Inline transaction: deduct `operand` gold. If the avatar
+                # can't afford it, replace the response with a refusal and
+                # signal the caller to abort the rest of the line so the
+                # subsequent thank-you text and any CHANGE-bytes don't fire.
+                if apply_changes and item.operand is not None:
+                    if not self.party_inventory.use(InventoryOffset.GOLD, item.operand):
+                        buffer.clear()
+                        buffer.append("Thou hast not the gold.")
+                        return None, True
             elif cmd == TalkCommand.START_LABEL_DEFINITION:
                 skip_next = True
             elif is_label_byte(cmd):
                 label = dialog.labels.get(label_byte_to_num(cmd))
                 if label is not None:
-                    return label
+                    return label, False
             # KEY_WAIT, PAUSE, KARMA_*, END_CONVERSATION, DO_NOTHING_SECTION,
             # and other command bytes are silently dropped.
-        return None
+        return None, False
 
     def _apply_change(self, operand: int):
         # Mirrors TALK.OVL's CHANGE (0x86) handler at file offset 0x0682:

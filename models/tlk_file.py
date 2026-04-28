@@ -372,6 +372,17 @@ def _decode_script_block(raw: bytes, words: CompressedWords) -> list[ScriptLine]
             current.items.append(ScriptItem(byte, operand=raw[i + 1]))
             i += 2
             continue
+        if byte == TalkCommand.GOLD and i + 3 < len(raw):
+            # Four-byte command: GOLD opcode + three high-bit ASCII digits
+            # encoding the price (e.g. <0x85><0xB0><0xB0><0xB3> = 003).
+            digits = "".join(chr(raw[i + k] - 0x80) for k in (1, 2, 3))
+            try:
+                price = int(digits)
+            except ValueError:
+                price = None
+            current.items.append(ScriptItem(byte, operand=price))
+            i += 4
+            continue
         current.items.append(ScriptItem(byte))
         i += 1
 

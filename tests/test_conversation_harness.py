@@ -485,6 +485,88 @@ def test_justin_keyword_mutton_y_increments_party_food(harness):
     )
 
 
+def test_justin_full_mutton_purchase_deducts_three_gold(harness):
+    # Justin's full transaction: free taste (mutt → y) bumps FOOD by 1, then
+    # the follow-up label1 ("Didst thou enjoy it?") → y → label2 ("...wouldst
+    # thou pay me 3 gold coins...") → y deducts 3 gold via opcode 0x85.
+    registry = harness.party_controller.global_registry
+    britain_loc = _britain_location_index(registry)
+    found = _find_npc_by_name(registry, "Justin", location_index=britain_loc)
+    if found is None:
+        pytest.skip("Justin not present in Britain's TLK data")
+    location_name, dialog_number = found
+
+    from models.enums.inventory_offset import InventoryOffset
+    from models.party_inventory import PartyInventory
+    party_inventory = harness.provider.resolve(PartyInventory)
+
+    party_inventory.write(InventoryOffset.GOLD, 100)
+    party_inventory.write(InventoryOffset.FOOD, 0)
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number, name="Justin")
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("mutt")  # → label0 "wouldst thou like a bite?"
+    harness.scripted.queue_string("y")     # accept taste → CHANGE FOOD +1, goto L1
+    harness.scripted.queue_string("y")     # enjoyed it → goto L2
+    harness.scripted.queue_string("y")     # pay 3 gold → GOLD -3, "I thank thee"
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    assert party_inventory.read(InventoryOffset.GOLD) == 97, (
+        f"GOLD should drop from 100 to 97 after Justin's 3-gold charge, got "
+        f"{party_inventory.read(InventoryOffset.GOLD)}"
+    )
+    assert party_inventory.read(InventoryOffset.FOOD) == 1
+
+
+def test_justin_purchase_with_insufficient_gold_refuses(harness):
+    # Avatar can't afford the 3-gold mutton. The renderer should print a
+    # refusal and NOT deduct gold or fire the trailing CHANGE bytes (none in
+    # Justin's case, but the gold balance must stay put either way).
+    registry = harness.party_controller.global_registry
+    britain_loc = _britain_location_index(registry)
+    found = _find_npc_by_name(registry, "Justin", location_index=britain_loc)
+    if found is None:
+        pytest.skip("Justin not present in Britain's TLK data")
+    location_name, dialog_number = found
+
+    from models.enums.inventory_offset import InventoryOffset
+    from models.party_inventory import PartyInventory
+    party_inventory = harness.provider.resolve(PartyInventory)
+
+    party_inventory.write(InventoryOffset.GOLD, 1)  # 1 < 3
+    party_inventory.write(InventoryOffset.FOOD, 0)
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number, name="Justin")
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("mutt")
+    harness.scripted.queue_string("y")  # taste (free, FOOD +1)
+    harness.scripted.queue_string("y")  # enjoyed it
+    harness.scripted.queue_string("y")  # try to pay → fails
+    harness.scripted.queue_string("bye")
+
+    harness.party_controller.run()
+
+    assert party_inventory.read(InventoryOffset.GOLD) == 1, (
+        "GOLD should be untouched when the avatar can't afford the price"
+    )
+    lines = harness.console_lines
+    assert any("not the gold" in line.lower() for line in lines), lines
+
+
 def test_description_render_does_not_apply_change(harness):
     # Description previews ('You see ...') run through _render_text_only,
     # which must NOT mutate party state even though Justin's keyword
