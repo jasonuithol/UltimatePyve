@@ -99,10 +99,8 @@ class CursorLoader(LoggerMixin):
         x, y = point
 
         # If this ever becomes a problem (unlikely), do vertical and vertikal flips instead.
-        assert (
-            self.display_config.TILE_SIZE.w == self.display_config.TILE_SIZE.h, 
+        assert self.display_config.TILE_SIZE.w == self.display_config.TILE_SIZE.h, \
             f"Can't perform a non-distorting rotation if the TILE_SIZE dimensions differ: {self.display_config.TILE_SIZE}"
-        )
 
         c = (self.display_config.TILE_SIZE.w - 1) / 2  # geometric centre
         # translate
