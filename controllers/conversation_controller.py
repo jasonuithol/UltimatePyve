@@ -6,7 +6,9 @@ from dark_libraries.logging   import LoggerMixin
 from data.global_registry import GlobalRegistry
 
 from models.agents.party_agent     import PartyAgent
+from models.agents.party_member_agent import PartyMemberAgent
 from models.agents.town_npc_agent  import TownNpcAgent
+from models.enums.character_class_to_tile_id import CharacterClassToTileId
 from models.enums.inventory_offset import InventoryOffset
 from models.party_inventory        import PartyInventory
 from models.tlk_file               import (
@@ -24,6 +26,10 @@ from models.tlk_file               import (
 from services.console_service import ConsoleService
 from services.input_service   import InputService, keycode_to_char
 from services.npc_service     import NpcService
+from services.town_npc_spawner import TownNpcSpawner
+
+
+MAX_PARTY_SIZE = 6
 
 
 KEYWORD_MAX_CHARS = 4
@@ -32,12 +38,17 @@ KEYWORD_MAX_CHARS = 4
 class ConversationController(LoggerMixin):
 
     # Injectable
-    party_agent:     PartyAgent
-    party_inventory: PartyInventory
-    global_registry: GlobalRegistry
-    console_service: ConsoleService
-    input_service:   InputService
-    npc_service:     NpcService
+    party_agent:        PartyAgent
+    party_inventory:    PartyInventory
+    global_registry:    GlobalRegistry
+    console_service:    ConsoleService
+    input_service:      InputService
+    npc_service:        NpcService
+    town_npc_spawner:   TownNpcSpawner
+
+    def __init__(self):
+        super().__init__()
+        self._end_conversation: bool = False
 
     def talk(self, direction: Vector2[int]):
         try:
@@ -47,6 +58,7 @@ class ConversationController(LoggerMixin):
             self.console_service.print_ascii("")
 
     def _talk(self, direction: Vector2[int]):
+        self._end_conversation = False
         party_location = self.party_agent.get_current_location()
         target_coord   = party_location.coord + direction
         target_npc     = self.npc_service.get_npc_at(target_coord)
@@ -100,6 +112,12 @@ class ConversationController(LoggerMixin):
                 continue
 
             active_label = self._render_and_speak(dialog, response_line, target_npc, avatar_name)
+
+            if self._end_conversation:
+                # JOIN_PARTY (or another terminating event) fired during the
+                # response — drop straight out without a parting "bye" line,
+                # since the recruited NPC is no longer here to say it.
+                return
 
     def _say(self, msg: str):
         # Conversation mode: suppress the '>' command prompt between lines,
@@ -394,6 +412,12 @@ class ConversationController(LoggerMixin):
                         buffer.clear()
                         buffer.append("Thou hast not the gold.")
                         return None, True
+            elif cmd == TalkCommand.JOIN_PARTY:
+                # Bare event byte — no operand. Mutates party roster, removes
+                # the recruited NPC from the world, and ends the conversation.
+                if apply_changes:
+                    self._handle_join_party(dialog, npc, buffer)
+                    return None, True
             elif cmd == TalkCommand.START_LABEL_DEFINITION:
                 skip_next = True
             elif is_label_byte(cmd):
@@ -419,6 +443,66 @@ class ConversationController(LoggerMixin):
             saved.write_u8(target.value, 0xFF)
         elif kind == "add":
             self.party_inventory.safe_add(target, 1)
+
+    def _handle_join_party(self, dialog: NpcDialog, npc: TownNpcAgent, buffer: list[str]):
+        # Find the recruit's CharacterRecord by name across all 16 saved-game
+        # slots — U5 pre-allocates every recruitable companion (Geoffrey at
+        # slot 4, Dupre at slot 7, etc) with `inn_party_flag = 0xFF`. The
+        # active party occupies slots [0, party_member_count); we promote the
+        # recruit into the next active slot by swapping raw record bytes.
+        recruit_name = dialog.name.as_text()
+        saved = self.global_registry.saved_game
+        if saved is None:
+            buffer.append(f"{recruit_name} doth join thy party!")
+            self._end_conversation = True
+            return
+
+        current_count = saved.read_party_member_count()
+        if current_count >= MAX_PARTY_SIZE:
+            buffer.append("Thou hast not the room.")
+            self._end_conversation = True
+            return
+
+        recruit_slot = None
+        for slot in range(16):
+            if saved.create_character_record(slot).name == recruit_name:
+                recruit_slot = slot
+                break
+
+        if recruit_slot is None or recruit_slot < current_count:
+            # No matching record, or the NPC is already in the active range —
+            # surface the join line and end the conversation, but skip the
+            # roster mutation rather than corrupting state.
+            buffer.append(f"{recruit_name} doth join thy party!")
+            self._end_conversation = True
+            return
+
+        if recruit_slot != current_count:
+            base_a = 0x0002 + recruit_slot * 32
+            base_b = 0x0002 + current_count * 32
+            tmp = bytes(saved.raw[base_a:base_a + 32])
+            saved.raw[base_a:base_a + 32] = saved.raw[base_b:base_b + 32]
+            saved.raw[base_b:base_b + 32] = tmp
+
+        new_record = saved.create_character_record(current_count)
+        new_record.inn_party_flag = 0
+        if recruit_slot != current_count:
+            saved.create_character_record(recruit_slot).inn_party_flag = 0xFF
+
+        saved.write_party_member_count(current_count + 1)
+
+        tile_id = CharacterClassToTileId.__dict__[new_record.char_class].value.value
+        sprite = self.global_registry.sprites.get(tile_id)
+        new_member = PartyMemberAgent(sprite=sprite, character_record=new_record)
+        new_member.global_registry = self.global_registry
+        self.party_agent.party_members.append(new_member)
+
+        location_index = self.party_agent.get_current_location().location_index
+        self.town_npc_spawner.mark_recruited(location_index, npc.dialog_number)
+        self.npc_service.remove_npc(npc)
+
+        buffer.append(f"{recruit_name} doth join thy party!")
+        self._end_conversation = True
 
     def _handle_ask_name(self, npc: TownNpcAgent, avatar_name: str):
         response = self._read_keyword(prompt="What is thy name?")

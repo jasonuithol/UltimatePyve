@@ -567,6 +567,54 @@ def test_justin_purchase_with_insufficient_gold_refuses(harness):
     assert any("not the gold" in line.lower() for line in lines), lines
 
 
+def test_geoffrey_join_keyword_recruits_into_party(harness):
+    # Geoffrey (CASTLE.TLK#40) — typing "join" jumps to label 3, whose 'y'
+    # branch ends in <0x84> JOIN_PARTY. The handler should: surface the
+    # canonical "<Name> doth join thy party!" line, increment
+    # party_member_count, append a PartyMemberAgent, and despawn the NPC.
+    registry = harness.party_controller.global_registry
+    found = _find_npc_by_name(registry, "Geoffrey")
+    if found is None:
+        pytest.skip("Geoffrey not present in TLK data")
+    location_name, dialog_number = found
+
+    # Trim the active party so Geoffrey is just outside the active range —
+    # the cloud save loads with count=6 (full) and Geoffrey already in.
+    saved = registry.saved_game
+    geoffrey_slot = next(
+        (s for s in range(16) if saved.create_character_record(s).name == "Geoffrey"),
+        None,
+    )
+    assert geoffrey_slot is not None, "Geoffrey not present in saved-game records"
+    saved.write_party_member_count(geoffrey_slot)
+    harness.party_agent.party_members = harness.party_agent.party_members[:geoffrey_slot]
+
+    from dark_libraries.dark_events import DarkEventService
+    injector = _TownNpcInjector(harness, dialog_number, name="Geoffrey")
+    harness.provider.resolve(DarkEventService).subscribe(injector)
+
+    harness.scripted.queue_key(pygame.K_BACKQUOTE)
+    harness.scripted.queue_string(f"teleport {location_name.lower()}")
+    harness.scripted.queue_key(pygame.K_t)
+    harness.scripted.queue_key(pygame.K_RIGHT)
+    harness.scripted.queue_string("join")
+    harness.scripted.queue_string("y")
+
+    party_size_before = len(harness.party_agent.party_members)
+    harness.party_controller.run()
+
+    lines = harness.console_lines
+    full = "\n".join(lines)
+    assert "geoffrey doth join thy party" in full.lower(), full
+    assert saved.read_party_member_count() == geoffrey_slot + 1
+    assert len(harness.party_agent.party_members) == party_size_before + 1
+    assert harness.party_agent.party_members[-1].name == "Geoffrey"
+    # Despawn: the injected NPC should be gone from the world.
+    assert harness.npc_service.get_npc_at(injector.injected_npc.coord) is None, (
+        "Geoffrey should have been removed from the world after recruitment"
+    )
+
+
 def test_description_render_does_not_apply_change(harness):
     # Description previews ('You see ...') run through _render_text_only,
     # which must NOT mutate party state even though Justin's keyword

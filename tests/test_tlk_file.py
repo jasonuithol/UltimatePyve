@@ -247,6 +247,20 @@ def test_jeremy_donation_branch_charges_thirty_gold(towne_tlk: TlkFile):
     assert gold_item.operand == 30, gold_item
 
 
+def test_geoffrey_join_label_y_branch_emits_join_party(castle_tlk: TlkFile):
+    # Geoffrey's "join" keyword is a bare goto to label 3; that label's 'y'
+    # branch ends in JOIN_PARTY (0x84). Pins the data shape the renderer
+    # relies on: bare opcode, no operand, after some narration.
+    geoffrey = next(
+        d for d in castle_tlk.dialogs.values() if d.name.as_text() == "Geoffrey"
+    )
+    label3 = geoffrey.labels[3]
+    line = label3.keyword_responses["y"]
+    join_items = [it for it in line.items if it.command == TalkCommand.JOIN_PARTY]
+    assert len(join_items) == 1, line.items
+    assert join_items[0].operand is None
+
+
 def test_greeting_label_bytes_resolve_to_known_labels(towne_tlk: TlkFile):
     # For any NPC whose greeting is just a label byte, that byte must match
     # a label the parser collected — otherwise the goto would dangle.

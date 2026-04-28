@@ -20,6 +20,12 @@ class TownNpcSpawner(LoggerMixin, DarkEventListenerMixin):
     def __init__(self):
         super().__init__()
         self._party_location: GlobalLocation = None
+        self._recruited: dict[int, set[int]] = {}
+
+    def mark_recruited(self, location_index: int, dialog_number: int):
+        # Suppress this dialog_number from spawning at this location after
+        # the avatar recruits the NPC into the party.
+        self._recruited.setdefault(location_index, set()).add(dialog_number)
 
     def loaded(self, party_location: GlobalLocation):
         self._party_location = party_location
@@ -52,9 +58,12 @@ class TownNpcSpawner(LoggerMixin, DarkEventListenerMixin):
         hour = self.world_clock.get_natural_time().hour
         target_floor = party_location.level_index
 
+        recruited_dialog_numbers = self._recruited.get(party_location.location_index, set())
+
         spawned = 0
         skipped_floor = 0
         skipped_sprite = 0
+        skipped_recruited = 0
         for slot_index, schedule in enumerate(section.schedules):
             if schedule.is_empty():
                 continue
@@ -62,6 +71,10 @@ class TownNpcSpawner(LoggerMixin, DarkEventListenerMixin):
             slot = schedule.slot_for_hour(hour)
             if schedule.z_coords[slot] != target_floor:
                 skipped_floor += 1
+                continue
+
+            if section.dialog_numbers[slot_index] in recruited_dialog_numbers:
+                skipped_recruited += 1
                 continue
 
             type_byte = section.types[slot_index]
@@ -87,5 +100,6 @@ class TownNpcSpawner(LoggerMixin, DarkEventListenerMixin):
         self.log(
             f"Spawned {spawned} town NPCs at location_index={party_location.location_index} "
             f"floor={target_floor} hour={hour} "
-            f"(skipped_floor={skipped_floor}, skipped_sprite={skipped_sprite})"
+            f"(skipped_floor={skipped_floor}, skipped_sprite={skipped_sprite}, "
+            f"skipped_recruited={skipped_recruited})"
         )

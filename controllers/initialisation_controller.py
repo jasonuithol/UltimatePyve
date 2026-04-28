@@ -80,7 +80,7 @@ class InitialisationController(LoggerMixin):
         self.world_clock.set_world_time(saved_game.read_current_datetime())
      
 
-        for party_member_index in range(6):#range(saved_game.read_party_member_count()):
+        for party_member_index in range(saved_game.read_party_member_count()):
 
             character_record    = saved_game.create_character_record(party_member_index)
             char_tile_id        = CharacterClassToTileId.__dict__[character_record.char_class].value.value
