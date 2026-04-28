@@ -30,6 +30,9 @@ TalkScripts, simplified):
 from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
+from typing import Literal
+
+from models.enums.inventory_offset import InventoryOffset
 
 
 class TalkCommand(IntEnum):
@@ -124,10 +127,89 @@ class CompressedWords:
         return self._words[idx]
 
 
+class ChangeItemCode(IntEnum):
+    """
+    CHANGE (0x86) operand bytes — observed values used by Ultima V NPCs.
+
+    TALK.OVL dispatches on the operand at file offset 0x0682. Three behaviours:
+      operand < 0x40            : items[operand] += 1, capped at 99
+                                  (items array starts at SAVED.GAM 0x21A)
+      operand in {0x41, 0x42}   : u16 slot += 1, capped at 9999  (FOOD, GOLD)
+      operand in {0x43..0x47, 0x4B} : u8 slot += 1, capped at 99
+      operand in {0x48..0x4A}   : u8 slot := 0xFF  (boolean quest-item flags)
+    """
+    # Items array branch (operand < 0x40)
+    JEWELLED_SHIELD = 0x08  # Thrud (KEEP.TLK npc#8)
+    CROSSBOW        = 0x1C  # Thrud (KEEP.TLK npc#8)
+    # Special slots
+    FOOD            = 0x41
+    GOLD            = 0x42
+    KEYS            = 0x43
+    GEMS            = 0x44
+    TORCHES         = 0x45
+    GRAPPLE         = 0x46
+    MAGIC_CARPETS   = 0x47
+    SEXTANTS        = 0x48
+    SPY_GLASSES     = 0x49
+    BLACK_BADGE     = 0x4A
+    SKULL_KEYS      = 0x4B
+
+
+_CHANGE_SPECIAL_TO_INVENTORY: dict[int, InventoryOffset] = {
+    ChangeItemCode.FOOD:          InventoryOffset.FOOD,
+    ChangeItemCode.GOLD:          InventoryOffset.GOLD,
+    ChangeItemCode.KEYS:          InventoryOffset.KEYS,
+    ChangeItemCode.GEMS:          InventoryOffset.GEMS,
+    ChangeItemCode.TORCHES:       InventoryOffset.TORCHES,
+    ChangeItemCode.GRAPPLE:       InventoryOffset.GRAPPLE,
+    ChangeItemCode.MAGIC_CARPETS: InventoryOffset.MAGIC_CARPETS,
+    ChangeItemCode.SEXTANTS:      InventoryOffset.SEXTANTS,
+    ChangeItemCode.SPY_GLASSES:   InventoryOffset.SPY_GLASSES,
+    ChangeItemCode.BLACK_BADGE:   InventoryOffset.BLACK_BADGE,
+    ChangeItemCode.SKULL_KEYS:    InventoryOffset.SKULL_KEYS,
+}
+
+_CHANGE_FLAG_OPERANDS = frozenset({
+    ChangeItemCode.SEXTANTS,
+    ChangeItemCode.SPY_GLASSES,
+    ChangeItemCode.BLACK_BADGE,
+})
+
+ChangeKind = Literal["add", "set_flag"]
+
+
+def change_operand_to_inventory(operand: int) -> InventoryOffset | None:
+    """
+    Map a CHANGE operand byte to its target SAVED.GAM inventory slot.
+    Returns None for operands outside the ranges TALK.OVL handles
+    (>= 0x40 and not in 0x41..0x4B).
+    """
+    if 0 <= operand < 0x40:
+        offset = 0x21A + operand
+        try:
+            return InventoryOffset(offset)
+        except ValueError:
+            return None
+    return _CHANGE_SPECIAL_TO_INVENTORY.get(operand)
+
+
+def change_operand_kind(operand: int) -> ChangeKind | None:
+    """
+    Whether the CHANGE handler increments a counter or sets a 0xFF flag.
+    """
+    if change_operand_to_inventory(operand) is None:
+        return None
+    return "set_flag" if operand in _CHANGE_FLAG_OPERANDS else "add"
+
+
+_OPERAND_COMMANDS = frozenset({TalkCommand.CHANGE, TalkCommand.DEFINE_LABEL})
+
+
 @dataclass
 class ScriptItem:
     command: int  # TalkCommand value, or raw byte for labels (0x91..0x9B)
     text: str = ""
+    operand: int | None = None  # 1-byte operand for CHANGE / DEFINE_LABEL
 
     @property
     def is_plain_string(self) -> bool:
@@ -247,7 +329,9 @@ def _decode_script_block(raw: bytes, words: CompressedWords) -> list[ScriptLine]
             current.items.append(ScriptItem(TalkCommand.PLAIN_STRING, buffer))
             buffer = ""
 
-    for byte in raw:
+    i = 0
+    while i < len(raw):
+        byte = raw[i]
         if byte == 0x00:
             # End of line. Bradhannah appends "\n" here, but we trim trailing
             # whitespace at the line boundary for cleaner Python semantics.
@@ -255,15 +339,18 @@ def _decode_script_block(raw: bytes, words: CompressedWords) -> list[ScriptLine]
             lines.append(current)
             current = ScriptLine()
             writing_chars = False
+            i += 1
             continue
 
         if _is_char_byte(byte):
             ch = chr(byte - 0x80)
             if ch == "@":
                 # Bradhannah skips '@' entirely — it ends a prompt run.
+                i += 1
                 continue
             buffer += ch
             writing_chars = True
+            i += 1
             continue
 
         # Not a character byte — either a compressed word or a command.
@@ -274,11 +361,19 @@ def _decode_script_block(raw: bytes, words: CompressedWords) -> list[ScriptLine]
 
         if words.has(byte):
             buffer += words.get(byte) + " "
+            i += 1
             continue
 
         # Command byte (or label in 0x91..0x9B range).
         flush_buffer()
+        if byte in _OPERAND_COMMANDS and i + 1 < len(raw):
+            # Two-byte command — TALK.OVL stores the command at memory
+            # [0x4AEE] then re-enters the parser to read the operand byte.
+            current.items.append(ScriptItem(byte, operand=raw[i + 1]))
+            i += 2
+            continue
         current.items.append(ScriptItem(byte))
+        i += 1
 
     # Trailing bytes without a closing NUL still form a line.
     flush_buffer()

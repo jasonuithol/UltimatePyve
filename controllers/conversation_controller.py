@@ -7,12 +7,15 @@ from data.global_registry import GlobalRegistry
 
 from models.agents.party_agent     import PartyAgent
 from models.agents.town_npc_agent  import TownNpcAgent
+from models.party_inventory        import PartyInventory
 from models.tlk_file               import (
     NpcDialog,
     ScriptItem,
     ScriptLine,
     TalkCommand,
     TlkLabel,
+    change_operand_kind,
+    change_operand_to_inventory,
     is_label_byte,
     label_byte_to_num,
 )
@@ -29,6 +32,7 @@ class ConversationController(LoggerMixin):
 
     # Injectable
     party_agent:     PartyAgent
+    party_inventory: PartyInventory
     global_registry: GlobalRegistry
     console_service: ConsoleService
     input_service:   InputService
@@ -221,7 +225,8 @@ class ConversationController(LoggerMixin):
         while pending_lines:
             current = pending_lines.pop(0)
             goto_label = self._render_line_to_buffer(
-                dialog, current, npc, avatar_name, buffer, flush_buffered
+                dialog, current, npc, avatar_name, buffer, flush_buffered,
+                apply_changes=True,
             )
             if goto_label is not None:
                 # Cyclic label graph (A→B→A) — stop following gotos and
@@ -263,6 +268,7 @@ class ConversationController(LoggerMixin):
             goto_label = self._render_line_to_buffer(
                 dialog, current, npc, avatar_name, buffer, do_nothing,
                 skip_ask_name=True,
+                apply_changes=False,
             )
             if goto_label is not None:
                 if goto_label.label_num in visited_labels:
@@ -281,6 +287,7 @@ class ConversationController(LoggerMixin):
         buffer: list[str],
         flush_callback,
         skip_ask_name: bool = False,
+        apply_changes: bool = False,
     ) -> TlkLabel | None:
         """
         Walk the sections of a ScriptLine, appending rendered text to buffer.
@@ -320,7 +327,8 @@ class ConversationController(LoggerMixin):
                 skip_instruction = "skip_after_next" if has_met else "skip_next"
             else:
                 goto_label = self._render_section_items(
-                    section, dialog, npc, avatar_name, buffer, flush_callback, skip_ask_name
+                    section, dialog, npc, avatar_name, buffer, flush_callback,
+                    skip_ask_name, apply_changes,
                 )
                 if goto_label is not None:
                     return goto_label
@@ -345,6 +353,7 @@ class ConversationController(LoggerMixin):
         buffer: list[str],
         flush_callback,
         skip_ask_name: bool,
+        apply_changes: bool,
     ) -> TlkLabel | None:
         skip_next = False
         for item in section:
@@ -367,6 +376,9 @@ class ConversationController(LoggerMixin):
                     continue
                 flush_callback()
                 self._handle_ask_name(npc, avatar_name)
+            elif cmd == TalkCommand.CHANGE:
+                if apply_changes and item.operand is not None:
+                    self._apply_change(item.operand)
             elif cmd == TalkCommand.START_LABEL_DEFINITION:
                 skip_next = True
             elif is_label_byte(cmd):
@@ -376,6 +388,22 @@ class ConversationController(LoggerMixin):
             # KEY_WAIT, PAUSE, KARMA_*, END_CONVERSATION, DO_NOTHING_SECTION,
             # and other command bytes are silently dropped.
         return None
+
+    def _apply_change(self, operand: int):
+        # Mirrors TALK.OVL's CHANGE (0x86) handler at file offset 0x0682:
+        # most operands add 1 to a slot (capped); the SEXTANTS / SPY_GLASSES /
+        # BLACK_BADGE flags are written as 0xFF instead of being incremented.
+        target = change_operand_to_inventory(operand)
+        if target is None:
+            return
+        kind = change_operand_kind(operand)
+        if kind == "set_flag":
+            saved = self.global_registry.saved_game
+            if saved is None:
+                return
+            saved.write_u8(target.value, 0xFF)
+        elif kind == "add":
+            self.party_inventory.safe_add(target, 1)
 
     def _handle_ask_name(self, npc: TownNpcAgent, avatar_name: str):
         response = self._read_keyword(prompt="What is thy name?")
