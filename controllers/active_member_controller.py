@@ -29,6 +29,10 @@ class ActiveMemberController:
 
         if active_member_index is None:
             return
-        
+
+        if active_member_index >= len(self.party_agent.party_members):
+            self.console_service.print_ascii(f"No party member {active_member_index + 1} !")
+            return
+
         self.party_agent.set_active_member(active_member_index)
         self.console_service.print_ascii(f"Set active player: {self.party_agent.get_active_member().name} !")
