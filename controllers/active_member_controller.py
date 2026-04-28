@@ -2,6 +2,7 @@ import pygame
 
 from models.agents.party_agent import PartyAgent
 from services.console_service import ConsoleService
+from services.info_panel_service import InfoPanelService
 from services.input_service import InputService
 
 active_player_keymap = {
@@ -15,15 +16,18 @@ active_player_keymap = {
 
 class ActiveMemberController:
 
-    party_agent: PartyAgent
-    console_service: ConsoleService
-    input_service: InputService
+    party_agent:        PartyAgent
+    console_service:    ConsoleService
+    info_panel_service: InfoPanelService
+    input_service:      InputService
 
     # This never passes time or consumes items or nuffin
     def handle_event(self, event: pygame.event.Event):
         if event.key == pygame.K_0:
             self.party_agent.set_active_member(None)
             self.console_service.print_ascii(f"Set active player: None !")
+            self.info_panel_service.update_party_summary()
+            return
 
         active_member_index = active_player_keymap.get(event.key, None)
 
@@ -36,3 +40,4 @@ class ActiveMemberController:
 
         self.party_agent.set_active_member(active_member_index)
         self.console_service.print_ascii(f"Set active player: {self.party_agent.get_active_member().name} !")
+        self.info_panel_service.update_party_summary()
