@@ -44,9 +44,10 @@ class ConsoleCommandController(LoggerMixin):
             self._deactivate(cancelled=True)
             return True
 
-        if event.key == pygame.K_BACKSPACE:
+        if event.key in (pygame.K_BACKSPACE, pygame.K_DELETE):
             if self._buffer:
                 self._buffer = self._buffer[:-1]
+                self.console_service.backspace()
             return True
 
         char = keycode_to_char(event.key)
