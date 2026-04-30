@@ -113,7 +113,7 @@ class ShopkeeperController(LoggerMixin):
             self.global_registry.data_ovl.shop_buy_sell_greetings
         ))
         while True:
-            answer = self._read_keypress(prompt="B)uy or S)ell?")
+            answer = self._read_keypress()  # canonical greeting already asked Buy/Sell
             if answer is None:  # ESC exits the conversation
                 self._npc_speak(self._random_string(
                     self.global_registry.data_ovl.shop_farewells
@@ -134,7 +134,7 @@ class ShopkeeperController(LoggerMixin):
             return
 
         while True:
-            self._npc_speak("I have for sale:")
+            self._npc_speak(self._buy_list_intro())
             for i, (label, _offset, _price) in enumerate(stock):
                 self.console_service.print_ascii(
                     f"{chr(ord('a') + i)}...{label}", no_prompt=True
@@ -333,6 +333,16 @@ class ShopkeeperController(LoggerMixin):
         names = self._split_strings(self.global_registry.data_ovl.barkeeper_names)
         return names[index] if 0 <= index < len(names) else ""
 
+    def _buy_list_intro(self) -> str:
+        # Combines an optional affirmation with a list-preface — e.g.
+        # "But of course! We've got:" or just "Thou canst buy:". The
+        # affirmation appears about half the time, matching the original.
+        preface = self._random_string(self.global_registry.data_ovl.shop_list_prefaces)
+        if random.random() < 0.5:
+            return preface
+        affirmation = self._random_string(self.global_registry.data_ovl.shop_affirmations)
+        return f"{affirmation} {preface}" if affirmation else preface
+
     def _resolve(self, template: str, *, name: str = "",
                  shoppe: str = "", item: str = "", price: int | None = None) -> str:
         out = template.strip().strip('"')
@@ -344,10 +354,11 @@ class ShopkeeperController(LoggerMixin):
             out = out.replace("%", str(price))
         return out
 
-    def _read_keypress(self, prompt: str) -> str | None:
+    def _read_keypress(self, prompt: str = "") -> str | None:
         # Single-keypress input: merchants act on the first letter immediately,
         # no Enter required. ESC returns None to drop back one menu level.
-        self.console_service.print_ascii(prompt, no_prompt=True)
+        if prompt:
+            self.console_service.print_ascii(prompt, no_prompt=True)
         self.console_service.print_ascii(":", include_carriage_return=False, no_prompt=True)
         while True:
             event = self.input_service.get_next_event()
