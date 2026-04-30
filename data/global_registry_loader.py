@@ -14,6 +14,7 @@ from data.loaders.tlk_file_loader       import TlkFileLoader
 from data.loaders.npc_metadata_loader   import NpcMetadataLoader
 from data.loaders.projectile_sprite_loader import ProjectileSpriteLoader
 from data.loaders.save_game_loader      import SavedGameLoader
+from data.loaders.shoppe_dat_loader     import ShoppeDatLoader
 
 from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
 from data.loaders.spell_rune_loader import SpellRuneLoader
@@ -70,6 +71,7 @@ class GlobalRegistryLoader(LoggerMixin):
     tlk_file_loader:             TlkFileLoader
     npc_metadata_loader:         NpcMetadataLoader
     saved_game_loader:           SavedGameLoader
+    shoppe_dat_loader:           ShoppeDatLoader
 
     blue_border_glyph_factory:   BlueBorderGlyphFactory
     scroll_border_glyph_factory: ScrollBorderGlyphFactory
@@ -130,6 +132,7 @@ class GlobalRegistryLoader(LoggerMixin):
         self.npc_metadata_loader.load()
         self.npc_file_loader.load(u5_path, self.u5map_loader.metadata)
         self.tlk_file_loader.load(u5_path, self.u5map_loader.metadata)
+        self.shoppe_dat_loader.load(u5_path)
 
         # magic
         self.spell_rune_loader.load()

@@ -24,6 +24,7 @@ from .input_service import InputService
 from .monster_service import MonsterService
 from .monster_spawner     import MonsterSpawner
 from .town_npc_spawner    import TownNpcSpawner
+from .town_npc_scheduler  import TownNpcScheduler
 from .combat_map_service import CombatMapService
 from .npc_service import NpcService
 
@@ -75,6 +76,7 @@ def compose(provider: ServiceProvider):
     provider.register(ViewPortService)
     provider.register(MonsterService)
     provider.register(TownNpcSpawner)
+    provider.register(TownNpcScheduler)
     provider.register(InfoPanelService)
     provider.register(InfoPanelDataProvider)
     provider.register(SfxLibraryService)

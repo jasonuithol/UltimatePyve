@@ -16,6 +16,7 @@ from data.loaders.npc_metadata_loader import NpcMetadataLoader
 from data.loaders.projectile_sprite_loader import ProjectileSpriteLoader
 from data.loaders.save_game_loader import SavedGameLoader
 from data.loaders.scroll_border_glyph_factory import ScrollBorderGlyphFactory
+from data.loaders.shoppe_dat_loader import ShoppeDatLoader
 from data.loaders.spell_rune_loader import SpellRuneLoader
 from data.loaders.spell_type_loader import SpellTypeLoader
 from services.light_map_level_baker       import LightMapLevelBaker
@@ -64,6 +65,7 @@ def compose(provider: ServiceProvider):
     provider.register(TlkFileLoader)
     provider.register(NpcMetadataLoader)
     provider.register(SavedGameLoader)
+    provider.register(ShoppeDatLoader)
     provider.register(SpellRuneLoader)
     provider.register(SpellTypeLoader)
 

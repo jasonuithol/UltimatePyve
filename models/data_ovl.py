@@ -194,6 +194,35 @@ class DataOVL:
         # 0x4e90 0x5 Inn bed Y-coordinate
         self.inn_bed_y_coords = slice_at(0x4e90, 0x5)
 
+        # ------- Shopkeeper-text region (DATA.OVL ASCII strings) -------
+        # Three time-of-day words used for the @ placeholder in shop welcomes.
+        # 0x7836 0x1a "morning", "afternoon", "evening"
+        self.time_of_day_strings = slice_at(0x7836, 0x1a)
+
+        # Four farewell variants. Picked at random when the player exits.
+        # 0x7e44 0x42 "Good-bye...", "Mayhap another time...", "Godspeed...", "Fare thee well..."
+        self.shop_farewells = slice_at(0x7e44, 0x42)
+
+        # Two greeting variants for the Buy/Sell prompt.
+        # 0x7f58 0x6a "Hail, friend! ...", "Greetings, traveller! ..."
+        self.shop_buy_sell_greetings = slice_at(0x7f58, 0x6a)
+
+        # Four affirmation variants spoken after a confirmed buy/sell choice.
+        # 0x7fc2 0x36 "Very good!", "Excellent!", "Fine, fine!", "But of course!"
+        self.shop_affirmations = slice_at(0x7fc2, 0x36)
+
+        # Four list-preface variants.
+        # 0x7ff8 0x30 "We have:", "We stock:", "Thou canst buy:", "We've got:"
+        self.shop_list_prefaces = slice_at(0x7ff8, 0x30)
+
+        # Welcome template. @ = time of day, # = shoppe name.
+        # 0x8028 0x1e "Good @, and welcome to #!"
+        self.shop_welcome_template = slice_at(0x8028, 0x1e)
+
+        # Speech-attribution template. $ = NPC name.
+        # 0x8046 0x10 "$ says,"
+        self.shop_name_says_template = slice_at(0x8046, 0x10)
+
         # --------- thanks Meta/Llama ------------------------
 
         # 0x154C 0x30*2 Monster flags

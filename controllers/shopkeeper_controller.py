@@ -1,3 +1,4 @@
+import random
 import struct
 
 import pygame
@@ -42,6 +43,27 @@ _STOCK_ROW_BYTES   = 8
 _BRITAIN_ARMS_ROW = 0
 
 
+# SHOPPE.DAT string-index ranges used by the arms-seller path. Item descriptions
+# are positionally aligned with item bytes 0x00..0x28 (Leather Helm .. Spiked
+# Collar) — i.e. string_index = _ITEM_DESC_BASE + byte. The sell-side variants
+# vary the flavour text (battle-worn / inferior / excellent condition / ...);
+# we pick one at random per transaction.
+_ITEM_DESC_BASE = 8
+_SELL_OFFER_RANGE = (49, 56)  # inclusive
+
+# store_names is one big NUL-separated list. Britain's arms seller is the first
+# entry ("Iolo's Bows"); the rest of the armouries follow in town order. The
+# slice currently includes a few trailing mantra bytes from virtue_mantras, so
+# we filter to entries we recognise rather than indexing positionally.
+_BRITAIN_SHOPPE_NAME_NEEDLE = "Iolo"
+
+# barkeeper_names is misnamed: it holds every shopkeeper's first name in role
+# order (arms-sellers first, then taverns, etc). Britain's arms seller is the
+# first entry — "Gwenneth". The TownNpcAgent only knows the spawner placeholder
+# ("NPC#N"), so we look the canonical name up here.
+_BRITAIN_ARMS_SELLER_NAME_INDEX = 0
+
+
 class ShopkeeperController(LoggerMixin):
 
     # Injectable
@@ -73,18 +95,29 @@ class ShopkeeperController(LoggerMixin):
             self._npc_speak("I have no time to talk just now.")
 
     # ------------------------------------------------------------------
-    # Arms seller — Britain (Terrance) for now. Greeting line is hardcoded
-    # in DATA.OVL at 0x7f58. The input loop must never fall back to a
-    # generic open prompt — outer keys are always B/S, item lists are
+    # Arms seller — Britain (Terrance) for now. Welcome / greeting / farewell
+    # text comes from DATA.OVL (~0x7836..0x8056). Item descriptions and sell
+    # offers come from SHOPPE.DAT. Outer keys are always B/S; item lists are
     # always indexed a..z.
     # ------------------------------------------------------------------
     def _arms_seller(self, npc: TownNpcAgent):
-        self._npc_speak("Welcome to mine shoppe!")
-        self._npc_speak(f"I am {npc.name}, weapons-master.")
+        shoppe = self._shoppe_name()
+        seller_name = self._arms_seller_name(_BRITAIN_ARMS_SELLER_NAME_INDEX)
+        welcome = self._resolve(
+            self._first_string(self.global_registry.data_ovl.shop_welcome_template),
+            name=seller_name, shoppe=shoppe,
+        )
+        self._npc_speak(welcome)
+        self._say(f"{seller_name} says,")
+        self._npc_speak(self._random_string(
+            self.global_registry.data_ovl.shop_buy_sell_greetings
+        ))
         while True:
             answer = self._read_keypress(prompt="B)uy or S)ell?")
             if answer is None:  # ESC exits the conversation
-                self._npc_speak("Fare thee well!")
+                self._npc_speak(self._random_string(
+                    self.global_registry.data_ovl.shop_farewells
+                ))
                 return
             if answer == "b":
                 self._buy(_BRITAIN_ARMS_ROW)
@@ -164,7 +197,7 @@ class ShopkeeperController(LoggerMixin):
                 continue
             self.party_inventory.safe_add(InventoryOffset.GOLD, offer)
             self.info_panel_service.update_party_summary()
-            self._npc_speak(f"Here is thy gold for the {label}!")
+            self._npc_speak(self._sell_offer_line(label, offer))
 
     def _sellable_inventory(self) -> list[tuple[str, InventoryOffset, int, int]]:
         # Items 0x00..0x2E cover armour, weapons, rings, amulets — the full set
@@ -225,20 +258,25 @@ class ShopkeeperController(LoggerMixin):
         return offset.name.replace("_", " ").title()
 
     def _describe(self, label: str, offset: InventoryOffset, price: int) -> str:
-        # Combat stats live in three parallel byte tables in DATA.OVL, indexed
-        # by the same item byte the stock and price tables use.
+        # Read the canonical sales pitch from SHOPPE.DAT. % is the price
+        # placeholder. If the item byte is outside the documented range
+        # (shouldn't happen for real arms-seller stock), fall back to label.
         byte = offset.value - _STOCK_BASE_OFFSET
-        ovl = self.global_registry.data_ovl
-        attack  = ovl.attack_values[byte]  if byte < len(ovl.attack_values)  else 0
-        defense = ovl.defense_values[byte] if byte < len(ovl.defense_values) else 0
-        rng     = ovl.range_values[byte]   if byte < len(ovl.range_values)   else 0
-        parts: list[str] = []
-        if attack:  parts.append(f"atk {attack}")
-        if defense: parts.append(f"def {defense}")
-        if rng:     parts.append(f"rng {rng}")
-        if parts:
-            return f"{label}: {', '.join(parts)}. {price} gp."
+        idx = _ITEM_DESC_BASE + byte
+        strings = self.global_registry.shoppe_strings
+        if 0 <= idx < len(strings):
+            return strings[idx].replace("%", str(price))
         return f"{label}: {price} gp."
+
+    def _sell_offer_line(self, label: str, offer: int) -> str:
+        # 49..56 are the eight sell-side flavour variants. & is the item name
+        # placeholder, % is the gold offer.
+        lo, hi = _SELL_OFFER_RANGE
+        idx = random.randint(lo, hi)
+        strings = self.global_registry.shoppe_strings
+        if 0 <= idx < len(strings):
+            return strings[idx].replace("&", label).replace("%", str(offer))
+        return f"Here is thy gold for the {label}!"
 
     def _say(self, msg: str):
         self.console_service.print_ascii(msg, no_prompt=True)
@@ -246,6 +284,65 @@ class ShopkeeperController(LoggerMixin):
 
     def _npc_speak(self, msg: str):
         self._say(f'"{msg}"')
+
+    # ------------------------------------------------------------------
+    # DATA.OVL phrase helpers — strings live as NUL-separated ASCII
+    # blocks at fixed offsets. Random variants are picked per call;
+    # placeholders ($/#/@/&/%) are resolved against the current context.
+    # ------------------------------------------------------------------
+    def _split_strings(self, raw: bytes) -> list[str]:
+        return [
+            chunk.decode("ascii", errors="ignore").strip("\n").strip()
+            for chunk in raw.split(b"\x00")
+            if chunk.strip(b"\n")
+        ]
+
+    def _first_string(self, raw: bytes) -> str:
+        items = self._split_strings(raw)
+        return items[0] if items else ""
+
+    def _random_string(self, raw: bytes) -> str:
+        items = self._split_strings(raw)
+        return random.choice(items) if items else ""
+
+    def _time_of_day_word(self) -> str:
+        words = self._split_strings(
+            self.global_registry.data_ovl.time_of_day_strings
+        )  # ["morning", "afternoon", "evening"]
+        if len(words) < 3:
+            return ""
+        hour = self.global_registry.saved_game.read_current_datetime().hour
+        if 5 <= hour < 12:
+            return words[0]
+        if 12 <= hour < 18:
+            return words[1]
+        return words[2]
+
+    def _shoppe_name(self) -> str:
+        # Britain arms seller is the only role wired today; look up "Iolo's
+        # Bows" by content match so we don't depend on the (still-fuzzy)
+        # store_names slice boundaries.
+        raw = self.global_registry.data_ovl.store_names
+        for chunk in raw.split(b"\x00"):
+            text = chunk.decode("ascii", errors="ignore").strip()
+            if _BRITAIN_SHOPPE_NAME_NEEDLE in text:
+                return text
+        return ""
+
+    def _arms_seller_name(self, index: int) -> str:
+        names = self._split_strings(self.global_registry.data_ovl.barkeeper_names)
+        return names[index] if 0 <= index < len(names) else ""
+
+    def _resolve(self, template: str, *, name: str = "",
+                 shoppe: str = "", item: str = "", price: int | None = None) -> str:
+        out = template.strip().strip('"')
+        out = out.replace("$", name)
+        out = out.replace("#", shoppe)
+        out = out.replace("@", self._time_of_day_word())
+        out = out.replace("&", item)
+        if price is not None:
+            out = out.replace("%", str(price))
+        return out
 
     def _read_keypress(self, prompt: str) -> str | None:
         # Single-keypress input: merchants act on the first letter immediately,
