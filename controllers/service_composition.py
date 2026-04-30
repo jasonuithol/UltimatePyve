@@ -10,6 +10,7 @@ from .conversation_controller     import ConversationController
 from .initialisation_controller import InitialisationController
 from .party_controller          import PartyController
 from .combat_controller         import CombatController
+from .shopkeeper_controller     import ShopkeeperController
 
 from .spell_controllers.service_composition import compose as compose_spell_controllers
 
@@ -23,6 +24,7 @@ def compose(provider: ServiceProvider):
     provider.register(CastController)
     provider.register(ConsoleCommandController)
     provider.register(ConversationController)
+    provider.register(ShopkeeperController)
 
     compose_spell_controllers(provider)
 

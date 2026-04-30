@@ -29,6 +29,11 @@ from services.input_service   import InputService, keycode_to_char
 from services.npc_service     import NpcService
 from services.town_npc_spawner import TownNpcSpawner
 
+# Local imports avoided here — controllers/shopkeeper_controller.py is
+# referenced via type-hint only to prevent an import cycle (it doesn't import
+# this module, but kept consistent with the rest of the controllers).
+from controllers.shopkeeper_controller import ShopkeeperController
+
 
 MAX_PARTY_SIZE = 6
 
@@ -47,6 +52,7 @@ class ConversationController(LoggerMixin):
     input_service:      InputService
     npc_service:        NpcService
     town_npc_spawner:   TownNpcSpawner
+    shopkeeper_controller: ShopkeeperController
 
     def __init__(self):
         super().__init__()
@@ -66,15 +72,37 @@ class ConversationController(LoggerMixin):
         target_npc     = self.npc_service.get_npc_at(target_coord)
 
         if not isinstance(target_npc, TownNpcAgent):
+            self.log(
+                f"'No response' (no TownNpcAgent at {target_coord}) "
+                f"target_npc={type(target_npc).__name__ if target_npc else None}"
+            )
             self.console_service.print_ascii("No response", no_prompt=True)
+            return
+
+        # High-bit dialog_number = shopkeeper class (arms seller, barkeep,
+        # innkeeper, etc). These don't live in the .TLK files — their lines
+        # come from SHOPPE.DAT and hardcoded strings in DATA.OVL/SHOPPES.OVL,
+        # so route them through the dedicated shopkeeper controller instead
+        # of looking up an absent TLK dialog.
+        if target_npc.dialog_number & 0x80:
+            self.shopkeeper_controller.talk(target_npc)
             return
 
         dialogs = self.global_registry.npc_dialogs.get(party_location.location_index)
         if dialogs is None:
+            self.log(
+                f"'No response' (no dialogs registered for "
+                f"location_index={party_location.location_index})"
+            )
             self.console_service.print_ascii("No response", no_prompt=True)
             return
         dialog = dialogs.get(target_npc.dialog_number)
         if dialog is None:
+            self.log(
+                f"'No response' (NPC dialog_number={target_npc.dialog_number} "
+                f"missing from dialogs at location_index={party_location.location_index}; "
+                f"available={sorted(dialogs.keys())})"
+            )
             self.console_service.print_ascii("No response", no_prompt=True)
             return
 
