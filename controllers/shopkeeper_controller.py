@@ -44,10 +44,12 @@ _BRITAIN_ARMS_ROW = 0
 
 
 # SHOPPE.DAT string-index ranges used by the arms-seller path. Item descriptions
-# are positionally aligned with item bytes 0x00..0x28 (Leather Helm .. Spiked
-# Collar) — i.e. string_index = _ITEM_DESC_BASE + byte. The sell-side variants
-# vary the flavour text (battle-worn / inferior / excellent condition / ...);
-# we pick one at random per transaction.
+# start at index 8 and run in inventory-byte order, but quest items with a
+# base price of 0 (Jewelled Shield, Mystic Armour, Chaos/Glass/Jeweled/Mystic
+# Sword) have no description string — so the byte→index map is built at
+# runtime by walking the price table. The sell-side variants vary the flavour
+# text (battle-worn / inferior / excellent condition / ...); we pick one at
+# random per transaction.
 _ITEM_DESC_BASE = 8
 _SELL_OFFER_RANGE = (49, 56)  # inclusive
 
@@ -77,6 +79,7 @@ class ShopkeeperController(LoggerMixin):
     def __init__(self):
         super().__init__()
         self._cached_prices: list[int] | None = None
+        self._cached_desc_idx_by_byte: dict[int, int] | None = None
 
     # ------------------------------------------------------------------
     # Entry point — dispatched from ConversationController when an NPC's
@@ -109,11 +112,16 @@ class ShopkeeperController(LoggerMixin):
         )
         self._npc_speak(welcome)
         self._say(f"{seller_name} says,")
-        self._npc_speak(self._random_string(
+        greeting = self._random_string(
             self.global_registry.data_ovl.shop_buy_sell_greetings
-        ))
+        )
+        # First iteration uses the canonical greeting as the keypress prompt so
+        # the animated cursor sits one space after the "?". Subsequent passes
+        # (after a buy/sell round) just wait for the next key with no prompt.
+        prompt = f'"{greeting}"'
         while True:
-            answer = self._read_keypress()  # canonical greeting already asked Buy/Sell
+            answer = self._read_keypress(prompt=prompt)
+            prompt = ""
             if answer is None:  # ESC exits the conversation
                 self._npc_speak(self._random_string(
                     self.global_registry.data_ovl.shop_farewells
@@ -140,7 +148,7 @@ class ShopkeeperController(LoggerMixin):
                     f"{chr(ord('a') + i)}...{label}", no_prompt=True
                 )
 
-            pick = self._read_keypress(prompt="Which?")
+            pick = self._read_keypress(prompt=self._buy_pick_prompt())
             if pick is None:  # ESC returns to outer Buy/Sell prompt
                 return
 
@@ -182,7 +190,7 @@ class ShopkeeperController(LoggerMixin):
                     no_prompt=True,
                 )
 
-            pick = self._read_keypress(prompt="Which?")
+            pick = self._read_keypress(prompt=self._sell_pick_prompt())
             if pick is None:  # ESC returns to outer Buy/Sell prompt
                 return
 
@@ -259,14 +267,25 @@ class ShopkeeperController(LoggerMixin):
 
     def _describe(self, label: str, offset: InventoryOffset, price: int) -> str:
         # Read the canonical sales pitch from SHOPPE.DAT. % is the price
-        # placeholder. If the item byte is outside the documented range
-        # (shouldn't happen for real arms-seller stock), fall back to label.
+        # placeholder. The byte→string-index map skips quest items with no
+        # base price (no description string in SHOPPE.DAT for them).
         byte = offset.value - _STOCK_BASE_OFFSET
-        idx = _ITEM_DESC_BASE + byte
+        idx = self._desc_idx_for_byte(byte)
         strings = self.global_registry.shoppe_strings
-        if 0 <= idx < len(strings):
+        if idx is not None and 0 <= idx < len(strings):
             return strings[idx].replace("%", str(price))
         return f"{label}: {price} gp."
+
+    def _desc_idx_for_byte(self, byte: int) -> int | None:
+        if self._cached_desc_idx_by_byte is None:
+            mapping: dict[int, int] = {}
+            next_idx = _ITEM_DESC_BASE
+            for b, p in enumerate(self._base_prices()):
+                if p > 0:
+                    mapping[b] = next_idx
+                    next_idx += 1
+            self._cached_desc_idx_by_byte = mapping
+        return self._cached_desc_idx_by_byte.get(byte)
 
     def _sell_offer_line(self, label: str, offer: int) -> str:
         # 49..56 are the eight sell-side flavour variants. & is the item name
@@ -333,6 +352,12 @@ class ShopkeeperController(LoggerMixin):
         names = self._split_strings(self.global_registry.data_ovl.barkeeper_names)
         return names[index] if 0 <= index < len(names) else ""
 
+    def _buy_pick_prompt(self) -> str:
+        return f'"{self._random_string(self.global_registry.data_ovl.shop_buy_pick_prompts)}"'
+
+    def _sell_pick_prompt(self) -> str:
+        return f'"{self._random_string(self.global_registry.data_ovl.shop_sell_pick_prompts)}"'
+
     def _buy_list_intro(self) -> str:
         # Combines an optional affirmation with a list-preface — e.g.
         # "But of course! We've got:" or just "Thou canst buy:". The
@@ -357,15 +382,19 @@ class ShopkeeperController(LoggerMixin):
     def _read_keypress(self, prompt: str = "") -> str | None:
         # Single-keypress input: merchants act on the first letter immediately,
         # no Enter required. ESC returns None to drop back one menu level.
+        # The animated cursor is drawn automatically at the current console
+        # position by InteractiveConsole.draw(), so no explicit prompt glyph
+        # is needed — printing the prompt inline (no carriage return) with a
+        # trailing space puts the cursor one space after the last text.
         if prompt:
-            self.console_service.print_ascii(prompt, no_prompt=True)
-        self.console_service.print_ascii(":", include_carriage_return=False, no_prompt=True)
+            self.console_service.print_ascii(
+                f"{prompt} ", include_carriage_return=False, no_prompt=True
+            )
         while True:
             event = self.input_service.get_next_event()
             if getattr(event, "type", 0) == pygame.QUIT or getattr(event, "key", 0) == -1:
                 return None
             if event.key == pygame.K_ESCAPE:
-                self.console_service.print_ascii("", no_prompt=True)
                 self.console_service.print_ascii("", no_prompt=True)
                 return None
             char = keycode_to_char(event.key)

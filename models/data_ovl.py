@@ -215,6 +215,17 @@ class DataOVL:
         # 0x7ff8 0x30 "We have:", "We stock:", "Thou canst buy:", "We've got:"
         self.shop_list_prefaces = slice_at(0x7ff8, 0x30)
 
+        # Four buy-side "which item?" prompt variants.
+        # 0x7bf2 0x66 "What may I show thee?", "Which wouldst thou like to see?",
+        #             "What is thine interest?", "Which would ye see?"
+        self.shop_buy_pick_prompts = slice_at(0x7bf2, 0x66)
+
+        # Four sell-side "which item?" prompt variants.
+        # 0x7dc4 0x80 "Which item wouldst thou like to sell?",
+        #             "What dost thou wish to sell?", "Show me what ye got...",
+        #             "What dost thou have for me to buy?"
+        self.shop_sell_pick_prompts = slice_at(0x7dc4, 0x80)
+
         # Welcome template. @ = time of day, # = shoppe name.
         # 0x8028 0x1e "Good @, and welcome to #!"
         self.shop_welcome_template = slice_at(0x8028, 0x1e)
